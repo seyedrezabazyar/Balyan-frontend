@@ -21,7 +21,7 @@
           <UButton
             :icon="isDark ? 'heroicons:sun' : 'heroicons:moon'"
             variant="ghost"
-            color="gray"
+            color="neutral"
             @click="toggleTheme"
             :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           />

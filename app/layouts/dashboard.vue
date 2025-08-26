@@ -18,7 +18,7 @@
         <UButton
           icon="i-heroicons-x-mark"
           variant="ghost"
-          color="gray"
+          color="neutral"
           size="sm"
           class="lg:hidden"
           @click="sidebarOpen = false"
@@ -36,15 +36,15 @@
           <!-- Menu Item -->
           <NuxtLink
             v-else
-            :to="item.to"
+            :to="item.to || '/'"
             :class="[
               'flex items-center px-3 py-2 rounded-lg transition-colors group',
-              isActiveRoute(item.to)
+              isActiveRoute(item.to || '/')
                 ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             ]"
           >
-            <Icon :name="item.icon" class="w-5 h-5 ml-3" />
+            <Icon :name="item.icon || 'i-heroicons-home'" class="w-5 h-5 ml-3" />
             <span class="flex-1">{{ item.label }}</span>
             <span v-if="item.badge" class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 rounded-full">
               {{ item.badge }}
@@ -82,7 +82,7 @@
           <UButton
             icon="i-heroicons-bars-3"
             variant="ghost"
-            color="gray"
+            color="neutral"
             class="lg:hidden"
             @click="sidebarOpen = true"
           />
@@ -104,7 +104,7 @@
             <UButton
               icon="i-heroicons-magnifying-glass"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="searchModalOpen = true"
             />
 
@@ -113,7 +113,7 @@
               <UButton
                 icon="i-heroicons-bell"
                 variant="ghost"
-                color="gray"
+                color="neutral"
                 class="relative"
               >
                 <span class="absolute top-1 left-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -124,7 +124,7 @@
             <UButton
               :icon="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="toggleTheme"
             />
 

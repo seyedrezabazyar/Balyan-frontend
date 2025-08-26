@@ -1,168 +1,135 @@
 import { defineStore } from 'pinia'
-import type { User, LoginCredentials, RegisterData, AuthResponse } from '~/types'
 
-export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
-  const token = useCookie('auth-token', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7 // 7 days
-  })
-  const refreshToken = useCookie('refresh-token', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30 // 30 days
-  })
+interface User {
+  id: string
+  name: string
+  email: string
+  role?: string
+  avatar?: string
+}
 
-  const isAuthenticated = computed(() => !!user.value && !!token.value)
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
+interface AuthState {
+  user: User | null
+  token: string | null
+  isAuthenticated: boolean
+}
 
-  // Login function
-  async function login(credentials: LoginCredentials) {
-    isLoading.value = true
-    error.value = null
-    
-    try {
-      const { data } = await $fetch<AuthResponse>('/auth/login', {
-        baseURL: useRuntimeConfig().public.apiBase,
-        method: 'POST',
-        body: credentials
-      })
+export const useAuthStore = defineStore('auth', {
+  state: (): AuthState => ({
+    user: null,
+    token: null,
+    isAuthenticated: false
+  }),
 
-      // Set user and tokens
-      user.value = data.user
-      token.value = data.access_token
-      if (data.refresh_token) {
-        refreshToken.value = data.refresh_token
-      }
+  getters: {
+    currentUser: (state) => state.user,
+    isLoggedIn: (state) => state.isAuthenticated
+  },
 
-      // Redirect to dashboard
-      await navigateTo('/dashboard')
-      
-      return { success: true }
-    } catch (err: any) {
-      error.value = err.data?.message || 'Login failed. Please try again.'
-      return { success: false, error: error.value }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Register function
-  async function register(data: RegisterData) {
-    isLoading.value = true
-    error.value = null
-    
-    try {
-      const response = await $fetch<AuthResponse>('/auth/register', {
-        baseURL: useRuntimeConfig().public.apiBase,
-        method: 'POST',
-        body: data
-      })
-
-      // Set user and tokens
-      user.value = response.data.user
-      token.value = response.data.access_token
-      if (response.data.refresh_token) {
-        refreshToken.value = response.data.refresh_token
-      }
-
-      // Redirect to dashboard
-      await navigateTo('/dashboard')
-      
-      return { success: true }
-    } catch (err: any) {
-      error.value = err.data?.message || 'Registration failed. Please try again.'
-      return { success: false, error: error.value }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Logout function
-  async function logout() {
-    try {
-      // Call logout endpoint if token exists
-      if (token.value) {
-        await $fetch('/auth/logout', {
-          baseURL: useRuntimeConfig().public.apiBase,
+  actions: {
+    async login(credentials: { email: string; password: string }) {
+      try {
+        // Simulate API call
+        const response = await $fetch('/api/auth/login', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token.value}`
-          }
-        }).catch(() => {
-          // Ignore logout errors
+          body: credentials
         })
+        
+        // Store token and user data
+        this.token = response.token
+        this.user = response.user
+        this.isAuthenticated = true
+        
+        // Save to localStorage
+        if (process.client) {
+          localStorage.setItem('token', this.token)
+        }
+        
+        return response
+      } catch (error) {
+        throw error
       }
-    } finally {
-      // Clear user data and tokens
-      user.value = null
-      token.value = null
-      refreshToken.value = null
+    },
+
+    async register(data: { name: string; email: string; password: string }) {
+      try {
+        // Simulate API call
+        const response = await $fetch('/api/auth/register', {
+          method: 'POST',
+          body: data
+        })
+        
+        // Store token and user data
+        this.token = response.token
+        this.user = response.user
+        this.isAuthenticated = true
+        
+        // Save to localStorage
+        if (process.client) {
+          localStorage.setItem('token', this.token)
+        }
+        
+        return response
+      } catch (error) {
+        throw error
+      }
+    },
+
+    async fetchUser() {
+      try {
+        if (!this.token) {
+          // Try to get token from localStorage
+          if (process.client) {
+            const storedToken = localStorage.getItem('token')
+            if (storedToken) {
+              this.token = storedToken
+            } else {
+              return null
+            }
+          }
+        }
+        
+        // Simulate API call to get user data
+        const response = await $fetch('/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${this.token}`
+          }
+        })
+        
+        this.user = response.user
+        this.isAuthenticated = true
+        
+        return response
+      } catch (error) {
+        // If fetch fails, clear auth state
+        this.logout()
+        throw error
+      }
+    },
+
+    logout() {
+      this.user = null
+      this.token = null
+      this.isAuthenticated = false
       
-      // Redirect to login
-      await navigateTo('/login')
-    }
-  }
-
-  // Fetch current user
-  async function fetchUser() {
-    if (!token.value) return null
-
-    try {
-      const { data } = await $fetch<{ data: User }>('/auth/user', {
-        baseURL: useRuntimeConfig().public.apiBase,
-        headers: {
-          Authorization: `Bearer ${token.value}`
-        }
-      })
-
-      user.value = data
-      return data
-    } catch (err) {
-      // Token might be invalid
-      await logout()
-      return null
-    }
-  }
-
-  // Refresh access token
-  async function refreshAccessToken() {
-    if (!refreshToken.value) return false
-
-    try {
-      const { data } = await $fetch<AuthResponse>('/auth/refresh', {
-        baseURL: useRuntimeConfig().public.apiBase,
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${refreshToken.value}`
-        }
-      })
-
-      token.value = data.access_token
-      if (data.refresh_token) {
-        refreshToken.value = data.refresh_token
+      // Clear localStorage
+      if (process.client) {
+        localStorage.removeItem('token')
       }
+      
+      // Navigate to login
+      navigateTo('/login')
+    },
 
-      return true
-    } catch (err) {
-      await logout()
-      return false
+    setUser(user: User) {
+      this.user = user
+      this.isAuthenticated = true
+    },
+
+    clearAuth() {
+      this.user = null
+      this.token = null
+      this.isAuthenticated = false
     }
-  }
-
-  return {
-    user: readonly(user),
-    isAuthenticated: readonly(isAuthenticated),
-    isLoading: readonly(isLoading),
-    error: readonly(error),
-    login,
-    register,
-    logout,
-    fetchUser,
-    refreshAccessToken
   }
 })

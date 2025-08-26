@@ -53,7 +53,7 @@
             <UButton
               :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
               variant="ghost"
-              color="gray"
+              color="neutral"
               size="xs"
               @click="showPassword = !showPassword"
             />
@@ -130,10 +130,10 @@
       <!-- Error Alert -->
       <UAlert
         v-if="error"
-        color="red"
+        color="error"
         variant="subtle"
         :title="error"
-        :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'red', variant: 'link' }"
+        :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'error', variant: 'link' }"
         @close="error = null"
       />
 
@@ -162,7 +162,7 @@
       <!-- Social Login -->
       <div class="grid grid-cols-2 gap-3">
         <UButton
-          color="gray"
+          color="neutral"
           variant="outline"
           size="lg"
           block
@@ -173,7 +173,7 @@
           Google
         </UButton>
         <UButton
-          color="gray"
+          color="neutral"
           variant="outline"
           size="lg"
           block
