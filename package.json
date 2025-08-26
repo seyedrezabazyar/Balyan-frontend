@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/icon": "^1.9.0",
     "@nuxt/image": "^1.11.0",
     "@nuxt/ui": "^3.3.2",
     "@nuxtjs/google-fonts": "^3.2.0",
@@ -20,11 +21,14 @@
     "axios": "^1.11.0",
     "dayjs": "^1.11.13",
     "nuxt": "^4.0.3",
-    "@nuxt/icon": "^1.9.0",
     "pinia": "^3.0.3",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.19",
     "vue-router": "^4.5.1",
     "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vue-tsc": "^3.0.6"
   }
 }

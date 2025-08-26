@@ -6,6 +6,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '~/stores/auth'
+
 // Set default color mode
 const colorMode = useColorMode()
 
