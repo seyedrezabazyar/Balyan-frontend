@@ -30,7 +30,7 @@
             <UButton
               :icon="isDark ? 'heroicons:sun' : 'heroicons:moon'"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="toggleTheme"
               :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
             />
@@ -40,7 +40,7 @@
               <UButton
                 to="/login"
                 variant="ghost"
-                color="gray"
+                color="neutral"
               >
                 ورود
               </UButton>
@@ -66,7 +66,7 @@
             <UButton
               :icon="mobileMenuOpen ? 'heroicons:x-mark' : 'heroicons:bars-3'"
               variant="ghost"
-              color="gray"
+              color="neutral"
               class="md:hidden"
               @click="mobileMenuOpen = !mobileMenuOpen"
             />

@@ -96,7 +96,7 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">سفارشات اخیر</h3>
-          <UButton variant="ghost" color="gray" size="sm">
+          <UButton variant="ghost" color="neutral" size="sm">
             مشاهده همه
           </UButton>
         </div>
@@ -110,7 +110,7 @@
         </template>
         <template #actions-data="{ row }">
           <UDropdown :items="[[{ label: 'مشاهده', icon: 'i-heroicons-eye' }, { label: 'ویرایش', icon: 'i-heroicons-pencil' }], [{ label: 'حذف', icon: 'i-heroicons-trash', color: 'red' }]]">
-            <UButton color="gray" variant="ghost" icon="i-heroicons-ellipsis-horizontal-20-solid" />
+            <UButton color="neutral" variant="ghost" icon="i-heroicons-ellipsis-horizontal-20-solid" />
           </UDropdown>
         </template>
       </UTable>
@@ -219,7 +219,9 @@ const recentActivities = [
 ]
 
 // Table columns
-const columns = [
+import type { TableColumn } from '~/types/ui'
+
+const columns: TableColumn[] = [
   {
     key: 'id',
     label: 'شماره سفارش'
@@ -311,18 +313,18 @@ const quickActions = [
 ]
 
 // Helper functions
-function getStatusColor(status: string) {
+function getStatusColor(status: string): 'success' | 'info' | 'warning' | 'error' | 'neutral' {
   switch (status) {
     case 'تکمیل شده':
-      return 'green'
+      return 'success'
     case 'در حال پردازش':
-      return 'blue'
+      return 'info'
     case 'ارسال شده':
-      return 'purple'
+      return 'warning'
     case 'لغو شده':
-      return 'red'
+      return 'error'
     default:
-      return 'gray'
+      return 'neutral'
   }
 }
 </script>

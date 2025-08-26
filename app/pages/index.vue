@@ -47,7 +47,7 @@
                 to="/demo"
                 size="xl"
                 variant="outline"
-                color="gray"
+                color="neutral"
                 class="px-8"
               >
                 مشاهده دمو
@@ -228,7 +228,7 @@
               </ul>
 
               <UButton
-                :color="plan.featured ? 'primary' : 'gray'"
+                :color="plan.featured ? 'primary' : 'neutral'"
                 :variant="plan.featured ? 'solid' : 'outline'"
                 size="lg"
                 block
@@ -255,8 +255,9 @@
             <UButton
               to="/register"
               size="xl"
-              color="white"
-              class="px-8"
+              color="primary"
+              variant="solid"
+              class="px-8 bg-white text-gray-900 hover:bg-gray-100"
             >
               شروع رایگان
             </UButton>
@@ -264,7 +265,7 @@
               to="/contact"
               size="xl"
               variant="outline"
-              color="white"
+              color="primary"
               class="px-8 !text-white !border-white hover:!bg-white/10"
             >
               تماس با فروش

@@ -8,14 +8,13 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     '@nuxtjs/google-fonts',
-    'nuxt-icon',
+    '@nuxt/icon',
     '@nuxt/image'
   ],
 
   css: ['~/assets/css/main.css'],
 
   ui: {
-    global: true,
     icons: ['heroicons', 'mdi', 'lucide']
   },
 
