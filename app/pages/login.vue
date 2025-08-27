@@ -159,10 +159,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import { ref, onMounted } from 'vue'
 
 // Form data
 const username = ref('')
@@ -185,7 +182,7 @@ const handleLogin = async () => {
   // Simple validation (username: admin, password: 1234)
   if (username.value === 'admin' && password.value === '1234') {
     // Save login status to localStorage
-    if (typeof window !== 'undefined') {
+    if (import.meta.client) {
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('username', username.value)
       
@@ -195,7 +192,7 @@ const handleLogin = async () => {
     }
 
     // Redirect to dashboard
-    router.push('/dashboard')
+    await navigateTo('/dashboard')
   } else {
     errorMessage.value = 'نام کاربری یا رمز عبور اشتباه است'
     isLoading.value = false
@@ -204,10 +201,10 @@ const handleLogin = async () => {
 
 // Check if user is already logged in
 onMounted(() => {
-  if (typeof window !== 'undefined') {
+  if (import.meta.client) {
     const isLoggedIn = localStorage.getItem('isLoggedIn')
     if (isLoggedIn === 'true') {
-      router.push('/dashboard')
+      navigateTo('/dashboard')
     }
   }
 })
