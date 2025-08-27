@@ -242,31 +242,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
 
 // Apply auth middleware
 definePageMeta({
   middleware: 'auth'
 })
 
-const router = useRouter()
 const username = ref('کاربر عزیز')
 
 const handleLogout = () => {
   // Clear login status
-  if (typeof window !== 'undefined') {
+  if (import.meta.client) {
     localStorage.removeItem('isLoggedIn')
     localStorage.removeItem('username')
   }
   
   // Redirect to login page
-  router.push('/login')
+  navigateTo('/login')
 }
 
 // Get username from localStorage
 onMounted(() => {
-  if (typeof window !== 'undefined') {
+  if (import.meta.client) {
     const storedUsername = localStorage.getItem('username')
     if (storedUsername) {
       username.value = storedUsername
