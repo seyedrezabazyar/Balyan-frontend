@@ -1,10 +1,12 @@
 export default defineNuxtRouteMiddleware((to, from) => {
-  // چک کردن وضعیت لاگین از localStorage
-  if (typeof window !== 'undefined') {
-    const isLoggedIn = localStorage.getItem('isLoggedIn')
+  // Only run on client side
+  if (process.server) return
 
-    if (!isLoggedIn || isLoggedIn !== 'true') {
-      return navigateTo('/login')
-    }
+  // Check login status from localStorage
+  const isLoggedIn = localStorage.getItem('isLoggedIn')
+  
+  // If not logged in, redirect to login page
+  if (!isLoggedIn || isLoggedIn !== 'true') {
+    return navigateTo('/login')
   }
 })
