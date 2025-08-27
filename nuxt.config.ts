@@ -29,21 +29,18 @@ export default defineNuxtConfig({
   // Development configuration
   devtools: { enabled: true },
 
-  // Nitro configuration for better development
-  nitro: {
-    devProxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000/api',
-        changeOrigin: true,
-        prependPath: true
-      }
-    }
-  },
-
   // Runtime configuration
   runtimeConfig: {
     public: {
-      apiBase: 'http://127.0.0.1:8000/api'
+      apiBase: process.env.NODE_ENV === 'development'
+        ? 'http://127.0.0.1:8000/api'
+        : 'https://your-production-api.com/api'
     }
+  },
+
+  // Development server configuration
+  devServer: {
+    port: 3000,
+    host: '127.0.0.1'
   }
 })

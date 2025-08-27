@@ -4,7 +4,9 @@ export const useAuth = () => {
   const token = useState<string | null>('auth.token', () => null);
   const isLoading = useState('auth.loading', () => false);
 
-  const apiUrl = 'http://127.0.0.1:8000/api';
+  // استفاده از runtime config برای API URL
+  const config = useRuntimeConfig();
+  const apiUrl = config.public.apiBase;
 
   // Initialize from localStorage
   const initialize = () => {
@@ -28,25 +30,57 @@ export const useAuth = () => {
     return !!(user.value && token.value);
   });
 
+  // Helper function برای handle کردن API calls
+  const makeApiCall = async (endpoint: string, options: any = {}) => {
+    try {
+      const response = await $fetch(`${apiUrl}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers
+        }
+      });
+      return response;
+    } catch (error: any) {
+      console.error(`API call failed for ${endpoint}:`, error);
+
+      // بررسی نوع خطا و ارسال پیام مناسب
+      if (error.status === 404) {
+        return {
+          success: false,
+          message: 'سرور در دسترس نیست. لطفاً مطمئن شوید که API در حال اجرا است.'
+        };
+      } else if (error.status === 500) {
+        return {
+          success: false,
+          message: 'خطای داخلی سرور'
+        };
+      } else if (error.message?.includes('fetch')) {
+        return {
+          success: false,
+          message: 'عدم اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.'
+        };
+      }
+
+      return {
+        success: false,
+        message: error.data?.message || 'خطا در ارتباط با سرور'
+      };
+    }
+  };
+
   // Check user existence or register
   const checkUser = async (identifier: string) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      const response = await $fetch(`${apiUrl}/auth/register`, {
+      const response = await makeApiCall('/auth/register', {
         method: 'POST',
         body: {
           email_or_phone: identifier
         }
       });
-
       return response;
-    } catch (error) {
-      console.error('Check user error:', error);
-      return {
-        success: false,
-        message: 'خطا در ارتباط با سرور'
-      };
     } finally {
       isLoading.value = false;
     }
@@ -54,10 +88,9 @@ export const useAuth = () => {
 
   // Login with password
   const loginWithPassword = async (identifier: string, password: string) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      const response = await $fetch(`${apiUrl}/auth/login`, {
+      const response = await makeApiCall('/auth/login', {
         method: 'POST',
         body: {
           email_or_phone: identifier,
@@ -76,12 +109,6 @@ export const useAuth = () => {
       }
 
       return response;
-    } catch (error) {
-      console.error('Login error:', error);
-      return {
-        success: false,
-        message: 'خطا در ورود'
-      };
     } finally {
       isLoading.value = false;
     }
@@ -89,23 +116,15 @@ export const useAuth = () => {
 
   // Send OTP
   const sendOTP = async (identifier: string) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      const response = await $fetch(`${apiUrl}/auth/otp/send`, {
+      const response = await makeApiCall('/auth/otp/send', {
         method: 'POST',
         body: {
           email_or_phone: identifier
         }
       });
-
       return response;
-    } catch (error) {
-      console.error('Send OTP error:', error);
-      return {
-        success: false,
-        message: 'خطا در ارسال کد'
-      };
     } finally {
       isLoading.value = false;
     }
@@ -113,10 +132,9 @@ export const useAuth = () => {
 
   // Verify OTP
   const verifyOTP = async (identifier: string, code: string) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      const response = await $fetch(`${apiUrl}/auth/otp/verify`, {
+      const response = await makeApiCall('/auth/otp/verify', {
         method: 'POST',
         body: {
           email_or_phone: identifier,
@@ -135,12 +153,6 @@ export const useAuth = () => {
       }
 
       return response;
-    } catch (error) {
-      console.error('Verify OTP error:', error);
-      return {
-        success: false,
-        message: 'خطا در تایید کد'
-      };
     } finally {
       isLoading.value = false;
     }
@@ -148,23 +160,15 @@ export const useAuth = () => {
 
   // Resend OTP
   const resendOTP = async (identifier: string) => {
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-
-      const response = await $fetch(`${apiUrl}/auth/otp/resend`, {
+      const response = await makeApiCall('/auth/otp/resend', {
         method: 'POST',
         body: {
           email_or_phone: identifier
         }
       });
-
       return response;
-    } catch (error) {
-      console.error('Resend OTP error:', error);
-      return {
-        success: false,
-        message: 'خطا در ارسال مجدد کد'
-      };
     } finally {
       isLoading.value = false;
     }
@@ -174,7 +178,7 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       if (token.value) {
-        await $fetch(`${apiUrl}/auth/logout`, {
+        await makeApiCall('/auth/logout', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token.value}`
@@ -190,8 +194,8 @@ export const useAuth = () => {
       if (process.client) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
-        localStorage.removeItem('isLoggedIn'); // Legacy
-        localStorage.removeItem('username'); // Legacy
+        localStorage.removeItem('isLoggedIn'); // Legacy cleanup
+        localStorage.removeItem('username'); // Legacy cleanup
       }
     }
   };
