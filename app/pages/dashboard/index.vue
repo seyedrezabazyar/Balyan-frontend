@@ -1,6 +1,6 @@
+<!-- pages/dashboard/index.vue -->
 <template>
   <div class="dashboard-container">
-    <!-- Header -->
     <header class="dashboard-header">
       <div class="header-content">
         <div class="header-left">
@@ -9,277 +9,144 @@
         </div>
         <div class="header-right">
           <div class="user-info">
-            <div class="user-avatar">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
+            <div class="user-avatar">👤</div>
             <div class="user-details">
-              <span class="user-name">{{ username }}</span>
-              <span class="user-role">مدیر سیستم</span>
+              <span class="user-name">{{ displayName }}</span>
+              <span class="user-role">{{ userRole }}</span>
             </div>
           </div>
-          <button @click="handleLogout" class="logout-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            خروج
-          </button>
+          <button @click="handleLogout" class="logout-btn">خروج</button>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="dashboard-main">
       <!-- Stats Cards -->
       <section class="stats-section">
-        <div class="stat-card stat-card-primary">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-title">کاربران فعال</h3>
-            <p class="stat-value">1,234</p>
-            <p class="stat-change positive">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-              </svg>
-              12% افزایش
-            </p>
+        <div class="stat-card">
+          <h3>کاربران فعال</h3>
+          <p class="stat-value">1,234</p>
+          <p class="stat-change">12% افزایش</p>
+        </div>
+        <div class="stat-card">
+          <h3>درآمد امروز</h3>
+          <p class="stat-value">45.2M</p>
+          <p class="stat-change">8% افزایش</p>
+        </div>
+        <div class="stat-card">
+          <h3>سفارشات جدید</h3>
+          <p class="stat-value">89</p>
+          <p class="stat-change">3% کاهش</p>
+        </div>
+      </section>
+
+      <!-- Auth System Info -->
+      <section class="auth-info-section" v-if="user">
+        <div class="auth-info-card">
+          <h2>اطلاعات کاربری (سیستم جدید)</h2>
+          <div class="auth-info-content">
+            <p><strong>نام:</strong> {{ user.name || 'تعریف نشده' }}</p>
+            <p v-if="user.email"><strong>ایمیل:</strong> {{ user.email }}</p>
+            <p v-if="user.phone"><strong>تلفن:</strong> {{ user.phone }}</p>
+            <p><strong>تاریخ عضویت:</strong> {{ formatDate(user.created_at) }}</p>
           </div>
         </div>
+      </section>
 
-        <div class="stat-card stat-card-success">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-title">درآمد امروز</h3>
-            <p class="stat-value">45.2M</p>
-            <p class="stat-change positive">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-              </svg>
-              8% افزایش
-            </p>
-          </div>
-        </div>
-
-        <div class="stat-card stat-card-warning">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-              <line x1="1" y1="10" x2="23" y2="10"></line>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-title">سفارشات جدید</h3>
-            <p class="stat-value">89</p>
-            <p class="stat-change negative">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                <polyline points="17 18 23 18 23 12"></polyline>
-              </svg>
-              3% کاهش
-            </p>
-          </div>
-        </div>
-
-        <div class="stat-card stat-card-info">
-          <div class="stat-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3 class="stat-title">بازدید امروز</h3>
-            <p class="stat-value">8,945</p>
-            <p class="stat-change positive">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                <polyline points="17 6 23 6 23 12"></polyline>
-              </svg>
-              23% افزایش
-            </p>
+      <!-- Legacy Info -->
+      <section class="auth-info-section" v-else>
+        <div class="auth-info-card">
+          <h2>اطلاعات کاربری (Legacy)</h2>
+          <div class="auth-info-content">
+            <p><strong>نام کاربری:</strong> {{ displayName }}</p>
+            <p><strong>نوع ورود:</strong> سیستم قدیمی</p>
           </div>
         </div>
       </section>
 
       <!-- Quick Actions -->
       <section class="quick-actions">
-        <h2 class="section-title">دسترسی سریع</h2>
+        <h2>دسترسی سریع</h2>
         <div class="actions-grid">
-          <button class="action-btn">
-            <div class="action-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-            </div>
-            <span>افزودن کاربر</span>
-          </button>
-
-          <button class="action-btn">
-            <div class="action-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-            </div>
-            <span>گزارش جدید</span>
-          </button>
-
-          <button class="action-btn">
-            <div class="action-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"></path>
-              </svg>
-            </div>
-            <span>تنظیمات</span>
-          </button>
-
-          <button class="action-btn">
-            <div class="action-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <span>پیام‌ها</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Recent Activity -->
-      <section class="activity-section">
-        <h2 class="section-title">فعالیت‌های اخیر</h2>
-        <div class="activity-list">
-          <div class="activity-item">
-            <div class="activity-icon success">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <div class="activity-content">
-              <p class="activity-text">سفارش جدید #1234 ثبت شد</p>
-              <span class="activity-time">2 دقیقه پیش</span>
-            </div>
-          </div>
-
-          <div class="activity-item">
-            <div class="activity-icon info">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-            </div>
-            <div class="activity-content">
-              <p class="activity-text">کاربر جدید ثبت نام کرد</p>
-              <span class="activity-time">15 دقیقه پیش</span>
-            </div>
-          </div>
-
-          <div class="activity-item">
-            <div class="activity-icon warning">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-            </div>
-            <div class="activity-content">
-              <p class="activity-text">موجودی انبار رو به اتمام است</p>
-              <span class="activity-time">1 ساعت پیش</span>
-            </div>
-          </div>
-
-          <div class="activity-item">
-            <div class="activity-icon success">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <div class="activity-content">
-              <p class="activity-text">پرداخت با موفقیت انجام شد</p>
-              <span class="activity-time">2 ساعت پیش</span>
-            </div>
-          </div>
+          <button class="action-btn">افزودن کاربر</button>
+          <button class="action-btn">گزارش جدید</button>
+          <NuxtLink to="/dashboard/gallery/books" class="action-btn">گالری تصاویر</NuxtLink>
+          <button class="action-btn">تنظیمات</button>
         </div>
       </section>
 
       <!-- Navigation -->
       <section class="navigation-section">
-        <NuxtLink to="/" class="nav-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          بازگشت به صفحه اصلی
-        </NuxtLink>
+        <NuxtLink to="/" class="nav-link">بازگشت به صفحه اصلی</NuxtLink>
       </section>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+// Use Auth composable
+const { user, logout, isLoggedIn, initialize } = useAuth();
 
 // Apply auth middleware
 definePageMeta({
   middleware: 'auth'
-})
+});
 
-const username = ref('کاربر عزیز')
+// Legacy support
+const legacyUsername = ref('');
 
-const handleLogout = () => {
-  // Clear login status
-  if (import.meta.client) {
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('username')
-  }
-  
-  // Redirect to login page
-  navigateTo('/login')
-}
+const displayName = computed(() => {
+  if (user.value?.name) return user.value.name;
+  if (user.value?.email) return user.value.email;
+  if (user.value?.phone) return user.value.phone;
+  return legacyUsername.value || 'کاربر عزیز';
+});
 
-// Get username from localStorage
-onMounted(() => {
-  if (import.meta.client) {
-    const storedUsername = localStorage.getItem('username')
-    if (storedUsername) {
-      username.value = storedUsername
+const userRole = computed(() => {
+  return user.value ? 'کاربر سیستم جدید' : 'مدیر سیستم (Legacy)';
+});
+
+const handleLogout = async () => {
+  if (user.value) {
+    // New auth system logout
+    await logout();
+  } else {
+    // Legacy logout
+    if (process.client) {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('username');
     }
   }
-})
+
+  // Redirect to login page
+  navigateTo('/login');
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'نامشخص';
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fa-IR').format(date);
+  } catch (e) {
+    return 'نامشخص';
+  }
+};
+
+// Initialize
+onMounted(() => {
+  initialize();
+
+  if (process.client) {
+    // Check for legacy login
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername && !user.value) {
+      legacyUsername.value = storedUsername;
+    }
+  }
+});
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .dashboard-container {
   min-height: 100vh;
   background: #f0f2f5;
@@ -287,7 +154,6 @@ onMounted(() => {
   direction: rtl;
 }
 
-/* Header */
 .dashboard-header {
   background: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -303,10 +169,6 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.header-left {
-  flex: 1;
 }
 
 .dashboard-title {
@@ -344,6 +206,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   color: white;
+  font-size: 1.2rem;
 }
 
 .user-details {
@@ -363,9 +226,6 @@ onMounted(() => {
 }
 
 .logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 10px 20px;
   background: #fee2e2;
   color: #dc2626;
@@ -382,14 +242,12 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-/* Main Content */
 .dashboard-main {
   max-width: 1400px;
   margin: 0 auto;
   padding: 30px;
 }
 
-/* Stats Section */
 .stats-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -401,9 +259,6 @@ onMounted(() => {
   background: white;
   border-radius: 16px;
   padding: 25px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
   transition: all 0.3s ease;
   border: 1px solid #e5e7eb;
 }
@@ -413,41 +268,7 @@ onMounted(() => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stat-card-primary .stat-icon {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-}
-
-.stat-card-success .stat-icon {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-.stat-card-warning .stat-icon {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-}
-
-.stat-card-info .stat-icon {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-title {
+.stat-card h3 {
   font-size: 0.9rem;
   color: #6b7280;
   margin-bottom: 8px;
@@ -461,27 +282,48 @@ onMounted(() => {
 }
 
 .stat-change {
-  display: flex;
-  align-items: center;
-  gap: 5px;
   font-size: 0.85rem;
   font-weight: 500;
-}
-
-.stat-change.positive {
   color: #10b981;
 }
 
-.stat-change.negative {
-  color: #ef4444;
+.auth-info-section {
+  margin-bottom: 40px;
 }
 
-/* Quick Actions */
+.auth-info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.auth-info-card h2 {
+  color: #1a1a1a;
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-info-content p {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 0;
+}
+
 .quick-actions {
   margin-bottom: 40px;
 }
 
-.section-title {
+.quick-actions h2 {
   font-size: 1.3rem;
   color: #1a1a1a;
   margin-bottom: 20px;
@@ -499,106 +341,23 @@ onMounted(() => {
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.95rem;
   color: #4b5563;
   font-weight: 500;
+  text-decoration: none;
+  display: block;
+  text-align: center;
 }
 
 .action-btn:hover {
   border-color: #667eea;
   background: #f3f4ff;
   transform: translateY(-3px);
+  color: #4b5563;
 }
 
-.action-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-/* Activity Section */
-.activity-section {
-  background: white;
-  border-radius: 16px;
-  padding: 25px;
-  margin-bottom: 40px;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-}
-
-.activity-item:hover {
-  background: #f3f4f6;
-  transform: translateX(-5px);
-}
-
-.activity-icon {
-  width: 35px;
-  height: 35px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.activity-icon.success {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.activity-icon.info {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.activity-icon.warning {
-  background: #fed7aa;
-  color: #ea580c;
-}
-
-.activity-content {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.activity-text {
-  color: #1a1a1a;
-  font-size: 0.95rem;
-}
-
-.activity-time {
-  color: #9ca3af;
-  font-size: 0.85rem;
-}
-
-/* Navigation */
 .navigation-section {
   text-align: center;
   padding-top: 20px;
@@ -624,17 +383,10 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
-    align-items: flex-start;
     gap: 15px;
-  }
-
-  .header-right {
-    width: 100%;
-    justify-content: space-between;
   }
 
   .stats-section {
@@ -643,12 +395,6 @@ onMounted(() => {
 
   .actions-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .activity-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
   }
 }
 </style>

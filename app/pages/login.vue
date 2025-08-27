@@ -1,3 +1,4 @@
+<!-- pages/login.vue -->
 <template>
   <div class="login-container">
     <div class="login-wrapper">
@@ -15,7 +16,8 @@
           <p class="login-subtitle">برای ادامه وارد حساب کاربری خود شوید</p>
         </div>
 
-        <form @submit.prevent="handleLogin" class="login-form">
+        <!-- Legacy Login Form (Fallback) -->
+        <form @click.prevent="handleLegacyLogin" class="login-form">
           <!-- Username Field -->
           <div class="form-group">
             <label for="username" class="form-label">نام کاربری</label>
@@ -29,7 +31,7 @@
                 v-model="username"
                 type="text"
                 class="form-input"
-                placeholder="نام کاربری خود را وارد کنید"
+                placeholder="admin"
                 required
               />
             </div>
@@ -48,7 +50,7 @@
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-input"
-                placeholder="رمز عبور خود را وارد کنید"
+                placeholder="1234"
                 required
               />
               <button
@@ -74,7 +76,7 @@
               <input type="checkbox" v-model="rememberMe" class="checkbox-input" />
               <span class="checkbox-text">مرا به خاطر بسپار</span>
             </label>
-            <a href="#" class="forgot-link">رمز عبور را فراموش کرده‌اید؟</a>
+            <NuxtLink to="/auth/login" class="forgot-link">سیستم جدید احراز هویت</NuxtLink>
           </div>
 
           <!-- Error Message -->
@@ -94,14 +96,14 @@
               <polyline points="10 17 15 12 10 7"></polyline>
               <line x1="15" y1="12" x2="3" y2="12"></line>
             </svg>
-            <span v-if="!isLoading">ورود به حساب</span>
+            <span v-if="!isLoading">ورود (Legacy)</span>
             <span v-else>در حال ورود...</span>
           </button>
         </form>
 
         <!-- Demo Info -->
         <div class="demo-info">
-          <p class="demo-title">حساب آزمایشی:</p>
+          <p class="demo-title">حساب آزمایشی Legacy:</p>
           <div class="demo-credentials">
             <span>نام کاربری: <strong>admin</strong></span>
             <span>رمز عبور: <strong>1234</strong></span>
@@ -110,7 +112,7 @@
 
         <!-- Footer Links -->
         <div class="login-footer">
-          <p>حساب کاربری ندارید؟ <a href="#" class="signup-link">ثبت نام کنید</a></p>
+          <p>حساب کاربری ندارید؟ <NuxtLink to="/auth/register" class="signup-link">ثبت نام کنید</NuxtLink></p>
           <NuxtLink to="/" class="home-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -124,7 +126,7 @@
       <!-- Side Decoration -->
       <div class="side-decoration">
         <div class="decoration-content">
-          <h2>پلتفرم مدیریت هوشمند</h2>
+          <h2>سیستم مدیریت هوشمند</h2>
           <p>با ورود به سیستم، به تمامی امکانات مدیریتی دسترسی خواهید داشت</p>
           <div class="features-list">
             <div class="feature-item">
@@ -152,6 +154,18 @@
               <span>امنیت بالا</span>
             </div>
           </div>
+
+          <!-- New Auth System Button -->
+          <div class="new-auth-button">
+            <NuxtLink to="/auth/login" class="new-auth-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+                <path d="M2 17L12 22L22 17"></path>
+                <path d="M2 12L12 17L22 12"></path>
+              </svg>
+              سیستم جدید احراز هویت
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </div>
@@ -171,8 +185,8 @@ const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// Handle login
-const handleLogin = async () => {
+// Handle legacy login (existing functionality)
+const handleLegacyLogin = async () => {
   errorMessage.value = ''
   isLoading.value = true
 
@@ -181,11 +195,11 @@ const handleLogin = async () => {
 
   // Simple validation (username: admin, password: 1234)
   if (username.value === 'admin' && password.value === '1234') {
-    // Save login status to localStorage
+    // Save login status to localStorage (legacy way)
     if (import.meta.client) {
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('username', username.value)
-      
+
       if (rememberMe.value) {
         localStorage.setItem('rememberMe', 'true')
       }
@@ -533,6 +547,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin-bottom: 40px;
 }
 
 .feature-item {
@@ -551,6 +566,31 @@ onMounted(() => {
 
 .feature-item span {
   font-size: 1rem;
+}
+
+.new-auth-button {
+  text-align: center;
+}
+
+.new-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 25px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.new-auth-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* Responsive */

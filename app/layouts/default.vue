@@ -1,3 +1,4 @@
+<!-- layouts/default.vue -->
 <template>
   <div class="layout-container">
     <header class="header">
@@ -8,11 +9,11 @@
         <nav class="navigation">
           <NuxtLink to="/" class="nav-link">صفحه اصلی</NuxtLink>
           <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
-          <div v-if="!isLoggedIn">
-            <NuxtLink to="/login" class="nav-link login-link">ورود</NuxtLink>
+          <div v-if="!isAuthenticated">
+            <NuxtLink to="/auth/login" class="nav-link login-link">ورود</NuxtLink>
           </div>
           <div v-else class="user-menu">
-            <span class="welcome-text">خوش آمدید، {{ username }}</span>
+            <span class="welcome-text">خوش آمدید، {{ displayName }}</span>
             <button @click="handleLogout" class="logout-button">خروج</button>
           </div>
         </nav>
@@ -29,6 +30,8 @@
         <div class="footer-links">
           <NuxtLink to="/">صفحه اصلی</NuxtLink>
           <NuxtLink to="/dashboard">داشبورد</NuxtLink>
+          <NuxtLink to="/auth/login">ورود</NuxtLink>
+          <NuxtLink to="/auth/register">ثبت نام</NuxtLink>
         </div>
       </div>
     </footer>
@@ -36,33 +39,69 @@
 </template>
 
 <script setup>
-const isLoggedIn = ref(false)
-const username = ref('')
+import { computed, onMounted } from 'vue'
 
-onMounted(() => {
-  if (typeof window !== 'undefined') {
-    isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
-    username.value = localStorage.getItem('username') || 'کاربر'
-  }
+// Use Auth composable
+const { user, isLoggedIn, logout, initialize } = useAuth()
+
+// Legacy support
+const legacyUsername = ref('')
+const legacyLoggedIn = ref(false)
+
+// Combined authentication state
+const isAuthenticated = computed(() => {
+  return isLoggedIn.value || legacyLoggedIn.value
 })
 
-// مشاهده تغییرات route برای بروزرسانی وضعیت لاگین
-const route = useRoute()
-watch(() => route.path, () => {
-  if (typeof window !== 'undefined') {
-    isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
-    username.value = localStorage.getItem('username') || 'کاربر'
-  }
+// Display name
+const displayName = computed(() => {
+  if (user.value?.name) return user.value.name
+  if (user.value?.email) return user.value.email
+  if (user.value?.phone) return user.value.phone
+  return legacyUsername.value || 'کاربر'
 })
 
-const handleLogout = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('username')
-    isLoggedIn.value = false
+// Handle logout
+const handleLogout = async () => {
+  if (isLoggedIn.value) {
+    // New auth system logout
+    await logout()
+  } else {
+    // Legacy logout
+    if (import.meta.client) {
+      localStorage.removeItem('isLoggedIn')
+      localStorage.removeItem('username')
+      legacyLoggedIn.value = false
+      legacyUsername.value = ''
+    }
   }
+
   navigateTo('/login')
 }
+
+// Watch for route changes to update auth state
+const route = useRoute()
+watch(() => route.path, () => {
+  checkAuthState()
+})
+
+// Check authentication state
+const checkAuthState = () => {
+  if (import.meta.client) {
+    // Check legacy auth
+    const isLoggedInLegacy = localStorage.getItem('isLoggedIn') === 'true'
+    const username = localStorage.getItem('username')
+
+    legacyLoggedIn.value = isLoggedInLegacy && !isLoggedIn.value
+    legacyUsername.value = username || ''
+  }
+}
+
+// Initialize
+onMounted(() => {
+  initialize()
+  checkAuthState()
+})
 </script>
 
 <style scoped>
