@@ -19,6 +19,10 @@
           {{ errorMessage }}
         </div>
 
+        <div v-if="successMessage" class="success">
+          {{ successMessage }}
+        </div>
+
         <button
           @click="handleIdentifierSubmit"
           :disabled="isLoading || !identifier.trim()"
@@ -107,6 +111,10 @@
           {{ errorMessage }}
         </div>
 
+        <div v-if="successMessage" class="success">
+          {{ successMessage }}
+        </div>
+
         <button
           @click="handleOTPVerify"
           :disabled="isLoading || otpCode.length !== 6"
@@ -140,17 +148,19 @@ const password = ref('');
 const otpCode = ref('');
 const showPassword = ref(false);
 const errorMessage = ref('');
+const successMessage = ref('');
 const hasPassword = ref(false);
 const otpTimer = ref(0);
 let timerInterval = null;
 
-const clearError = () => {
+const clearMessages = () => {
   errorMessage.value = '';
+  successMessage.value = '';
 };
 
 const goBack = () => {
   step.value = 1;
-  clearError();
+  clearMessages();
   password.value = '';
   otpCode.value = '';
 };
@@ -169,16 +179,20 @@ const startOTPTimer = (seconds = 120) => {
 };
 
 const handleIdentifierSubmit = async () => {
-  clearError();
+  clearMessages();
 
   if (!identifier.value.trim()) {
     errorMessage.value = 'لطفاً ایمیل یا شماره تلفن خود را وارد کنید';
     return;
   }
 
+  console.log('Checking user existence...');
+
   const result = await checkUser(identifier.value);
 
-  if (result.success) {
+  console.log('Check user result:', result);
+
+  if (result.success || result.data) {
     hasPassword.value = result.data?.has_password || false;
     step.value = hasPassword.value ? 2 : 3;
 
@@ -191,7 +205,7 @@ const handleIdentifierSubmit = async () => {
 };
 
 const handlePasswordLogin = async () => {
-  clearError();
+  clearMessages();
 
   if (!password.value.trim()) {
     errorMessage.value = 'لطفاً رمز عبور خود را وارد کنید';
@@ -208,16 +222,25 @@ const handlePasswordLogin = async () => {
 };
 
 const handleOTPLogin = async () => {
-  clearError();
+  clearMessages();
   step.value = 3;
   await handleSendOTP();
 };
 
 const handleSendOTP = async () => {
+  console.log('Sending OTP for login...');
+
   const result = await sendOTP(identifier.value, 'login');
 
-  if (result.success) {
+  console.log('Send OTP result:', result);
+
+  if (result.success || result.message === 'OTP sent successfully' || result.message?.includes('OTP sent')) {
+    successMessage.value = 'کد تایید با موفقیت ارسال شد!';
     startOTPTimer();
+
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 3000);
   } else {
     errorMessage.value = result.message || 'خطا در ارسال کد تایید';
   }
@@ -230,14 +253,18 @@ const handleOTPInput = (event) => {
 };
 
 const handleOTPVerify = async () => {
-  clearError();
+  clearMessages();
 
   if (otpCode.value.length !== 6) {
     errorMessage.value = 'لطفاً کد تایید 6 رقمی را وارد کنید';
     return;
   }
 
+  console.log('Verifying OTP for login...');
+
   const result = await verifyOTP(identifier.value, otpCode.value, 'login');
+
+  console.log('Verify OTP result:', result);
 
   if (result.success) {
     await navigateTo('/dashboard');
@@ -247,13 +274,22 @@ const handleOTPVerify = async () => {
 };
 
 const handleResendOTP = async () => {
-  clearError();
+  clearMessages();
+
+  console.log('Resending OTP for login...');
 
   const result = await resendOTP(identifier.value, 'login');
 
-  if (result.success) {
+  console.log('Resend OTP result:', result);
+
+  if (result.success || result.message === 'OTP sent successfully' || result.message?.includes('OTP sent')) {
+    successMessage.value = 'کد تایید مجدداً ارسال شد!';
     startOTPTimer();
     otpCode.value = '';
+
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 3000);
   } else {
     errorMessage.value = result.message || 'خطا در ارسال مجدد کد';
   }
@@ -381,6 +417,15 @@ h1 {
 .error {
   background: #fee2e2;
   color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 20px;

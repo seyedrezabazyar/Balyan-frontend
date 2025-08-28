@@ -41,6 +41,8 @@ export const useAuth = () => {
           ...options.headers
         }
       });
+
+      console.log(`API Response for ${endpoint}:`, response);
       return response;
     } catch (error: any) {
       console.error(`API call failed for ${endpoint}:`, error);
@@ -135,7 +137,7 @@ export const useAuth = () => {
     }
   };
 
-  // Send OTP
+  // Send OTP - Updated to handle different response formats
   const sendOTP = async (identifier: string, purpose: string = 'registration') => {
     isLoading.value = true;
     try {
@@ -147,13 +149,40 @@ export const useAuth = () => {
           purpose: purpose
         }
       });
-      return response;
+
+      // Handle different response formats
+      if (response) {
+        // Check if response indicates success in various ways
+        if (response.success === true ||
+          response.message === 'OTP sent successfully' ||
+          response.message?.includes('OTP sent') ||
+          response.message?.includes('sent successfully') ||
+          typeof response === 'string' && response.includes('OTP sent')) {
+          return {
+            success: true,
+            message: response.message || 'OTP sent successfully',
+            data: response.data || null
+          };
+        }
+
+        // If response exists but doesn't explicitly indicate success
+        return {
+          success: true,
+          message: response.message || 'کد تایید ارسال شد',
+          data: response.data || response
+        };
+      }
+
+      return {
+        success: false,
+        message: 'خطا در ارسال کد تایید'
+      };
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Verify OTP
+  // Verify OTP - Updated to handle different response formats
   const verifyOTP = async (identifier: string, code: string, purpose: string = 'registration', name?: string) => {
     isLoading.value = true;
     try {
@@ -173,23 +202,53 @@ export const useAuth = () => {
         body: requestBody
       });
 
-      if (response.success && response.data?.user && response.data?.token) {
-        user.value = response.data.user;
-        token.value = response.data.token;
+      console.log('Verify OTP Response:', response);
 
-        if (process.client) {
-          localStorage.setItem('auth_token', response.data.token);
-          localStorage.setItem('auth_user', JSON.stringify(response.data.user));
+      // Handle successful verification with user data
+      if (response && (response.success || response.data?.user || response.user)) {
+        const userData = response.data?.user || response.user;
+        const tokenData = response.data?.token || response.token;
+
+        if (userData && tokenData) {
+          user.value = userData;
+          token.value = tokenData;
+
+          if (process.client) {
+            localStorage.setItem('auth_token', tokenData);
+            localStorage.setItem('auth_user', JSON.stringify(userData));
+          }
         }
+
+        return {
+          success: true,
+          message: response.message || 'تایید موفقیت‌آمیز',
+          data: response.data || { user: userData, token: tokenData }
+        };
       }
 
-      return response;
+      // Handle different success indicators
+      if (response && (
+        response.message === 'OTP verified successfully' ||
+        response.message?.includes('verified') ||
+        response.message?.includes('successful')
+      )) {
+        return {
+          success: true,
+          message: response.message,
+          data: response.data || response
+        };
+      }
+
+      return {
+        success: false,
+        message: response?.message || 'کد تایید اشتباه است'
+      };
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Resend OTP
+  // Resend OTP - Updated to handle different response formats
   const resendOTP = async (identifier: string, purpose: string = 'registration') => {
     isLoading.value = true;
     try {
@@ -201,7 +260,32 @@ export const useAuth = () => {
           purpose: purpose
         }
       });
-      return response;
+
+      // Handle different response formats for resend
+      if (response) {
+        if (response.success === true ||
+          response.message === 'OTP sent successfully' ||
+          response.message?.includes('OTP sent') ||
+          response.message?.includes('resent') ||
+          response.message?.includes('sent successfully')) {
+          return {
+            success: true,
+            message: response.message || 'کد تایید مجدداً ارسال شد',
+            data: response.data || null
+          };
+        }
+
+        return {
+          success: true,
+          message: response.message || 'کد تایید مجدداً ارسال شد',
+          data: response.data || response
+        };
+      }
+
+      return {
+        success: false,
+        message: 'خطا در ارسال مجدد کد'
+      };
     } finally {
       isLoading.value = false;
     }

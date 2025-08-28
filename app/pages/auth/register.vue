@@ -67,6 +67,14 @@
               {{ errorMessage }}
             </div>
 
+            <!-- Success Message for OTP Send -->
+            <div v-if="successMessage" class="success-message">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              {{ successMessage }}
+            </div>
+
             <!-- Submit Button -->
             <button
               @click="handleIdentifierSubmit"
@@ -162,7 +170,7 @@
                 </svg>
               </div>
               <h2>ثبت نام با موفقیت انجام شد!</h2>
-              <p>حساب کاربری شما ایجاد شد و می‌توانید از امکانات سیستم استفاده کنید。</p>
+              <p>حساب کاربری شما ایجاد شد و می‌توانید از امکانات سیستم استفاده کنید.</p>
 
               <button @click="goToDashboard" class="submit-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -237,17 +245,19 @@ const identifier = ref('');
 const name = ref('');
 const otpCode = ref('');
 const errorMessage = ref('');
+const successMessage = ref('');
 const otpTimer = ref(0);
 let timerInterval = null;
 
 // Methods
-const clearError = () => {
+const clearMessages = () => {
   errorMessage.value = '';
+  successMessage.value = '';
 };
 
 const goBack = () => {
   step.value = 1;
-  clearError();
+  clearMessages();
   otpCode.value = '';
 };
 
@@ -269,7 +279,7 @@ const startOTPTimer = (seconds = 120) => {
 };
 
 const handleIdentifierSubmit = async () => {
-  clearError();
+  clearMessages();
 
   if (!identifier.value.trim()) {
     errorMessage.value = 'لطفاً ایمیل یا شماره تلفن خود را وارد کنید';
@@ -281,12 +291,23 @@ const handleIdentifierSubmit = async () => {
     return;
   }
 
+  console.log('Sending OTP for registration...');
+
   // ارسال OTP برای ثبت نام
   const result = await sendOTP(identifier.value, 'registration');
 
-  if (result.success) {
-    step.value = 2;
+  console.log('OTP Send Result:', result);
+
+  // بررسی انواع پاسخ ممکن
+  if (result.success || result.message === 'OTP sent successfully' || result.message?.includes('OTP sent')) {
+    successMessage.value = 'کد تایید با موفقیت ارسال شد!';
+    step.value = 2; // انتقال به مرحله بعد
     startOTPTimer();
+
+    // پاک کردن پیام موفقیت پس از 3 ثانیه
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 3000);
   } else {
     errorMessage.value = result.message || 'خطا در ارسال کد تایید';
   }
@@ -300,15 +321,19 @@ const handleOTPInput = (event) => {
 };
 
 const handleOTPVerify = async () => {
-  clearError();
+  clearMessages();
 
   if (otpCode.value.length !== 6) {
     errorMessage.value = 'لطفاً کد تایید 6 رقمی را وارد کنید';
     return;
   }
 
+  console.log('Verifying OTP...');
+
   // تایید OTP با نام کاربر برای ثبت نام
   const result = await verifyOTP(identifier.value, otpCode.value, 'registration', name.value);
+
+  console.log('OTP Verify Result:', result);
 
   if (result.success) {
     step.value = 3;
@@ -317,18 +342,28 @@ const handleOTPVerify = async () => {
       navigateTo('/dashboard');
     }, 2000);
   } else {
-    errorMessage.value = result.message || 'کد تایید اشتباه است';
+    errorMessage.value = result.message || 'کد تایید اشتباه است یا منقضی شده';
   }
 };
 
 const handleResendOTP = async () => {
-  clearError();
+  clearMessages();
+
+  console.log('Resending OTP...');
 
   const result = await resendOTP(identifier.value, 'registration');
 
-  if (result.success) {
+  console.log('Resend Result:', result);
+
+  if (result.success || result.message === 'OTP sent successfully' || result.message?.includes('OTP sent')) {
+    successMessage.value = 'کد تایید مجدداً ارسال شد!';
     startOTPTimer();
     otpCode.value = '';
+
+    // پاک کردن پیام موفقیت پس از 3 ثانیه
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 3000);
   } else {
     errorMessage.value = result.message || 'خطا در ارسال مجدد کد';
   }
@@ -428,7 +463,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* سایر استایل‌ها مشابه login.vue */
 .user-info {
   display: flex;
   justify-content: space-between;
@@ -550,6 +584,18 @@ onBeforeUnmount(() => {
   padding: 12px;
   background: #fee2e2;
   color: #dc2626;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #d1fae5;
+  color: #065f46;
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 0.9rem;
