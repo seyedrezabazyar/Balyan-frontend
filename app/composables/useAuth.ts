@@ -1,10 +1,11 @@
 // composables/useAuth.ts
 export const useAuth = () => {
   const user = useState<any>('auth.user', () => null);
-  const token = useState<string | null>('auth.token', () => null);
+  const accessToken = useState<string | null>('auth.access_token', () => null);
+  const refreshToken = useState<string | null>('auth.refresh_token', () => null);
   const isLoading = useState('auth.loading', () => false);
 
-  // استفاده از runtime config برای API URL
+  // Runtime config برای API URL
   const config = useRuntimeConfig();
   const apiUrl = config.public.apiBase;
 
@@ -12,25 +13,28 @@ export const useAuth = () => {
   const initialize = () => {
     if (process.client) {
       try {
-        const storedToken = localStorage.getItem('auth_token');
+        const storedAccessToken = localStorage.getItem('auth_access_token');
+        const storedRefreshToken = localStorage.getItem('auth_refresh_token');
         const storedUser = localStorage.getItem('auth_user');
 
-        if (storedToken && storedUser) {
-          token.value = storedToken;
+        if (storedAccessToken && storedUser) {
+          accessToken.value = storedAccessToken;
+          refreshToken.value = storedRefreshToken;
           user.value = JSON.parse(storedUser);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        clearAuthData();
       }
     }
   };
 
   // Check if logged in
   const isLoggedIn = computed(() => {
-    return !!(user.value && token.value);
+    return !!(user.value && accessToken.value);
   });
 
-  // Helper function برای handle کردن API calls
+  // API call helper
   const makeApiCall = async (endpoint: string, options: any = {}) => {
     try {
       const response = await $fetch(`${apiUrl}${endpoint}`, {
@@ -42,35 +46,37 @@ export const useAuth = () => {
         }
       });
 
-      console.log(`API Response for ${endpoint}:`, response);
+      console.log(`✅ API Response for ${endpoint}:`, response);
       return response;
     } catch (error: any) {
-      console.error(`API call failed for ${endpoint}:`, error);
+      console.error(`❌ API call failed for ${endpoint}:`, error);
 
-      // بررسی نوع خطا و ارسال پیام مناسب
+      // Handle different error types
       if (error.status === 404) {
         return {
           success: false,
-          message: 'سرور در دسترس نیست. لطفاً مطمئن شوید که API در حال اجرا است.'
+          message: 'سرور در دسترس نیست. لطفاً مطمئن شوید که Laravel API در حال اجرا است.'
         };
       } else if (error.status === 500) {
         return {
           success: false,
           message: 'خطای داخلی سرور'
         };
-      } else if (error.status === 422) {
-        // Handle validation errors
-        const validationErrors = error.data?.errors || error.data?.message;
+      } else if (error.status === 422 || error.status === 400) {
         return {
           success: false,
-          message: typeof validationErrors === 'string'
-            ? validationErrors
-            : 'داده‌های ارسالی نامعتبر است'
+          message: error.data?.message || 'داده‌های ارسالی نامعتبر است',
+          errors: error.data?.errors
+        };
+      } else if (error.status === 429) {
+        return {
+          success: false,
+          message: error.data?.message || 'تعداد درخواست‌ها بیش از حد مجاز'
         };
       } else if (error.message?.includes('fetch')) {
         return {
           success: false,
-          message: 'عدم اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید.'
+          message: 'عدم اتصال به سرور. لطفاً اتصال اینترنت و وضعیت سرور را بررسی کنید.'
         };
       }
 
@@ -81,54 +87,64 @@ export const useAuth = () => {
     }
   };
 
-  // Helper function to determine identifier type
-  const getIdentifierType = (identifier: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^(\+98|0)?9\d{9}$/;
+  // Clear auth data
+  const clearAuthData = () => {
+    user.value = null;
+    accessToken.value = null;
+    refreshToken.value = null;
 
-    if (emailRegex.test(identifier)) return 'email';
-    if (phoneRegex.test(identifier.replace(/\s/g, ''))) return 'phone';
-    return 'email'; // default fallback
+    if (process.client) {
+      localStorage.removeItem('auth_access_token');
+      localStorage.removeItem('auth_refresh_token');
+      localStorage.removeItem('auth_user');
+    }
   };
 
-  // Check user existence or register
+  // Save auth data
+  const saveAuthData = (userData: any, tokens: any) => {
+    user.value = userData;
+    accessToken.value = tokens.access_token;
+    refreshToken.value = tokens.refresh_token;
+
+    if (process.client) {
+      localStorage.setItem('auth_access_token', tokens.access_token);
+      localStorage.setItem('auth_refresh_token', tokens.refresh_token);
+      localStorage.setItem('auth_user', JSON.stringify(userData));
+    }
+  };
+
+  // ✨ Step 1: Check user (unified entry point)
   const checkUser = async (identifier: string) => {
     isLoading.value = true;
     try {
-      const response = await makeApiCall('/auth/register', {
+      const response = await makeApiCall('/auth/check-user', {
         method: 'POST',
-        body: {
-          identifier: identifier,
-          type: getIdentifierType(identifier)
-        }
+        body: { identifier: identifier.trim() }
       });
+
+      console.log('📋 Check User Response:', response);
       return response;
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Login with password
+  // 🔑 Step 2a: Login with password
   const loginWithPassword = async (identifier: string, password: string) => {
     isLoading.value = true;
     try {
-      const response = await makeApiCall('/auth/login', {
+      const response = await makeApiCall('/auth/login-password', {
         method: 'POST',
         body: {
-          identifier: identifier,
-          password: password,
-          type: getIdentifierType(identifier)
+          identifier: identifier.trim(),
+          password: password
         }
       });
 
-      if (response.success && response.data?.user && response.data?.token) {
-        user.value = response.data.user;
-        token.value = response.data.token;
+      console.log('🔑 Password Login Response:', response);
 
-        if (process.client) {
-          localStorage.setItem('auth_token', response.data.token);
-          localStorage.setItem('auth_user', JSON.stringify(response.data.user));
-        }
+      if (response.success && response.tokens && response.user) {
+        saveAuthData(response.user, response.tokens);
       }
 
       return response;
@@ -137,197 +153,237 @@ export const useAuth = () => {
     }
   };
 
-  // Send OTP - Updated to handle different response formats
-  const sendOTP = async (identifier: string, purpose: string = 'registration') => {
+  // 📱 Step 2b: Send OTP
+  const sendOTP = async (identifier: string) => {
     isLoading.value = true;
     try {
-      const response = await makeApiCall('/auth/otp/send', {
+      const response = await makeApiCall('/auth/send-otp', {
         method: 'POST',
-        body: {
-          identifier: identifier,
-          type: getIdentifierType(identifier),
-          purpose: purpose
-        }
+        body: { identifier: identifier.trim() }
       });
 
-      // Handle different response formats
-      if (response) {
-        // Check if response indicates success in various ways
-        if (response.success === true ||
-          response.message === 'OTP sent successfully' ||
-          response.message?.includes('OTP sent') ||
-          response.message?.includes('sent successfully') ||
-          typeof response === 'string' && response.includes('OTP sent')) {
-          return {
-            success: true,
-            message: response.message || 'OTP sent successfully',
-            data: response.data || null
-          };
-        }
-
-        // If response exists but doesn't explicitly indicate success
-        return {
-          success: true,
-          message: response.message || 'کد تایید ارسال شد',
-          data: response.data || response
-        };
-      }
-
-      return {
-        success: false,
-        message: 'خطا در ارسال کد تایید'
-      };
+      console.log('📱 Send OTP Response:', response);
+      return response;
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Verify OTP - Updated to handle different response formats
-  const verifyOTP = async (identifier: string, code: string, purpose: string = 'registration', name?: string) => {
+  // ✅ Step 3: Verify OTP
+  const verifyOTP = async (identifier: string, otp: string, name?: string) => {
     isLoading.value = true;
     try {
       const requestBody: any = {
-        identifier: identifier,
-        otp: code,
-        purpose: purpose
+        identifier: identifier.trim(),
+        otp: otp.trim()
       };
 
-      // اگر نام ارسال شده باشد (برای registration)
+      // اگر نام داده شده برای ثبت‌نام جدید
       if (name) {
-        requestBody.name = name;
+        requestBody.name = name.trim();
       }
 
-      const response = await makeApiCall('/auth/otp/verify', {
+      const response = await makeApiCall('/auth/verify-otp', {
         method: 'POST',
         body: requestBody
       });
 
-      console.log('Verify OTP Response:', response);
+      console.log('✅ Verify OTP Response:', response);
 
-      // Handle successful verification with user data
-      if (response && (response.success || response.data?.user || response.user)) {
-        const userData = response.data?.user || response.user;
-        const tokenData = response.data?.token || response.token;
-
-        if (userData && tokenData) {
-          user.value = userData;
-          token.value = tokenData;
-
-          if (process.client) {
-            localStorage.setItem('auth_token', tokenData);
-            localStorage.setItem('auth_user', JSON.stringify(userData));
-          }
-        }
-
-        return {
-          success: true,
-          message: response.message || 'تایید موفقیت‌آمیز',
-          data: response.data || { user: userData, token: tokenData }
-        };
+      // اگر موفق بود و توکن‌ها آمدند
+      if (response.success && response.tokens && response.user) {
+        saveAuthData(response.user, response.tokens);
       }
 
-      // Handle different success indicators
-      if (response && (
-        response.message === 'OTP verified successfully' ||
-        response.message?.includes('verified') ||
-        response.message?.includes('successful')
-      )) {
-        return {
-          success: true,
-          message: response.message,
-          data: response.data || response
-        };
-      }
-
-      return {
-        success: false,
-        message: response?.message || 'کد تایید اشتباه است'
-      };
+      return response;
     } finally {
       isLoading.value = false;
     }
   };
 
-  // Resend OTP - Updated to handle different response formats
-  const resendOTP = async (identifier: string, purpose: string = 'registration') => {
-    isLoading.value = true;
+  // 🔄 Refresh tokens
+  const refreshTokens = async () => {
+    if (!refreshToken.value) {
+      throw new Error('No refresh token available');
+    }
+
     try {
-      const response = await makeApiCall('/auth/otp/resend', {
+      const response = await makeApiCall('/auth/refresh', {
         method: 'POST',
-        body: {
-          identifier: identifier,
-          type: getIdentifierType(identifier),
-          purpose: purpose
+        headers: {
+          Authorization: `Bearer ${refreshToken.value}`
         }
       });
 
-      // Handle different response formats for resend
-      if (response) {
-        if (response.success === true ||
-          response.message === 'OTP sent successfully' ||
-          response.message?.includes('OTP sent') ||
-          response.message?.includes('resent') ||
-          response.message?.includes('sent successfully')) {
-          return {
-            success: true,
-            message: response.message || 'کد تایید مجدداً ارسال شد',
-            data: response.data || null
-          };
-        }
-
-        return {
-          success: true,
-          message: response.message || 'کد تایید مجدداً ارسال شد',
-          data: response.data || response
-        };
+      if (response.success && response.tokens) {
+        const currentUser = user.value;
+        saveAuthData(currentUser, response.tokens);
       }
 
-      return {
-        success: false,
-        message: 'خطا در ارسال مجدد کد'
-      };
-    } finally {
-      isLoading.value = false;
+      return response;
+    } catch (error) {
+      // اگر refresh token معتبر نیست، کاربر رو logout کن
+      clearAuthData();
+      throw error;
     }
   };
 
-  // Logout
+  // 👤 Get user info
+  const fetchUser = async () => {
+    if (!accessToken.value) return null;
+
+    try {
+      const response = await makeApiCall('/auth/user', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken.value}`
+        }
+      });
+
+      if (response.success && response.user) {
+        user.value = response.user;
+        if (process.client) {
+          localStorage.setItem('auth_user', JSON.stringify(response.user));
+        }
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return null;
+    }
+  };
+
+  // 🚪 Logout
   const logout = async () => {
     try {
-      if (token.value) {
+      if (accessToken.value) {
         await makeApiCall('/auth/logout', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token.value}`
+            Authorization: `Bearer ${accessToken.value}`
           }
         });
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      user.value = null;
-      token.value = null;
+      clearAuthData();
+    }
+  };
 
-      if (process.client) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
-        localStorage.removeItem('isLoggedIn'); // Legacy cleanup
-        localStorage.removeItem('username'); // Legacy cleanup
+  // 🚪 Logout from all devices
+  const logoutAll = async () => {
+    try {
+      if (accessToken.value) {
+        await makeApiCall('/auth/logout-all', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken.value}`
+          }
+        });
       }
+    } catch (error) {
+      console.error('Logout all error:', error);
+    } finally {
+      clearAuthData();
+    }
+  };
+
+  // 📝 Update profile
+  const updateProfile = async (profileData: any) => {
+    if (!accessToken.value) throw new Error('Not authenticated');
+
+    isLoading.value = true;
+    try {
+      const response = await makeApiCall('/auth/profile/update', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken.value}`
+        },
+        body: profileData
+      });
+
+      if (response.success && response.user) {
+        user.value = response.user;
+        if (process.client) {
+          localStorage.setItem('auth_user', JSON.stringify(response.user));
+        }
+      }
+
+      return response;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // 🔐 Set password (for OTP-only users)
+  const setPassword = async (password: string, passwordConfirmation: string) => {
+    if (!accessToken.value) throw new Error('Not authenticated');
+
+    isLoading.value = true;
+    try {
+      const response = await makeApiCall('/auth/password/set', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken.value}`
+        },
+        body: {
+          password,
+          password_confirmation: passwordConfirmation
+        }
+      });
+
+      return response;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  // 🔐 Update password
+  const updatePassword = async (currentPassword: string, newPassword: string, passwordConfirmation: string) => {
+    if (!accessToken.value) throw new Error('Not authenticated');
+
+    isLoading.value = true;
+    try {
+      const response = await makeApiCall('/auth/password/update', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken.value}`
+        },
+        body: {
+          current_password: currentPassword,
+          password: newPassword,
+          password_confirmation: passwordConfirmation
+        }
+      });
+
+      return response;
+    } finally {
+      isLoading.value = false;
     }
   };
 
   return {
+    // State
     user: readonly(user),
-    token: readonly(token),
+    accessToken: readonly(accessToken),
+    refreshToken: readonly(refreshToken),
     isLoading: readonly(isLoading),
     isLoggedIn,
+
+    // Methods
     initialize,
     checkUser,
     loginWithPassword,
     sendOTP,
     verifyOTP,
-    resendOTP,
-    logout
+    refreshTokens,
+    fetchUser,
+    logout,
+    logoutAll,
+    updateProfile,
+    setPassword,
+    updatePassword
   };
 };
