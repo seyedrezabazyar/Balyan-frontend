@@ -1,4 +1,3 @@
-<!-- pages/auth/register.vue -->
 <template>
   <div class="auth-container">
     <div class="auth-wrapper">
@@ -38,6 +37,26 @@
               </div>
             </div>
 
+            <!-- Name Input -->
+            <div class="form-group">
+              <label for="name" class="form-label">نام و نام خانوادگی</label>
+              <div class="input-wrapper">
+                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <input
+                  id="name"
+                  v-model="name"
+                  type="text"
+                  class="form-input"
+                  placeholder="نام کامل خود را وارد کنید"
+                  :disabled="isLoading"
+                  @keyup.enter="handleIdentifierSubmit"
+                />
+              </div>
+            </div>
+
             <!-- Error Message -->
             <div v-if="errorMessage" class="error-message">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,7 +71,7 @@
             <button
               @click="handleIdentifierSubmit"
               class="submit-btn"
-              :disabled="isLoading || !identifier.trim()"
+              :disabled="isLoading || !identifier.trim() || !name.trim()"
             >
               <svg v-if="!isLoading" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M5 12h14M12 5l7 7-7 7"></path>
@@ -143,7 +162,7 @@
                 </svg>
               </div>
               <h2>ثبت نام با موفقیت انجام شد!</h2>
-              <p>حساب کاربری شما ایجاد شد و می‌توانید از امکانات سیستم استفاده کنید.</p>
+              <p>حساب کاربری شما ایجاد شد و می‌توانید از امکانات سیستم استفاده کنید。</p>
 
               <button @click="goToDashboard" class="submit-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -215,6 +234,7 @@ definePageMeta({
 // State
 const step = ref(1);
 const identifier = ref('');
+const name = ref('');
 const otpCode = ref('');
 const errorMessage = ref('');
 const otpTimer = ref(0);
@@ -256,8 +276,13 @@ const handleIdentifierSubmit = async () => {
     return;
   }
 
-  // در صفحه ثبت نام، مستقیماً OTP ارسال می‌کنیم
-  const result = await sendOTP(identifier.value);
+  if (!name.value.trim()) {
+    errorMessage.value = 'لطفاً نام و نام خانوادگی خود را وارد کنید';
+    return;
+  }
+
+  // ارسال OTP برای ثبت نام
+  const result = await sendOTP(identifier.value, 'registration');
 
   if (result.success) {
     step.value = 2;
@@ -282,7 +307,8 @@ const handleOTPVerify = async () => {
     return;
   }
 
-  const result = await verifyOTP(identifier.value, otpCode.value);
+  // تایید OTP با نام کاربر برای ثبت نام
+  const result = await verifyOTP(identifier.value, otpCode.value, 'registration', name.value);
 
   if (result.success) {
     step.value = 3;
@@ -298,7 +324,7 @@ const handleOTPVerify = async () => {
 const handleResendOTP = async () => {
   clearError();
 
-  const result = await resendOTP(identifier.value);
+  const result = await resendOTP(identifier.value, 'registration');
 
   if (result.success) {
     startOTPTimer();

@@ -56,6 +56,15 @@ export const useAuth = () => {
           success: false,
           message: 'خطای داخلی سرور'
         };
+      } else if (error.status === 422) {
+        // Handle validation errors
+        const validationErrors = error.data?.errors || error.data?.message;
+        return {
+          success: false,
+          message: typeof validationErrors === 'string'
+            ? validationErrors
+            : 'داده‌های ارسالی نامعتبر است'
+        };
       } else if (error.message?.includes('fetch')) {
         return {
           success: false,
@@ -70,6 +79,16 @@ export const useAuth = () => {
     }
   };
 
+  // Helper function to determine identifier type
+  const getIdentifierType = (identifier: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^(\+98|0)?9\d{9}$/;
+
+    if (emailRegex.test(identifier)) return 'email';
+    if (phoneRegex.test(identifier.replace(/\s/g, ''))) return 'phone';
+    return 'email'; // default fallback
+  };
+
   // Check user existence or register
   const checkUser = async (identifier: string) => {
     isLoading.value = true;
@@ -77,7 +96,8 @@ export const useAuth = () => {
       const response = await makeApiCall('/auth/register', {
         method: 'POST',
         body: {
-          email_or_phone: identifier
+          identifier: identifier,
+          type: getIdentifierType(identifier)
         }
       });
       return response;
@@ -93,8 +113,9 @@ export const useAuth = () => {
       const response = await makeApiCall('/auth/login', {
         method: 'POST',
         body: {
-          email_or_phone: identifier,
-          password: password
+          identifier: identifier,
+          password: password,
+          type: getIdentifierType(identifier)
         }
       });
 
@@ -115,13 +136,15 @@ export const useAuth = () => {
   };
 
   // Send OTP
-  const sendOTP = async (identifier: string) => {
+  const sendOTP = async (identifier: string, purpose: string = 'registration') => {
     isLoading.value = true;
     try {
       const response = await makeApiCall('/auth/otp/send', {
         method: 'POST',
         body: {
-          email_or_phone: identifier
+          identifier: identifier,
+          type: getIdentifierType(identifier),
+          purpose: purpose
         }
       });
       return response;
@@ -131,15 +154,23 @@ export const useAuth = () => {
   };
 
   // Verify OTP
-  const verifyOTP = async (identifier: string, code: string) => {
+  const verifyOTP = async (identifier: string, code: string, purpose: string = 'registration', name?: string) => {
     isLoading.value = true;
     try {
+      const requestBody: any = {
+        identifier: identifier,
+        otp: code,
+        purpose: purpose
+      };
+
+      // اگر نام ارسال شده باشد (برای registration)
+      if (name) {
+        requestBody.name = name;
+      }
+
       const response = await makeApiCall('/auth/otp/verify', {
         method: 'POST',
-        body: {
-          email_or_phone: identifier,
-          otp_code: code
-        }
+        body: requestBody
       });
 
       if (response.success && response.data?.user && response.data?.token) {
@@ -159,13 +190,15 @@ export const useAuth = () => {
   };
 
   // Resend OTP
-  const resendOTP = async (identifier: string) => {
+  const resendOTP = async (identifier: string, purpose: string = 'registration') => {
     isLoading.value = true;
     try {
       const response = await makeApiCall('/auth/otp/resend', {
         method: 'POST',
         body: {
-          email_or_phone: identifier
+          identifier: identifier,
+          type: getIdentifierType(identifier),
+          purpose: purpose
         }
       });
       return response;
