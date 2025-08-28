@@ -9,12 +9,32 @@
         <nav class="navigation">
           <NuxtLink to="/" class="nav-link">صفحه اصلی</NuxtLink>
           <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
-          <div v-if="!isAuthenticated">
-            <NuxtLink to="/auth/login" class="nav-link login-link">ورود</NuxtLink>
+
+          <div v-if="!isAuthenticated" class="guest-actions">
+            <NuxtLink to="/auth" class="nav-link login-link">ورود / ثبت نام</NuxtLink>
           </div>
+
           <div v-else class="user-menu">
-            <span class="welcome-text">خوش آمدید، {{ displayName }}</span>
-            <button @click="handleLogout" class="logout-button">خروج</button>
+            <div class="welcome-section">
+              <div class="user-avatar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div class="welcome-info">
+                <span class="welcome-text">خوش آمدید</span>
+                <span class="user-name">{{ displayName }}</span>
+              </div>
+            </div>
+            <button @click="handleLogout" class="logout-button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              خروج
+            </button>
           </div>
         </nav>
       </div>
@@ -30,8 +50,7 @@
         <div class="footer-links">
           <NuxtLink to="/">صفحه اصلی</NuxtLink>
           <NuxtLink to="/dashboard">داشبورد</NuxtLink>
-          <NuxtLink to="/auth/login">ورود</NuxtLink>
-          <NuxtLink to="/auth/register">ثبت نام</NuxtLink>
+          <NuxtLink to="/auth">احراز هویت</NuxtLink>
         </div>
       </div>
     </footer>
@@ -56,7 +75,7 @@ const isAuthenticated = computed(() => {
 // Display name
 const displayName = computed(() => {
   if (user.value?.name) return user.value.name
-  if (user.value?.email) return user.value.email
+  if (user.value?.email) return user.value.email.split('@')[0]
   if (user.value?.phone) return user.value.phone
   return legacyUsername.value || 'کاربر'
 })
@@ -76,14 +95,9 @@ const handleLogout = async () => {
     }
   }
 
-  navigateTo('/login')
+  // Redirect to home
+  await navigateTo('/')
 }
-
-// Watch for route changes to update auth state
-const route = useRoute()
-watch(() => route.path, () => {
-  checkAuthState()
-})
 
 // Check authentication state
 const checkAuthState = () => {
@@ -96,6 +110,12 @@ const checkAuthState = () => {
     legacyUsername.value = username || ''
   }
 }
+
+// Watch for route changes
+const route = useRoute()
+watch(() => route.path, () => {
+  checkAuthState()
+})
 
 // Initialize
 onMounted(() => {
@@ -147,8 +167,9 @@ onMounted(() => {
   color: #333;
   text-decoration: none;
   padding: 8px 16px;
-  border-radius: 5px;
-  transition: background-color 0.3s, color 0.3s;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .nav-link:hover {
@@ -159,10 +180,12 @@ onMounted(() => {
 .login-link {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white !important;
+  font-weight: 600;
 }
 
 .login-link:hover {
   background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: translateY(-1px);
 }
 
 .user-menu {
@@ -171,24 +194,62 @@ onMounted(() => {
   gap: 15px;
 }
 
+.welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.welcome-info {
+  display: flex;
+  flex-direction: column;
+}
+
 .welcome-text {
-  color: #666;
-  font-size: 14px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1;
 }
 
 .logout-button {
-  background: #e74c3c;
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fee2e2;
+  color: #dc2626;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 8px 14px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .logout-button:hover {
-  background: #c0392b;
+  background: #fecaca;
+  transform: translateY(-1px);
 }
 
 .main-content {
@@ -200,7 +261,7 @@ onMounted(() => {
   background: #333;
   color: white;
   padding: 30px 0;
-  margin-top: 50px;
+  margin-top: auto;
 }
 
 .footer-content {
@@ -253,6 +314,15 @@ onMounted(() => {
   .user-menu {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .welcome-section {
+    padding: 6px 12px;
+  }
+
+  .logout-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
   }
 }
 </style>

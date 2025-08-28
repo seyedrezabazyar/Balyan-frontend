@@ -5,7 +5,7 @@ export const useAuth = () => {
   const refreshToken = useState<string | null>('auth.refresh_token', () => null);
   const isLoading = useState('auth.loading', () => false);
 
-  // Runtime config برای API URL
+  // Runtime config
   const config = useRuntimeConfig();
   const apiUrl = config.public.apiBase;
 
@@ -34,7 +34,7 @@ export const useAuth = () => {
     return !!(user.value && accessToken.value);
   });
 
-  // API call helper
+  // API call helper with better error handling
   const makeApiCall = async (endpoint: string, options: any = {}) => {
     try {
       const response = await $fetch(`${apiUrl}${endpoint}`, {
@@ -46,34 +46,45 @@ export const useAuth = () => {
         }
       });
 
-      console.log(`✅ API Response for ${endpoint}:`, response);
+      console.log(`✅ API Success [${endpoint}]:`, response);
       return response;
     } catch (error: any) {
-      console.error(`❌ API call failed for ${endpoint}:`, error);
+      console.error(`❌ API Error [${endpoint}]:`, error);
 
-      // Handle different error types
-      if (error.status === 404) {
+      // Handle different error types based on status
+      const status = error.response?.status || error.status;
+      const data = error.response?._data || error.data;
+
+      if (status === 404) {
         return {
           success: false,
           message: 'سرور در دسترس نیست. لطفاً مطمئن شوید که Laravel API در حال اجرا است.'
         };
-      } else if (error.status === 500) {
+      } else if (status === 500) {
         return {
           success: false,
           message: 'خطای داخلی سرور'
         };
-      } else if (error.status === 422 || error.status === 400) {
+      } else if (status === 422 || status === 400) {
         return {
           success: false,
-          message: error.data?.message || 'داده‌های ارسالی نامعتبر است',
-          errors: error.data?.errors
+          message: data?.message || 'داده‌های ارسالی نامعتبر است',
+          errors: data?.errors
         };
-      } else if (error.status === 429) {
+      } else if (status === 429) {
         return {
           success: false,
-          message: error.data?.message || 'تعداد درخواست‌ها بیش از حد مجاز'
+          message: data?.message || 'تعداد درخواست‌ها بیش از حد مجاز'
         };
-      } else if (error.message?.includes('fetch')) {
+      } else if (status === 401) {
+        return {
+          success: false,
+          message: data?.message || 'عدم احراز هویت'
+        };
+      }
+
+      // Network or unknown errors
+      if (error.message?.includes('fetch') || !status) {
         return {
           success: false,
           message: 'عدم اتصال به سرور. لطفاً اتصال اینترنت و وضعیت سرور را بررسی کنید.'
@@ -82,7 +93,7 @@ export const useAuth = () => {
 
       return {
         success: false,
-        message: error.data?.message || 'خطا در ارتباط با سرور'
+        message: data?.message || error.message || 'خطا در ارتباط با سرور'
       };
     }
   };
@@ -111,9 +122,11 @@ export const useAuth = () => {
       localStorage.setItem('auth_refresh_token', tokens.refresh_token);
       localStorage.setItem('auth_user', JSON.stringify(userData));
     }
+
+    console.log('💾 Auth data saved:', { user: userData, hasTokens: !!tokens.access_token });
   };
 
-  // ✨ Step 1: Check user (unified entry point)
+  // ✨ Step 1: Check user (based on API docs)
   const checkUser = async (identifier: string) => {
     isLoading.value = true;
     try {
@@ -129,7 +142,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🔑 Step 2a: Login with password
+  // 🔑 Step 2a: Login with password (based on API docs)
   const loginWithPassword = async (identifier: string, password: string) => {
     isLoading.value = true;
     try {
@@ -153,7 +166,7 @@ export const useAuth = () => {
     }
   };
 
-  // 📱 Step 2b: Send OTP
+  // 📱 Step 2b: Send OTP (based on API docs)
   const sendOTP = async (identifier: string) => {
     isLoading.value = true;
     try {
@@ -169,7 +182,7 @@ export const useAuth = () => {
     }
   };
 
-  // ✅ Step 3: Verify OTP
+  // ✅ Step 3: Verify OTP (based on API docs)
   const verifyOTP = async (identifier: string, otp: string, name?: string) => {
     isLoading.value = true;
     try {
@@ -178,7 +191,7 @@ export const useAuth = () => {
         otp: otp.trim()
       };
 
-      // اگر نام داده شده برای ثبت‌نام جدید
+      // Add name for registration
       if (name) {
         requestBody.name = name.trim();
       }
@@ -190,7 +203,7 @@ export const useAuth = () => {
 
       console.log('✅ Verify OTP Response:', response);
 
-      // اگر موفق بود و توکن‌ها آمدند
+      // Save auth data if successful
       if (response.success && response.tokens && response.user) {
         saveAuthData(response.user, response.tokens);
       }
@@ -201,7 +214,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🔄 Refresh tokens
+  // 🔄 Refresh tokens (based on API docs)
   const refreshTokens = async () => {
     if (!refreshToken.value) {
       throw new Error('No refresh token available');
@@ -222,13 +235,13 @@ export const useAuth = () => {
 
       return response;
     } catch (error) {
-      // اگر refresh token معتبر نیست، کاربر رو logout کن
+      // If refresh token is invalid, logout user
       clearAuthData();
       throw error;
     }
   };
 
-  // 👤 Get user info
+  // 👤 Get user info (based on API docs)
   const fetchUser = async () => {
     if (!accessToken.value) return null;
 
@@ -254,7 +267,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🚪 Logout
+  // 🚪 Logout (based on API docs)
   const logout = async () => {
     try {
       if (accessToken.value) {
@@ -272,7 +285,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🚪 Logout from all devices
+  // 🚪 Logout from all devices (based on API docs)
   const logoutAll = async () => {
     try {
       if (accessToken.value) {
@@ -290,7 +303,7 @@ export const useAuth = () => {
     }
   };
 
-  // 📝 Update profile
+  // 📝 Update profile (based on API docs)
   const updateProfile = async (profileData: any) => {
     if (!accessToken.value) throw new Error('Not authenticated');
 
@@ -317,7 +330,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🔐 Set password (for OTP-only users)
+  // 🔐 Set password (for OTP-only users, based on API docs)
   const setPassword = async (password: string, passwordConfirmation: string) => {
     if (!accessToken.value) throw new Error('Not authenticated');
 
@@ -340,7 +353,7 @@ export const useAuth = () => {
     }
   };
 
-  // 🔐 Update password
+  // 🔐 Update password (based on API docs)
   const updatePassword = async (currentPassword: string, newPassword: string, passwordConfirmation: string) => {
     if (!accessToken.value) throw new Error('Not authenticated');
 
@@ -364,6 +377,18 @@ export const useAuth = () => {
     }
   };
 
+  // 🔍 Health check (based on API docs)
+  const healthCheck = async () => {
+    try {
+      const response = await makeApiCall('/auth/health');
+      console.log('🏥 Health Check:', response);
+      return response;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return { success: false, message: 'سرور در دسترس نیست' };
+    }
+  };
+
   return {
     // State
     user: readonly(user),
@@ -372,18 +397,27 @@ export const useAuth = () => {
     isLoading: readonly(isLoading),
     isLoggedIn,
 
-    // Methods
+    // Methods - Core Flow
     initialize,
     checkUser,
     loginWithPassword,
     sendOTP,
     verifyOTP,
+
+    // Methods - Token Management
     refreshTokens,
+
+    // Methods - User Management
     fetchUser,
-    logout,
-    logoutAll,
     updateProfile,
     setPassword,
-    updatePassword
+    updatePassword,
+
+    // Methods - Session Management
+    logout,
+    logoutAll,
+
+    // Methods - Utilities
+    healthCheck
   };
 };

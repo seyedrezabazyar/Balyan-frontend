@@ -1,19 +1,29 @@
 // middleware/auth.ts
 export default defineNuxtRouteMiddleware((to, from) => {
   if (process.client) {
-    // چک کردن سیستم جدید احراز هویت
-    const newAuthToken = localStorage.getItem('auth_token');
-    if (newAuthToken) {
-      return; // کاربر احراز هویت شده است
+    // Check new auth system
+    const accessToken = localStorage.getItem('auth_access_token');
+    const user = localStorage.getItem('auth_user');
+
+    if (accessToken && user) {
+      try {
+        JSON.parse(user); // Validate user data
+        return; // User is authenticated
+      } catch (error) {
+        // Clear invalid data
+        localStorage.removeItem('auth_access_token');
+        localStorage.removeItem('auth_refresh_token');
+        localStorage.removeItem('auth_user');
+      }
     }
 
-    // چک کردن سیستم legacy
+    // Check legacy system as fallback
     const legacyLogin = localStorage.getItem('isLoggedIn');
     if (legacyLogin === 'true') {
-      return; // کاربر احراز هویت شده است (legacy)
+      return; // User is authenticated via legacy system
     }
 
-    // اگر کاربر احراز هویت نشده باشد، به صفحه ورود هدایت شود
-    return navigateTo('/auth/login');
+    // Redirect to unified auth page
+    return navigateTo('/auth');
   }
 });
