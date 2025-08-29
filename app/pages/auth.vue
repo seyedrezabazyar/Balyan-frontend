@@ -1,308 +1,248 @@
 <!-- pages/auth.vue -->
 <template>
   <div class="auth-page">
-    <div class="auth-container">
+    <div class="auth-card">
       <div class="auth-header">
         <div class="logo">⚡</div>
         <h1>{{ title }}</h1>
         <p>{{ subtitle }}</p>
       </div>
 
-      <!-- Step 1: Identifier -->
-      <div v-if="step === 1" class="auth-step">
+      <!-- Step 1: Enter identifier -->
+      <div v-if="step === 1" class="auth-form">
         <div class="form-group">
-          <label>ایمیل یا شماره تلفن</label>
           <input
-            v-model="identifier"
-            placeholder="example@email.com یا 09123456789"
-            :disabled="isLoading"
+            v-model="form.identifier"
+            type="text"
+            placeholder="ایمیل یا شماره تلفن"
             @keyup.enter="handleStep1"
           />
         </div>
 
-        <div v-if="showNameInput" class="form-group">
-          <label>نام کامل</label>
+        <div v-if="needsName" class="form-group">
           <input
-            v-model="name"
+            v-model="form.name"
+            type="text"
             placeholder="نام و نام خانوادگی"
-            :disabled="isLoading"
             @keyup.enter="handleStep1"
           />
         </div>
 
-        <div v-if="message" :class="['message', messageType]">{{ message }}</div>
-
-        <button
-          @click="handleStep1"
-          :disabled="isLoading || !identifier.trim() || (showNameInput && !name.trim())"
-          class="btn btn-primary"
-        >
-          {{ isLoading ? 'در حال بررسی...' : 'ادامه' }}
+        <button @click="handleStep1" class="btn btn-primary" :disabled="loading">
+          {{ loading ? 'در حال بررسی...' : 'ادامه' }}
         </button>
       </div>
 
-      <!-- Step 2: Password -->
-      <div v-if="step === 2" class="auth-step">
+      <!-- Step 2: Password or OTP choice -->
+      <div v-else-if="step === 2" class="auth-form">
         <div class="user-info">
-          <span>{{ userInfo.identifier }}</span>
-          <button @click="goBack" class="back-btn">تغییر</button>
-        </div>
-
-        <div v-if="userInfo.user_name" class="welcome">
-          خوش آمدید، {{ userInfo.user_name }}! 👋
+          <span>{{ form.identifier }}</span>
+          <button type="button" @click="goBack">تغییر</button>
         </div>
 
         <div class="form-group">
-          <label>رمز عبور</label>
-          <div class="password-input">
-            <input
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              placeholder="رمز عبور خود را وارد کنید"
-              :disabled="isLoading"
-              @keyup.enter="handlePasswordLogin"
-            />
-            <button type="button" @click="showPassword = !showPassword" class="toggle-password">
-              {{ showPassword ? '👁️' : '👁️‍🗨️' }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="message" :class="['message', messageType]">{{ message }}</div>
-
-        <div class="btn-group">
-          <button
-            @click="handlePasswordLogin"
-            :disabled="isLoading || !password.trim()"
-            class="btn btn-primary"
-          >
-            {{ isLoading ? 'در حال ورود...' : 'ورود' }}
-          </button>
-
-          <button @click="switchToOTP" :disabled="isLoading" class="btn btn-secondary">
-            ورود با کد
+          <input
+            v-model="form.password"
+            type="password"
+            placeholder="رمز عبور"
+            @keyup.enter="handlePassword"
+          />
+          <button @click="handlePassword" class="btn btn-primary" :disabled="loading">
+            {{ loading ? 'در حال ورود...' : 'ورود' }}
           </button>
         </div>
+
+        <div class="divider">یا</div>
+
+        <button @click="switchToOTP" class="btn btn-secondary">
+          ورود با کد تایید
+        </button>
       </div>
 
-      <!-- Step 3: OTP -->
-      <div v-if="step === 3" class="auth-step">
+      <!-- Step 3: OTP verification -->
+      <div v-else-if="step === 3" class="auth-form">
         <div class="user-info">
-          <span>{{ userInfo.identifier }}</span>
-          <button @click="goBack" class="back-btn">تغییر</button>
+          <span>{{ form.identifier }}</span>
+          <button type="button" @click="goBack">تغییر</button>
         </div>
 
-        <div class="otp-info">
-          📱 کد تایید 6 رقمی به {{ identifier.includes('@') ? 'ایمیل' : 'شماره تلفن' }} شما ارسال شد
-        </div>
+        <p class="otp-info">
+          کد 6 رقمی به {{ form.identifier.includes('@') ? 'ایمیل' : 'شماره' }} شما ارسال شد
+        </p>
 
         <div class="form-group">
-          <label>کد تایید</label>
           <input
-            v-model="otpCode"
+            v-model="form.otp"
+            type="text"
             placeholder="123456"
             maxlength="6"
             class="otp-input"
-            :disabled="isLoading"
-            @input="handleOTPInput"
-            @keyup.enter="handleOTPVerify"
+            @keyup.enter="handleOTP"
           />
         </div>
 
-        <div v-if="otpTimer > 0" class="timer">
-          ⏱️ ارسال مجدد تا {{ otpTimer }} ثانیه
+        <div v-if="timer > 0" class="timer">
+          ارسال مجدد تا {{ timer }} ثانیه
         </div>
+        <button v-else type="button" @click="resendOTP" class="resend-btn">
+          ارسال مجدد کد
+        </button>
 
-        <div v-else class="resend">
-          <span>کد را دریافت نکردید؟</span>
-          <button @click="handleResendOTP" :disabled="isLoading" class="resend-btn">
-            ارسال مجدد
-          </button>
-        </div>
-
-        <div v-if="message" :class="['message', messageType]">{{ message }}</div>
-
-        <button
-          @click="handleOTPVerify"
-          :disabled="isLoading || otpCode.length !== 6"
-          class="btn btn-primary"
-        >
-          {{ isLoading ? (isRegistration ? 'در حال ثبت نام...' : 'در حال ورود...') : (isRegistration ? 'ثبت نام' : 'ورود') }}
+        <button @click="handleOTP" class="btn btn-primary" :disabled="loading">
+          {{ loading ? 'تایید...' : 'تایید' }}
         </button>
       </div>
 
       <!-- Step 4: Success -->
-      <div v-if="step === 4" class="auth-step success-step">
+      <div v-else-if="step === 4" class="success-step">
         <div class="success-icon">✅</div>
-        <h2>{{ isRegistration ? 'ثبت نام موفق!' : 'ورود موفق!' }}</h2>
-        <p>{{ isRegistration ? 'حساب شما ایجاد شد' : 'به حساب خود خوش آمدید' }}</p>
-        <button @click="goToDashboard" class="btn btn-primary">ورود به داشبورد</button>
+        <h2>ورود موفق!</h2>
+        <p>به سیستم خوش آمدید</p>
       </div>
 
-      <div class="footer-link">
-        <NuxtLink to="/">← بازگشت به خانه</NuxtLink>
+      <!-- Error message -->
+      <div v-if="error" class="error-message">
+        {{ error }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-definePageMeta({ middleware: 'guest', layout: false });
+definePageMeta({ middleware: 'guest', layout: false })
 
-const { checkUser, loginWithPassword, sendOTP, verifyOTP, isLoading } = useAuth();
+const { checkUser, loginPassword, sendOTP, verifyOTP, loading } = useAuth()
 
-// State
-const step = ref(1);
-const identifier = ref('');
-const name = ref('');
-const password = ref('');
-const otpCode = ref('');
-const showPassword = ref(false);
-const message = ref('');
-const messageType = ref('success');
-const otpTimer = ref(0);
-const userInfo = ref({});
-const isRegistration = ref(false);
-
-let timerInterval = null;
-
-// Computed
-const showNameInput = computed(() => userInfo.value.status === 'new_user');
+const step = ref(1)
+const form = reactive({
+  identifier: '',
+  name: '',
+  password: '',
+  otp: ''
+})
+const error = ref('')
+const needsName = ref(false)
+const timer = ref(0)
+let timerInterval: any = null
 
 const title = computed(() => {
-  const titles = { 1: 'احراز هویت', 2: 'ورود', 3: isRegistration.value ? 'ثبت نام' : 'تایید', 4: 'موفق!' };
-  return titles[step.value] || 'احراز هویت';
-});
+  const titles = ['احراز هویت', 'ورود', 'تایید کد', 'موفق!']
+  return titles[step.value - 1]
+})
 
 const subtitle = computed(() => {
-  const subtitles = {
-    1: showNameInput.value ? 'برای ثبت نام اطلاعات را وارد کنید' : 'ایمیل یا شماره تلفن خود را وارد کنید',
-    2: 'رمز عبور خود را وارد کنید',
-    3: 'کد تایید ارسال شده را وارد کنید',
-    4: 'شما با موفقیت وارد شدید'
-  };
-  return subtitles[step.value] || '';
-});
+  const subtitles = [
+    'ایمیل یا شماره تلفن خود را وارد کنید',
+    'رمز عبور خود را وارد کنید',
+    'کد تایید ارسال شده را وارد کنید',
+    'شما با موفقیت وارد شدید'
+  ]
+  return subtitles[step.value - 1]
+})
 
-// Methods
-const clearMessage = () => { message.value = ''; };
-const showMessage = (text, type = 'error') => { message.value = text; messageType.value = type; };
-
+const clearError = () => error.value = ''
 const goBack = () => {
-  step.value = 1;
-  clearMessage();
-  password.value = '';
-  otpCode.value = '';
-};
+  step.value = 1
+  clearError()
+  Object.assign(form, { password: '', otp: '' })
+}
 
-const goToDashboard = () => navigateTo('/dashboard');
-
-const startTimer = (seconds = 120) => {
-  otpTimer.value = seconds;
-  if (timerInterval) clearInterval(timerInterval);
+const startTimer = () => {
+  timer.value = 120
   timerInterval = setInterval(() => {
-    otpTimer.value--;
-    if (otpTimer.value <= 0) {
-      clearInterval(timerInterval);
-      timerInterval = null;
+    timer.value--
+    if (timer.value <= 0) {
+      clearInterval(timerInterval)
     }
-  }, 1000);
-};
+  }, 1000)
+}
 
-// Step handlers
 const handleStep1 = async () => {
-  clearMessage();
-  if (!identifier.value.trim()) return showMessage('لطفاً ایمیل یا تلفن را وارد کنید');
+  clearError()
+  if (!form.identifier.trim()) return
 
-  const result = await checkUser(identifier.value);
-  if (!result.success) return showMessage(result.message);
-
-  userInfo.value = result;
-
-  if (result.status === 'existing_user_with_password') {
-    step.value = 2;
-  } else {
-    isRegistration.value = result.status === 'new_user';
-    if (isRegistration.value && !name.value.trim()) {
-      return showMessage('لطفاً نام خود را وارد کنید');
+  try {
+    const result = await checkUser(form.identifier)
+    if (result.status === 'new_user') {
+      needsName.value = true
+      if (!form.name.trim()) return
     }
-    await sendOTPAndProceed();
-  }
-};
 
-const handlePasswordLogin = async () => {
-  clearMessage();
-  if (!password.value.trim()) return showMessage('رمز عبور را وارد کنید');
-
-  const result = await loginWithPassword(identifier.value, password.value);
-  if (result.success) {
-    step.value = 4;
-    setTimeout(goToDashboard, 2000);
-  } else {
-    showMessage(result.message);
+    if (result.status === 'existing_user_with_password') {
+      step.value = 2
+    } else {
+      await sendOTPAndProceed()
+    }
+  } catch (err: any) {
+    error.value = err.message
   }
-};
+}
+
+const handlePassword = async () => {
+  clearError()
+  if (!form.password.trim()) return
+
+  try {
+    const result = await loginPassword(form.identifier, form.password)
+    if (result.success) {
+      step.value = 4
+      setTimeout(() => navigateTo('/dashboard'), 2000)
+    }
+  } catch (err: any) {
+    error.value = err.message
+  }
+}
 
 const switchToOTP = async () => {
-  clearMessage();
-  isRegistration.value = false;
-  await sendOTPAndProceed();
-};
+  await sendOTPAndProceed()
+}
 
 const sendOTPAndProceed = async () => {
-  const result = await sendOTP(identifier.value);
-  if (result.success) {
-    step.value = 3;
-    startTimer();
-    showMessage('کد تایید ارسال شد!', 'success');
-    setTimeout(clearMessage, 3000);
-  } else {
-    showMessage(result.message);
+  try {
+    await sendOTP(form.identifier)
+    step.value = 3
+    startTimer()
+  } catch (err: any) {
+    error.value = err.message
   }
-};
+}
 
-const handleOTPInput = (event) => {
-  event.target.value = event.target.value.replace(/[^0-9]/g, '');
-  otpCode.value = event.target.value;
-};
+const handleOTP = async () => {
+  clearError()
+  if (form.otp.length !== 6) return
 
-const handleOTPVerify = async () => {
-  clearMessage();
-  if (otpCode.value.length !== 6) return showMessage('کد 6 رقمی وارد کنید');
-
-  const userName = isRegistration.value ? name.value : undefined;
-  const result = await verifyOTP(identifier.value, otpCode.value, userName);
-
-  if (result.success) {
-    step.value = 4;
-    setTimeout(goToDashboard, 2000);
-  } else {
-    showMessage(result.message);
+  try {
+    const result = await verifyOTP(form.identifier, form.otp, form.name)
+    if (result.success) {
+      step.value = 4
+      setTimeout(() => navigateTo('/dashboard'), 2000)
+    }
+  } catch (err: any) {
+    error.value = err.message
   }
-};
+}
 
-const handleResendOTP = () => sendOTPAndProceed();
+const resendOTP = () => sendOTPAndProceed()
 
-onBeforeUnmount(() => {
-  if (timerInterval) clearInterval(timerInterval);
-});
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+})
 </script>
 
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--primary), #764ba2);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  direction: rtl;
+  padding: 20px;
 }
 
-.auth-container {
+.auth-card {
   background: white;
-  border-radius: 20px;
-  padding: 2rem;
+  border-radius: var(--radius);
+  padding: 32px;
   width: 100%;
   max-width: 400px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -310,80 +250,86 @@ onBeforeUnmount(() => {
 
 .auth-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 32px;
 }
 
 .logo {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 15px;
+  background: linear-gradient(135deg, var(--primary), #764ba2);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
   color: white;
-  margin: 0 auto 1rem;
+  margin: 0 auto 16px;
 }
 
 .auth-header h1 {
-  margin: 0 0 0.5rem;
-  color: #1a1a1a;
+  margin-bottom: 8px;
+  color: var(--dark);
 }
 
 .auth-header p {
+  color: var(--gray);
   margin: 0;
-  color: #6b7280;
 }
 
-.auth-step {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #374151;
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--light);
+  border-radius: 8px;
   font-weight: 500;
 }
 
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  background: #f9fafb;
-  transition: all 0.3s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-  background: white;
-}
-
-.password-input {
-  position: relative;
-}
-
-.toggle-password {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
+.user-info button {
   background: none;
   border: none;
+  color: var(--primary);
   cursor: pointer;
-  padding: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.divider {
+  text-align: center;
+  color: var(--gray);
+  position: relative;
+  margin: 8px 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+  z-index: 0;
+}
+
+.otp-info {
+  background: #e0f2fe;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .otp-input {
@@ -393,174 +339,52 @@ onBeforeUnmount(() => {
   letter-spacing: 0.5rem;
 }
 
-.user-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f3f4f6;
-  padding: 1rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #667eea;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 5px;
-  transition: background 0.3s;
-}
-
-.back-btn:hover { background: #e0e7ff; }
-
-.welcome {
-  background: #d1fae5;
-  color: #065f46;
-  padding: 1rem;
-  border-radius: 10px;
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.otp-info {
-  background: #e0f2fe;
-  padding: 1rem;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-}
-
 .timer {
   text-align: center;
   background: #fef3c7;
   color: #92400e;
-  padding: 0.5rem;
+  padding: 8px;
   border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.resend {
-  text-align: center;
-  margin-bottom: 1rem;
+  font-size: 0.9rem;
 }
 
 .resend-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--primary);
   cursor: pointer;
+  text-align: center;
+  padding: 8px;
   font-weight: 500;
-  padding: 0.5rem;
-  border-radius: 6px;
-  transition: background 0.3s;
-}
-
-.resend-btn:hover { background: #e0e7ff; }
-
-.message {
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.message.success {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.message.error {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.btn {
-  width: 100%;
-  padding: 0.875rem;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #e5e7eb;
-}
-
-.btn-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-group .btn {
-  width: auto;
-  flex: 1;
 }
 
 .success-step {
   text-align: center;
-  padding: 2rem 0;
+  padding: 32px 0;
 }
 
 .success-icon {
   font-size: 4rem;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .success-step h2 {
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+  color: var(--success);
+  margin-bottom: 8px;
 }
 
-.success-step p {
-  color: #6b7280;
-  margin-bottom: 2rem;
-}
-
-.footer-link {
+.error-message {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
   text-align: center;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.footer-link a {
-  color: #6b7280;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.footer-link a:hover {
-  color: #374151;
+  margin-top: 16px;
 }
 
 @media (max-width: 480px) {
-  .auth-page { padding: 1rem; }
-  .auth-container { padding: 1.5rem; }
-  .btn-group { flex-direction: column; }
+  .auth-card {
+    padding: 24px;
+  }
 }
 </style>
