@@ -113,6 +113,7 @@ definePageMeta({ middleware: 'guest', layout: false })
 
 const { checkUser, loginPassword, sendOTP, verifyOTP, loading } = useAuth()
 
+// Reactive state
 const step = ref(1)
 const form = reactive({
   identifier: '',
@@ -123,8 +124,9 @@ const form = reactive({
 const error = ref('')
 const needsName = ref(false)
 const timer = ref(0)
-let timerInterval: any = null
+let timerInterval = null; // Fixed: Added semicolon
 
+// Computed properties
 const title = computed(() => {
   const titles = ['احراز هویت', 'ورود', 'تایید کد', 'موفق!']
   return titles[step.value - 1]
@@ -140,6 +142,7 @@ const subtitle = computed(() => {
   return subtitles[step.value - 1]
 })
 
+// Helper methods
 const clearError = () => error.value = ''
 const goBack = () => {
   step.value = 1
@@ -157,6 +160,7 @@ const startTimer = () => {
   }, 1000)
 }
 
+// Main handlers
 const handleStep1 = async () => {
   clearError()
   if (!form.identifier.trim()) return
@@ -173,7 +177,7 @@ const handleStep1 = async () => {
     } else {
       await sendOTPAndProceed()
     }
-  } catch (err: any) {
+  } catch (err) {
     error.value = err.message
   }
 }
@@ -188,7 +192,7 @@ const handlePassword = async () => {
       step.value = 4
       setTimeout(() => navigateTo('/dashboard'), 2000)
     }
-  } catch (err: any) {
+  } catch (err) {
     error.value = err.message
   }
 }
@@ -202,7 +206,7 @@ const sendOTPAndProceed = async () => {
     await sendOTP(form.identifier)
     step.value = 3
     startTimer()
-  } catch (err: any) {
+  } catch (err) {
     error.value = err.message
   }
 }
@@ -217,13 +221,14 @@ const handleOTP = async () => {
       step.value = 4
       setTimeout(() => navigateTo('/dashboard'), 2000)
     }
-  } catch (err: any) {
+  } catch (err) {
     error.value = err.message
   }
 }
 
 const resendOTP = () => sendOTPAndProceed()
 
+// Cleanup
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval)
 })

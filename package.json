@@ -1,13 +1,33 @@
 {
-  "name": "nuxt-app",
+  "name": "management-system",
+  "version": "1.0.0",
+  "description": "سیستم مدیریت پیشرفته با احراز هویت امن",
   "type": "module",
   "private": true,
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "keywords": [
+    "nuxt",
+    "vue",
+    "typescript",
+    "authentication",
+    "management-system",
+    "dashboard"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/management-system.git"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf .nuxt dist .output node_modules/.cache"
   },
   "dependencies": {
     "@nuxt/ui": "^3.3.2",
@@ -16,6 +36,17 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@nuxt/typescript": "^2.15.8",
+    "@types/node": "^22.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.28.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4",
     "vite-tsconfig-paths": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

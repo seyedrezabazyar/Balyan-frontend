@@ -2,17 +2,19 @@
 export default defineNuxtPlugin(async () => {
   const { initialize, isLoggedIn } = useAuth()
 
-  // بارگذاری اطلاعات احراز هویت از localStorage
+  // Initialize auth from localStorage
   initialize()
 
-  // اگر کاربر لاگین است، اطلاعات کاربر را از سرور دریافت کن
+  // Optional: Refresh user data if logged in
   if (isLoggedIn.value) {
     try {
       await nextTick()
-      // اختیاری: می‌توانید اطلاعات کاربر را از سرور بروزرسانی کنید
-      // await fetchUser()
+      // Here you can add logic to refresh user data from server
+      // const { refreshUser } = useAuth()
+      // await refreshUser()
     } catch (error) {
-      console.error('Auth initialization error:', error)
+      console.warn('Failed to refresh user data:', error)
+      // Handle token expiration or invalid token
     }
   }
 })
