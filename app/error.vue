@@ -1,33 +1,25 @@
+<!-- error.vue -->
 <template>
-  <div class="error-container">
+  <div class="error-page">
     <div class="error-content">
       <div class="error-icon">
-        <span v-if="error?.statusCode === 404">🔍</span>
-        <span v-else>⚠️</span>
+        {{ error?.statusCode === 404 ? '🔍' : '⚠️' }}
       </div>
 
-      <h1 class="error-title">
-        {{ error?.statusCode === 404 ? 'صفحه یافت نشد' : 'خطایی رخ داده است' }}
-      </h1>
-
-      <p class="error-message">
-        {{ error?.statusCode === 404
-        ? 'متأسفانه صفحه‌ای که دنبال آن می‌گردید یافت نشد.'
-        : error?.message || 'خطای غیرمنتظره‌ای رخ داده است.'
-        }}
-      </p>
+      <h1>{{ errorTitle }}</h1>
+      <p>{{ errorMessage }}</p>
 
       <div class="error-actions">
-        <button @click="handleError" class="btn-primary">
+        <button @click="handleError" class="btn btn-primary">
           تلاش مجدد
         </button>
-        <NuxtLink to="/" class="btn-secondary">
-          بازگشت به صفحه اصلی
+        <NuxtLink to="/" class="btn btn-secondary">
+          صفحه اصلی
         </NuxtLink>
       </div>
 
-      <div v-if="error?.statusCode !== 404" class="error-details">
-        <p><strong>کد خطا:</strong> {{ error?.statusCode || 'نامشخص' }}</p>
+      <div v-if="showDetails" class="error-details">
+        <p><strong>کد:</strong> {{ error?.statusCode || 'نامشخص' }}</p>
         <p><strong>URL:</strong> {{ error?.url || 'نامشخص' }}</p>
       </div>
     </div>
@@ -35,81 +27,87 @@
 </template>
 
 <script setup>
-const props = defineProps({
-  error: Object
-})
+const props = defineProps({ error: Object });
 
-definePageMeta({
-  layout: false
-})
+definePageMeta({ layout: false });
+
+const errorTitle = computed(() =>
+  props.error?.statusCode === 404 ? 'صفحه یافت نشد' : 'خطایی رخ داده'
+);
+
+const errorMessage = computed(() =>
+  props.error?.statusCode === 404
+    ? 'صفحه مورد نظر یافت نشد'
+    : props.error?.message || 'خطای غیرمنتظره'
+);
+
+const showDetails = computed(() => props.error?.statusCode !== 404);
 
 const handleError = async () => {
-  await clearError({ redirect: '/' })
-}
+  await clearError({ redirect: '/' });
+};
 </script>
 
 <style scoped>
-.error-container {
+.error-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 2rem;
+  direction: rtl;
 }
 
 .error-content {
   background: white;
-  padding: 50px 40px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 3rem 2rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   text-align: center;
   max-width: 500px;
   width: 100%;
 }
 
 .error-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
 }
 
-.error-title {
-  font-size: 32px;
+.error-content h1 {
+  font-size: 2rem;
   color: #333;
-  margin-bottom: 20px;
-  font-weight: bold;
+  margin-bottom: 1rem;
 }
 
-.error-message {
-  font-size: 18px;
+.error-content p {
+  font-size: 1.125rem;
   color: #666;
-  margin-bottom: 40px;
+  margin-bottom: 2rem;
   line-height: 1.6;
 }
 
 .error-actions {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
   justify-content: center;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  margin-bottom: 30px;
 }
 
-.btn-primary, .btn-secondary {
-  padding: 12px 24px;
-  border-radius: 8px;
+.btn {
+  padding: 0.875rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
   text-decoration: none;
-  font-size: 16px;
-  font-weight: bold;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s;
   border: none;
   cursor: pointer;
   display: inline-block;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
 }
 
@@ -119,35 +117,31 @@ const handleError = async () => {
   border: 2px solid #ddd;
 }
 
-.btn-primary:hover, .btn-secondary:hover {
+.btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .error-details {
-  padding: 20px;
+  padding: 1.5rem;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: right;
-  font-size: 14px;
+  font-size: 0.875rem;
   color: #666;
 }
 
 .error-details p {
-  margin: 5px 0;
+  margin: 0.5rem 0;
 }
 
 @media (max-width: 768px) {
   .error-content {
-    padding: 30px 20px;
+    padding: 2rem 1.5rem;
   }
 
-  .error-title {
-    font-size: 24px;
-  }
-
-  .error-message {
-    font-size: 16px;
+  .error-content h1 {
+    font-size: 1.5rem;
   }
 
   .error-actions {
@@ -155,7 +149,7 @@ const handleError = async () => {
     align-items: center;
   }
 
-  .btn-primary, .btn-secondary {
+  .btn {
     width: 200px;
   }
 }

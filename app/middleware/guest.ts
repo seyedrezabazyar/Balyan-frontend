@@ -1,28 +1,24 @@
 // middleware/guest.ts
 export default defineNuxtRouteMiddleware((to, from) => {
   if (process.client) {
-    // Check new auth system
-    const accessToken = localStorage.getItem('auth_access_token');
+    const token = localStorage.getItem('auth_access_token');
     const user = localStorage.getItem('auth_user');
+    const legacy = localStorage.getItem('isLoggedIn');
 
-    if (accessToken && user) {
+    // Check new auth
+    if (token && user) {
       try {
-        JSON.parse(user); // Validate user data
-        return navigateTo('/dashboard'); // Redirect authenticated users
-      } catch (error) {
-        // Clear invalid data
-        localStorage.removeItem('auth_access_token');
-        localStorage.removeItem('auth_refresh_token');
-        localStorage.removeItem('auth_user');
+        JSON.parse(user);
+        return navigateTo('/dashboard');
+      } catch {
+        ['auth_access_token', 'auth_refresh_token', 'auth_user']
+          .forEach(key => localStorage.removeItem(key));
       }
     }
 
-    // Check legacy system
-    const legacyLogin = localStorage.getItem('isLoggedIn');
-    if (legacyLogin === 'true') {
-      return navigateTo('/dashboard'); // Redirect legacy authenticated users
+    // Check legacy
+    if (legacy === 'true') {
+      return navigateTo('/dashboard');
     }
-
-    // Allow access to guest pages
   }
 });

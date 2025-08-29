@@ -1,57 +1,50 @@
+<!-- pages/dashboard/gallery/books.vue -->
 <template>
-  <div class="books-gallery-container">
-    <!-- Header -->
-    <header class="gallery-header">
-      <div class="header-content">
-        <h1 class="gallery-title">گالری تصاویر کتاب‌ها</h1>
-        <p class="gallery-subtitle">بررسی و تایید تصاویر در انتظار</p>
+  <div class="gallery">
+    <div class="gallery-header">
+      <h1>گالری تصاویر کتاب‌ها</h1>
+      <p>بررسی و تایید تصاویر</p>
+      <div class="stats">
+        <span class="pending-count">{{ pendingImages.length }} تصویر در انتظار</span>
       </div>
-      <div class="stats-info">
-        <span class="pending-count">{{ pendingImages.length }} تصویر در انتظار بررسی</span>
-      </div>
-    </header>
+    </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <div class="loader"></div>
-      <p>در حال بارگذاری تصاویر...</p>
+    <!-- Loading -->
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      <p>در حال بارگذاری...</p>
     </div>
 
     <!-- Images Grid -->
-    <div v-else-if="pendingImages.length > 0" class="images-grid">
+    <div v-else-if="pendingImages.length" class="images-grid">
       <div v-for="image in pendingImages" :key="image.id" class="image-card">
         <div class="image-wrapper">
-          <img 
-            :src="`http://127.0.0.1:8000/${image.image_path}`" 
+          <img
+            :src="`http://127.0.0.1:8000/${image.image_path}`"
             :alt="image.alt_text || 'تصویر کتاب'"
             @error="handleImageError"
           />
         </div>
+
         <div class="image-info">
-          <p class="book-id">کتاب شماره: {{ image.book_id }}</p>
-          <p class="upload-date">{{ formatDate(image.created_at) }}</p>
+          <p><strong>کتاب:</strong> #{{ image.book_id }}</p>
+          <p><strong>تاریخ:</strong> {{ formatDate(image.created_at) }}</p>
         </div>
-        <div class="action-buttons">
-          <button 
-            @click="reviewImage(image.id, 'approved')" 
+
+        <div class="image-actions">
+          <button
+            @click="reviewImage(image.id, 'approved')"
+            :disabled="processingIds.includes(image.id)"
             class="btn btn-approve"
-            :disabled="processingIds.includes(image.id)"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            تایید
+            ✓ تایید
           </button>
-          <button 
-            @click="reviewImage(image.id, 'rejected')" 
-            class="btn btn-reject"
+          <button
+            @click="reviewImage(image.id, 'rejected')"
             :disabled="processingIds.includes(image.id)"
+            class="btn btn-reject"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-            رد
+            ✗ رد
           </button>
         </div>
       </div>
@@ -59,16 +52,12 @@
 
     <!-- Empty State -->
     <div v-else class="empty-state">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-        <polyline points="21 15 16 10 5 21"></polyline>
-      </svg>
+      <div class="empty-icon">🖼️</div>
       <h3>تصویری برای بررسی وجود ندارد</h3>
       <p>همه تصاویر بررسی شده‌اند</p>
     </div>
 
-    <!-- Success/Error Messages -->
+    <!-- Message -->
     <div v-if="message" :class="['message', messageType]">
       {{ message }}
     </div>
@@ -76,48 +65,40 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+const pendingImages = ref([]);
+const loading = ref(true);
+const processingIds = ref([]);
+const message = ref('');
+const messageType = ref('success');
 
-// State
-const pendingImages = ref([])
-const loading = ref(true)
-const processingIds = ref([])
-const message = ref('')
-const messageType = ref('success')
-
-// Fetch pending images
-const fetchPendingImages = async () => {
+const fetchImages = async () => {
   try {
-    loading.value = true
-    const token = localStorage.getItem('token')
-    
+    loading.value = true;
+    const token = localStorage.getItem('auth_access_token');
+
     const response = await fetch('http://127.0.0.1:8000/api/book-images?status=pending', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
       }
-    })
+    });
 
-    if (!response.ok) {
-      throw new Error('خطا در دریافت تصاویر')
-    }
+    if (!response.ok) throw new Error('خطا در دریافت تصاویر');
 
-    const data = await response.json()
-    pendingImages.value = data.data || []
+    const data = await response.json();
+    pendingImages.value = data.data || [];
   } catch (error) {
-    console.error('Error fetching images:', error)
-    showMessage('خطا در بارگذاری تصاویر', 'error')
+    showMessage('خطا در بارگذاری تصاویر', 'error');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-// Review image (approve/reject)
 const reviewImage = async (imageId, status) => {
   try {
-    processingIds.value.push(imageId)
-    const token = localStorage.getItem('token')
-    
+    processingIds.value.push(imageId);
+    const token = localStorage.getItem('auth_access_token');
+
     const response = await fetch(`http://127.0.0.1:8000/api/book-images/${imageId}/review`, {
       method: 'PATCH',
       headers: {
@@ -127,89 +108,67 @@ const reviewImage = async (imageId, status) => {
       },
       body: JSON.stringify({
         status: status,
-        rejection_reason: status === 'rejected' ? 'تصویر مناسب نیست' : null
+        rejection_reason: status === 'rejected' ? 'نامناسب' : null
       })
-    })
+    });
 
-    if (!response.ok) {
-      throw new Error('خطا در بررسی تصویر')
-    }
+    if (!response.ok) throw new Error('خطا در بررسی');
 
-    // Remove image from list
-    pendingImages.value = pendingImages.value.filter(img => img.id !== imageId)
-    
-    const statusText = status === 'approved' ? 'تایید' : 'رد'
-    showMessage(`تصویر با موفقیت ${statusText} شد`, 'success')
+    pendingImages.value = pendingImages.value.filter(img => img.id !== imageId);
+    showMessage(`تصویر ${status === 'approved' ? 'تایید' : 'رد'} شد`, 'success');
   } catch (error) {
-    console.error('Error reviewing image:', error)
-    showMessage('خطا در بررسی تصویر', 'error')
+    showMessage('خطا در بررسی تصویر', 'error');
   } finally {
-    processingIds.value = processingIds.value.filter(id => id !== imageId)
+    processingIds.value = processingIds.value.filter(id => id !== imageId);
   }
-}
+};
 
-// Show message
 const showMessage = (text, type = 'success') => {
-  message.value = text
-  messageType.value = type
-  setTimeout(() => {
-    message.value = ''
-  }, 3000)
-}
+  message.value = text;
+  messageType.value = type;
+  setTimeout(() => { message.value = ''; }, 3000);
+};
 
-// Format date
 const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('fa-IR').format(date)
-}
+  if (!dateString) return '';
+  try {
+    return new Intl.DateTimeFormat('fa-IR').format(new Date(dateString));
+  } catch {
+    return '';
+  }
+};
 
-// Handle image load error
 const handleImageError = (event) => {
-  event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNzUgMTEwQzE3NSA5Ni4xOTI5IDE4Ni4xOTMgODUgMjAwIDg1QzIxMy44MDcgODUgMjI1IDk2LjE5MjkgMjI1IDExMEMyMjUgMTIzLjgwNyAyMTMuODA3IDEzNSAyMDAgMTM1QzE4Ni4xOTMgMTM1IDE3NSAxMjMuODA3IDE3NSAxMTBaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIvPgo8cGF0aCBkPSJNMTIwIDE5MEgxMjBDMTIwIDE3Ni4xOTMgMTMxLjE5MyAxNjUgMTQ1IDE2NUgyNTVDMjY4LjgwNyAxNjUgMjgwIDE3Ni4xOTMgMjgwIDE5MFYxOTBIMTIwWiIgc3Ryb2tlPSIjOUNBM0FGIiBzdHJva2Utd2lkdGg9IjIiLz4KPC9zdmc+'
-}
+  event.target.style.display = 'none';
+  event.target.parentElement.innerHTML = '<div class="error-placeholder">🖼️<br>خطا در بارگذاری</div>';
+};
 
-// Mount
-onMounted(() => {
-  fetchPendingImages()
-})
+onMounted(() => fetchImages());
 </script>
 
 <style scoped>
-.books-gallery-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.gallery {
   padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* Header */
 .gallery-header {
   background: white;
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
-.header-content {
-  margin-bottom: 1rem;
-}
-
-.gallery-title {
-  font-size: 2rem;
+.gallery-header h1 {
   color: #1f2937;
-  margin: 0 0 0.5rem 0;
-  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
 
-.gallery-subtitle {
+.gallery-header p {
   color: #6b7280;
-  margin: 0;
-}
-
-.stats-info {
-  display: flex;
-  gap: 2rem;
+  margin: 0 0 1rem 0;
 }
 
 .pending-count {
@@ -218,24 +177,24 @@ onMounted(() => {
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
+  font-size: 0.875rem;
 }
 
-/* Loading */
-.loading-container {
+.loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  min-height: 300px;
   background: white;
   border-radius: 16px;
   gap: 1rem;
 }
 
-.loader {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #f3f4f6;
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
   border-top-color: #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -245,31 +204,31 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Images Grid */
 .images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .image-card {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .image-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .image-wrapper {
   width: 100%;
-  height: 250px;
+  height: 200px;
   overflow: hidden;
   background: #f3f4f6;
+  position: relative;
 }
 
 .image-wrapper img {
@@ -278,25 +237,34 @@ onMounted(() => {
   object-fit: cover;
 }
 
+.error-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #9ca3af;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
 .image-info {
   padding: 1rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.book-id {
-  font-weight: 600;
-  color: #374151;
+.image-info p {
   margin: 0 0 0.5rem 0;
-}
-
-.upload-date {
+  color: #374151;
   font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0;
 }
 
-/* Action Buttons */
-.action-buttons {
+.image-info p:last-child {
+  margin-bottom: 0;
+}
+
+.image-actions {
   display: flex;
   gap: 0.5rem;
   padding: 1rem;
@@ -304,17 +272,13 @@ onMounted(() => {
 
 .btn {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
   padding: 0.75rem;
   border: none;
   border-radius: 8px;
-  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  font-size: 0.875rem;
 }
 
 .btn:disabled {
@@ -329,6 +293,7 @@ onMounted(() => {
 
 .btn-approve:hover:not(:disabled) {
   background: #059669;
+  transform: translateY(-1px);
 }
 
 .btn-reject {
@@ -338,28 +303,26 @@ onMounted(() => {
 
 .btn-reject:hover:not(:disabled) {
   background: #dc2626;
+  transform: translateY(-1px);
 }
 
-/* Empty State */
 .empty-state {
   background: white;
   border-radius: 16px;
-  padding: 4rem 2rem;
+  padding: 3rem 2rem;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-.empty-state svg {
-  color: #9ca3af;
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
 .empty-state h3 {
   color: #374151;
-  margin: 0;
-  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .empty-state p {
@@ -367,16 +330,16 @@ onMounted(() => {
   margin: 0;
 }
 
-/* Messages */
 .message {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   padding: 1rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 500;
-  animation: slideIn 0.3s;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   z-index: 1000;
+  animation: slideIn 0.3s ease;
 }
 
 .message.success {
@@ -400,29 +363,23 @@ onMounted(() => {
   }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  .books-gallery-container {
-    padding: 1rem;
-  }
-
-  .gallery-header {
-    padding: 1.5rem;
-  }
-
-  .gallery-title {
-    font-size: 1.5rem;
-  }
-
+  .gallery { padding: 1rem; }
+  .gallery-header { padding: 1.5rem; }
   .images-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
   }
-
   .message {
     left: 1rem;
     right: 1rem;
     bottom: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .images-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

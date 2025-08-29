@@ -37,11 +37,23 @@ export const useAuth = () => {
   // API call helper with better error handling
   const makeApiCall = async (endpoint: string, options: any = {}) => {
     try {
+      // تنظیم headers پیش‌فرض
+      const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      // اگر body وجود دارد، آن را stringify کنیم
+      let body = options.body;
+      if (body && typeof body === 'object') {
+        body = JSON.stringify(body);
+      }
+
       const response = await $fetch(`${apiUrl}${endpoint}`, {
         ...options,
+        body,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          ...defaultHeaders,
           ...options.headers
         }
       });
@@ -63,7 +75,8 @@ export const useAuth = () => {
       } else if (status === 500) {
         return {
           success: false,
-          message: 'خطای داخلی سرور'
+          message: 'خطای داخلی سرور',
+          details: data?.message || error.message
         };
       } else if (status === 422 || status === 400) {
         return {
@@ -182,7 +195,7 @@ export const useAuth = () => {
     }
   };
 
-  // ✅ Step 3: Verify OTP (based on API docs)
+  // ✅ Step 3: Verify OTP (based on API docs) - اصلاح شده
   const verifyOTP = async (identifier: string, otp: string, name?: string) => {
     isLoading.value = true;
     try {
@@ -191,10 +204,15 @@ export const useAuth = () => {
         otp: otp.trim()
       };
 
-      // Add name for registration
-      if (name) {
+      // Add name for registration ONLY if provided
+      if (name && name.trim()) {
         requestBody.name = name.trim();
       }
+
+      console.log('🔍 Sending verify-otp request:', {
+        endpoint: '/auth/verify-otp',
+        body: requestBody
+      });
 
       const response = await makeApiCall('/auth/verify-otp', {
         method: 'POST',
@@ -209,6 +227,12 @@ export const useAuth = () => {
       }
 
       return response;
+    } catch (error) {
+      console.error('❌ Verify OTP Error:', error);
+      return {
+        success: false,
+        message: 'خطا در تایید کد'
+      };
     } finally {
       isLoading.value = false;
     }

@@ -1,400 +1,428 @@
 <!-- pages/dashboard/index.vue -->
 <template>
-  <div class="dashboard-container">
-    <header class="dashboard-header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1 class="dashboard-title">داشبورد</h1>
-          <p class="dashboard-subtitle">خلاصه‌ای از وضعیت کسب و کار شما</p>
-        </div>
-        <div class="header-right">
-          <div class="user-info">
-            <div class="user-avatar">👤</div>
-            <div class="user-details">
-              <span class="user-name">{{ displayName }}</span>
-              <span class="user-role">{{ userRole }}</span>
-            </div>
-          </div>
-          <button @click="handleLogout" class="logout-btn">خروج</button>
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <h1>داشبورد</h1>
+      <p>خلاصه‌ای از وضعیت سیستم</p>
+    </div>
+
+    <!-- Welcome Section -->
+    <div class="welcome-card">
+      <div class="welcome-content">
+        <h2>خوش آمدید، {{ displayName }}! 👋</h2>
+        <p>{{ welcomeMessage }}</p>
+      </div>
+      <div class="auth-badge" :class="{ 'new-system': user, 'legacy': !user }">
+        {{ user ? 'سیستم جدید' : 'سیستم قدیمی' }}
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon users">👥</div>
+        <div class="stat-content">
+          <h3>کاربران فعال</h3>
+          <p class="stat-value">1,247</p>
+          <p class="stat-change positive">↗ 12% افزایش</p>
         </div>
       </div>
-    </header>
 
-    <main class="dashboard-main">
-      <!-- Stats Cards -->
-      <section class="stats-section">
-        <div class="stat-card">
-          <h3>کاربران فعال</h3>
-          <p class="stat-value">1,234</p>
-          <p class="stat-change">12% افزایش</p>
-        </div>
-        <div class="stat-card">
-          <h3>درآمد امروز</h3>
+      <div class="stat-card">
+        <div class="stat-icon revenue">💰</div>
+        <div class="stat-content">
+          <h3>درآمد ماهانه</h3>
           <p class="stat-value">45.2M</p>
-          <p class="stat-change">8% افزایش</p>
+          <p class="stat-change positive">↗ 8% افزایش</p>
         </div>
-        <div class="stat-card">
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon orders">📦</div>
+        <div class="stat-content">
           <h3>سفارشات جدید</h3>
-          <p class="stat-value">89</p>
-          <p class="stat-change">3% کاهش</p>
+          <p class="stat-value">189</p>
+          <p class="stat-change negative">↘ 3% کاهش</p>
         </div>
-      </section>
+      </div>
 
-      <!-- Auth System Info -->
-      <section class="auth-info-section" v-if="user">
-        <div class="auth-info-card">
-          <h2>اطلاعات کاربری (سیستم جدید)</h2>
-          <div class="auth-info-content">
-            <p><strong>نام:</strong> {{ user.name || 'تعریف نشده' }}</p>
-            <p v-if="user.email"><strong>ایمیل:</strong> {{ user.email }}</p>
-            <p v-if="user.phone"><strong>تلفن:</strong> {{ user.phone }}</p>
-            <p><strong>تاریخ عضویت:</strong> {{ formatDate(user.created_at) }}</p>
-          </div>
+      <div class="stat-card">
+        <div class="stat-icon growth">📈</div>
+        <div class="stat-content">
+          <h3>رشد فروش</h3>
+          <p class="stat-value">24%</p>
+          <p class="stat-change positive">↗ نسبت به ماه قبل</p>
         </div>
-      </section>
+      </div>
+    </div>
 
-      <!-- Legacy Info -->
-      <section class="auth-info-section" v-else>
-        <div class="auth-info-card">
-          <h2>اطلاعات کاربری (Legacy)</h2>
-          <div class="auth-info-content">
-            <p><strong>نام کاربری:</strong> {{ displayName }}</p>
-            <p><strong>نوع ورود:</strong> سیستم قدیمی</p>
-          </div>
+    <!-- User Info -->
+    <div v-if="user" class="info-card">
+      <h2>اطلاعات حساب کاربری</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">نام:</span>
+          <span>{{ user.name || 'تعریف نشده' }}</span>
         </div>
-      </section>
-
-      <!-- Quick Actions -->
-      <section class="quick-actions">
-        <h2>دسترسی سریع</h2>
-        <div class="actions-grid">
-          <button class="action-btn">افزودن کاربر</button>
-          <button class="action-btn">گزارش جدید</button>
-          <NuxtLink to="/dashboard/gallery/books" class="action-btn">گالری تصاویر</NuxtLink>
-          <button class="action-btn">تنظیمات</button>
+        <div v-if="user.email" class="info-item">
+          <span class="label">ایمیل:</span>
+          <span>{{ user.email }}</span>
+          <span v-if="user.email_verified_at" class="verified">✓</span>
         </div>
-      </section>
+        <div v-if="user.phone" class="info-item">
+          <span class="label">تلفن:</span>
+          <span>{{ user.phone }}</span>
+          <span v-if="user.phone_verified_at" class="verified">✓</span>
+        </div>
+        <div class="info-item">
+          <span class="label">عضویت:</span>
+          <span>{{ formatDate(user.created_at) }}</span>
+        </div>
+      </div>
+    </div>
 
-      <!-- Navigation -->
-      <section class="navigation-section">
-        <NuxtLink to="/" class="nav-link">بازگشت به صفحه اصلی</NuxtLink>
-      </section>
-    </main>
+    <!-- Quick Actions -->
+    <div class="actions-section">
+      <h2>دسترسی سریع</h2>
+      <div class="actions-grid">
+        <button @click="showModal = true" class="action-card">
+          <div class="action-icon">👤</div>
+          <h3>افزودن کاربر</h3>
+        </button>
+
+        <button @click="showModal = true" class="action-card">
+          <div class="action-icon">📊</div>
+          <h3>گزارش جدید</h3>
+        </button>
+
+        <NuxtLink to="/dashboard/gallery/books" class="action-card">
+          <div class="action-icon">🖼️</div>
+          <h3>گالری تصاویر</h3>
+        </NuxtLink>
+
+        <button @click="showModal = true" class="action-card">
+          <div class="action-icon">⚙️</div>
+          <h3>تنظیمات</h3>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div v-if="showModal" class="modal-overlay" @click="showModal = false">
+      <div class="modal" @click.stop>
+        <div class="modal-icon">⏰</div>
+        <h3>به زودی...</h3>
+        <p>این قابلیت در حال توسعه است</p>
+        <button @click="showModal = false" class="btn-primary">متوجه شدم</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-// Use Auth composable
-const { user, logout, isLoggedIn, initialize } = useAuth();
+definePageMeta({ middleware: 'auth' });
 
-// Apply auth middleware
-definePageMeta({
-  middleware: 'auth'
-});
-
-// Legacy support
-const legacyUsername = ref('');
+const { user, logout, initialize } = useAuth();
+const showModal = ref(false);
 
 const displayName = computed(() => {
-  if (user.value?.name) return user.value.name;
-  if (user.value?.email) return user.value.email;
+  if (user.value?.name && user.value.name !== 'کاربر') return user.value.name;
+  if (user.value?.email) return user.value.email.split('@')[0];
   if (user.value?.phone) return user.value.phone;
-  return legacyUsername.value || 'کاربر عزیز';
+  return process.client && localStorage.getItem('username') || 'کاربر عزیز';
 });
 
-const userRole = computed(() => {
-  return user.value ? 'کاربر سیستم جدید' : 'مدیر سیستم (Legacy)';
+const welcomeMessage = computed(() => {
+  if (user.value) return 'به داشبورد جدید خود خوش آمدید';
+  return 'شما با سیستم قدیمی وارد شده‌اید';
 });
-
-const handleLogout = async () => {
-  if (user.value) {
-    // New auth system logout
-    await logout();
-  } else {
-    // Legacy logout
-    if (process.client) {
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('username');
-    }
-  }
-
-  // Redirect to login page
-  navigateTo('/login');
-};
 
 const formatDate = (dateString) => {
   if (!dateString) return 'نامشخص';
   try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('fa-IR').format(date);
-  } catch (e) {
+    return new Intl.DateTimeFormat('fa-IR').format(new Date(dateString));
+  } catch {
     return 'نامشخص';
   }
 };
 
-// Initialize
-onMounted(() => {
-  initialize();
-
-  if (process.client) {
-    // Check for legacy login
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername && !user.value) {
-      legacyUsername.value = storedUsername;
-    }
-  }
-});
+onMounted(() => initialize());
 </script>
 
 <style scoped>
-.dashboard-container {
-  min-height: 100vh;
-  background: #f0f2f5;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  direction: rtl;
+.dashboard {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .dashboard-header {
-  background: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px 30px;
+.dashboard-header h1 {
+  font-size: 2.5rem;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.welcome-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
-.dashboard-title {
-  font-size: 1.8rem;
+.welcome-content h2 {
   color: #1a1a1a;
-  margin-bottom: 5px;
+  margin-bottom: 0.5rem;
 }
 
-.dashboard-subtitle {
+.welcome-content p {
   color: #6b7280;
-  font-size: 0.95rem;
+  margin: 0;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: #f8f9fa;
+.auth-badge {
+  padding: 0.5rem 1rem;
   border-radius: 12px;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #1a1a1a;
-  font-size: 0.95rem;
-}
-
-.user-role {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.logout-btn {
-  padding: 10px 20px;
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.logout-btn:hover {
-  background: #fecaca;
-  transform: translateY(-2px);
+.auth-badge.new-system {
+  background: #d1fae5;
+  color: #065f46;
 }
 
-.dashboard-main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 30px;
+.auth-badge.legacy {
+  background: #fef3c7;
+  color: #92400e;
 }
 
-.stats-section {
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
   background: white;
   border-radius: 16px;
-  padding: 25px;
-  transition: all 0.3s ease;
-  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  transition: transform 0.3s;
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
 }
 
-.stat-card h3 {
-  font-size: 0.9rem;
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.stat-icon.users { background: linear-gradient(135deg, #667eea, #764ba2); }
+.stat-icon.revenue { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-icon.orders { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-icon.growth { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+.stat-content h3 {
+  font-size: 0.875rem;
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 8px;
+  margin-bottom: 0.25rem;
 }
 
 .stat-change {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #10b981;
-}
-
-.auth-info-section {
-  margin-bottom: 40px;
-}
-
-.auth-info-card {
-  background: white;
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.auth-info-card h2 {
-  color: #1a1a1a;
-  font-size: 1.3rem;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.auth-info-content {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.auth-info-content p {
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
   margin: 0;
 }
 
-.quick-actions {
-  margin-bottom: 40px;
+.stat-change.positive { color: #10b981; }
+.stat-change.negative { color: #ef4444; }
+
+.info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
-.quick-actions h2 {
-  font-size: 1.3rem;
+.info-card h2 {
   color: #1a1a1a;
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.info-item .label {
   font-weight: 600;
+  color: #374151;
+  min-width: 70px;
+}
+
+.verified {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.actions-section {
+  margin-bottom: 2rem;
+}
+
+.actions-section h2 {
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
 }
 
 .actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
-.action-btn {
+.action-card {
   background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
+  border: 2px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-  color: #4b5563;
-  font-weight: 500;
   text-decoration: none;
-  display: block;
-  text-align: center;
+  color: inherit;
 }
 
-.action-btn:hover {
+.action-card:hover {
   border-color: #667eea;
-  background: #f3f4ff;
-  transform: translateY(-3px);
-  color: #4b5563;
-}
-
-.navigation-section {
-  text-align: center;
-  padding-top: 20px;
-}
-
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
-  border-radius: 10px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.nav-link:hover {
-  background: #667eea;
-  color: white;
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.action-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.action-card h3 {
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 300px;
+  width: 90%;
+}
+
+.modal-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.modal h3 {
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.modal p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
 @media (max-width: 768px) {
-  .header-content {
+  .dashboard { padding: 1rem; }
+  .welcome-card {
     flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
+    text-align: center;
   }
+  .stats-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+  .actions-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
-  .stats-section {
-    grid-template-columns: 1fr;
-  }
-
-  .actions-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@media (max-width: 480px) {
+  .actions-grid { grid-template-columns: 1fr; }
 }
 </style>
