@@ -1,24 +1,23 @@
-// composables/useAuth.ts
 interface User {
-  id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  username?: string;
-  email_verified_at?: string;
-  phone_verified_at?: string;
-  created_at: string;
-  last_login_at?: string;
-  preferred_method?: 'password' | 'otp';
+  id: number
+  name: string
+  email?: string
+  phone?: string
+  username?: string
+  email_verified_at?: string
+  phone_verified_at?: string
+  created_at: string
+  last_login_at?: string
+  preferred_method?: 'password' | 'otp'
 }
 
-interface ApiResponse {
-  success: boolean;
-  message?: string;
-  user?: User;
-  token?: string;
-  status?: string;
-  data?: any;
+interface ApiResponse<T = any> {
+  success: boolean
+  message?: string
+  data?: T
+  user?: User
+  token?: string
+  status?: string
 }
 
 export const useAuth = () => {
@@ -27,21 +26,19 @@ export const useAuth = () => {
   const loading = useState<boolean>('auth.loading', () => false)
 
   const config = useRuntimeConfig()
-  const apiUrl = config.public.apiBase || 'http://127.0.0.1:8000/api'
+  const apiUrl = config.public.apiBase
 
-  // Computed properties
   const isLoggedIn = computed(() => !!(user.value && token.value))
 
-  // API helper with better error handling
-  const api = async (endpoint: string, options: RequestInit = {}): Promise<ApiResponse> => {
+  const api = async <T = any>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> => {
     try {
-      const headers: Record<string, string> = {
+      const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-      }
-
-      if (token.value) {
-        headers.Authorization = `Bearer ${token.value}`
+        ...(token.value && { Authorization: `Bearer ${token.value}` })
       }
 
       const response = await fetch(`${apiUrl}${endpoint}`, {
@@ -63,98 +60,62 @@ export const useAuth = () => {
     }
   }
 
-  // Initialize auth from localStorage
   const initialize = () => {
-    if (process.client) {
-      try {
-        // Check new auth system first
-        const savedToken = localStorage.getItem('auth_access_token')
-        const savedUser = localStorage.getItem('auth_user')
+    if (!process.client) return
 
-        if (savedToken && savedUser) {
-          token.value = savedToken
-          user.value = JSON.parse(savedUser)
-          return
-        }
+    try {
+      const savedToken = localStorage.getItem('auth_access_token')
+      const savedUser = localStorage.getItem('auth_user')
 
-        // Fallback to old system
-        const legacyToken = localStorage.getItem('token')
-        const legacyUser = localStorage.getItem('user')
-
-        if (legacyToken && legacyUser) {
-          token.value = legacyToken
-          user.value = JSON.parse(legacyUser)
-          // Migrate to new system
-          saveAuth(user.value, legacyToken)
-          // Clean old keys
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error)
-        clearAuth()
+      if (savedToken && savedUser) {
+        token.value = savedToken
+        user.value = JSON.parse(savedUser)
       }
+    } catch (error) {
+      console.error('Auth initialization error:', error)
+      clearAuth()
     }
   }
 
-  // Save auth data
   const saveAuth = (userData: User, userToken: string) => {
     user.value = userData
     token.value = userToken
 
     if (process.client) {
-      try {
-        localStorage.setItem('auth_user', JSON.stringify(userData))
-        localStorage.setItem('auth_access_token', userToken)
-
-        // Also save legacy format for compatibility
-        localStorage.setItem('user', JSON.stringify(userData))
-        localStorage.setItem('token', userToken)
-        localStorage.setItem('isLoggedIn', 'true')
-      } catch (error) {
-        console.error('Error saving auth data:', error)
-      }
+      localStorage.setItem('auth_user', JSON.stringify(userData))
+      localStorage.setItem('auth_access_token', userToken)
     }
   }
 
-  // Clear auth data
   const clearAuth = () => {
     user.value = null
     token.value = ''
 
     if (process.client) {
-      try {
-        // Clear all possible auth keys
-        const authKeys = [
-          'auth_user', 'auth_access_token', 'auth_refresh_token',
-          'user', 'token', 'isLoggedIn', 'username'
-        ]
-        authKeys.forEach(key => localStorage.removeItem(key))
-      } catch (error) {
-        console.error('Error clearing auth data:', error)
-      }
+      ['auth_user', 'auth_access_token', 'auth_refresh_token'].forEach(key =>
+        localStorage.removeItem(key)
+      )
     }
   }
 
-  // Auth methods
-  const checkUser = async (identifier: string): Promise<ApiResponse> => {
+  const checkUser = async (identifier: string) => {
     loading.value = true
     try {
-      return await api('/auth/check-user', {
+      return await api<User>('/auth/check-user', {
         method: 'POST',
-        body: { identifier }
+        body: { identifier } as any
       })
     } finally {
       loading.value = false
     }
   }
 
-  const loginPassword = async (identifier: string, password: string): Promise<ApiResponse> => {
+  const loginPassword = async (identifier: string, password: string) => {
     loading.value = true
     try {
       const result = await api('/auth/login-password', {
         method: 'POST',
-        body: { identifier, password }
+        body: { identifier, password } as any
       })
 
       if (result.success && result.user && result.token) {
@@ -167,24 +128,24 @@ export const useAuth = () => {
     }
   }
 
-  const sendOTP = async (identifier: string): Promise<ApiResponse> => {
+  const sendOTP = async (identifier: string) => {
     loading.value = true
     try {
       return await api('/auth/send-otp', {
         method: 'POST',
-        body: { identifier }
+        body: { identifier } as any
       })
     } finally {
       loading.value = false
     }
   }
 
-  const verifyOTP = async (identifier: string, otp: string, name?: string): Promise<ApiResponse> => {
+  const verifyOTP = async (identifier: string, otp: string, name?: string) => {
     loading.value = true
     try {
       const result = await api('/auth/verify-otp', {
         method: 'POST',
-        body: { identifier, otp, name }
+        body: { identifier, otp, name } as any
       })
 
       if (result.success && result.user && result.token) {
@@ -197,12 +158,12 @@ export const useAuth = () => {
     }
   }
 
-  const updateProfile = async (profileData: Partial<User>): Promise<ApiResponse> => {
+  const updateProfile = async (profileData: Partial<User>) => {
     loading.value = true
     try {
-      const result = await api('/user/profile', {
+      const result = await api<User>('/user/profile', {
         method: 'PUT',
-        body: profileData
+        body: profileData as any
       })
 
       if (result.success && result.user) {
@@ -216,62 +177,62 @@ export const useAuth = () => {
     }
   }
 
-  const setPassword = async (password: string): Promise<ApiResponse> => {
+  const setPassword = async (password: string) => {
     loading.value = true
     try {
       return await api('/user/set-password', {
         method: 'POST',
-        body: { password }
+        body: { password } as any
       })
     } finally {
       loading.value = false
     }
   }
 
-  const updatePassword = async (currentPassword: string, newPassword: string): Promise<ApiResponse> => {
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
     loading.value = true
     try {
       return await api('/user/change-password', {
         method: 'POST',
-        body: { current_password: currentPassword, new_password: newPassword }
+        body: {
+          current_password: currentPassword,
+          new_password: newPassword
+        } as any
       })
     } finally {
       loading.value = false
     }
   }
 
-  const logoutAll = async (): Promise<void> => {
-    try {
-      if (token.value) {
-        await api('/auth/logout-all', { method: 'POST' })
-      }
-    } catch (error) {
-      console.error('Error during logout all:', error)
-    } finally {
-      clearAuth()
-    }
-  }
-
-  const logout = async (): Promise<void> => {
+  const logout = async () => {
     try {
       if (token.value) {
         await api('/auth/logout', { method: 'POST' })
       }
     } catch (error) {
-      console.error('Error during logout:', error)
+      console.error('Logout error:', error)
+    } finally {
+      clearAuth()
+    }
+  }
+
+  const logoutAll = async () => {
+    try {
+      if (token.value) {
+        await api('/auth/logout-all', { method: 'POST' })
+      }
+    } catch (error) {
+      console.error('Logout all error:', error)
     } finally {
       clearAuth()
     }
   }
 
   return {
-    // State
     user: readonly(user),
     token: readonly(token),
     loading: readonly(loading),
     isLoggedIn,
-
-    // Methods
     initialize,
     checkUser,
     loginPassword,

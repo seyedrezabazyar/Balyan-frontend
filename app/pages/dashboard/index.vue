@@ -1,4 +1,3 @@
-<!-- pages/dashboard/index.vue -->
 <template>
   <div class="dashboard">
     <!-- Welcome Section -->
@@ -17,7 +16,7 @@
     <!-- Recent Activity -->
     <RecentActivity v-if="user" />
 
-    <!-- User Info Card (for authenticated users) -->
+    <!-- User Info Card -->
     <UserInfoCard v-if="user" :user="user" />
 
     <!-- Coming Soon Modal -->
@@ -25,7 +24,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import WelcomeCard from '~/components/dashboard/WelcomeCard.vue'
+import StatsGrid from '~/components/dashboard/StatsGrid.vue'
+import QuickActions from '~/components/dashboard/QuickActions.vue'
+import RecentActivity from '~/components/dashboard/RecentActivity.vue'
+import UserInfoCard from '~/components/dashboard/UserInfoCard.vue'
+import ComingSoonModal from '~/components/dashboard/ComingSoonModal.vue'
+
 definePageMeta({
   middleware: 'auth',
   layout: 'default'
@@ -34,13 +40,9 @@ definePageMeta({
 const { user, initialize } = useAuth()
 const showComingSoon = ref(false)
 
-// Computed properties
 const displayName = computed(() => {
   if (!user.value) return 'کاربر عزیز'
-  if (user.value.name && user.value.name !== 'کاربر') return user.value.name
-  if (user.value.email) return user.value.email.split('@')[0]
-  if (user.value.phone) return user.value.phone
-  return process.client && localStorage.getItem('username') || 'کاربر عزیز'
+  return user.value.name || user.value.email?.split('@')[0] || user.value.phone || 'کاربر عزیز'
 })
 
 const welcomeMessage = computed(() => {
@@ -54,42 +56,40 @@ const dashboardStats = computed(() => [
     title: 'کاربران فعال',
     value: '1,247',
     change: '+12%',
-    changeType: 'positive',
+    changeType: 'positive' as const,
     icon: '👥',
-    color: 'primary'
+    color: 'primary' as const
   },
   {
     title: 'درآمد ماهانه',
     value: '45.2M',
     change: '+8%',
-    changeType: 'positive',
+    changeType: 'positive' as const,
     icon: '💰',
-    color: 'success'
+    color: 'success' as const
   },
   {
     title: 'سفارشات جدید',
     value: '189',
     change: '-3%',
-    changeType: 'negative',
+    changeType: 'negative' as const,
     icon: '📦',
-    color: 'warning'
+    color: 'warning' as const
   },
   {
     title: 'رشد فروش',
     value: '24%',
     change: 'نسبت به ماه قبل',
-    changeType: 'positive',
+    changeType: 'positive' as const,
     icon: '📈',
-    color: 'info'
+    color: 'info' as const
   }
 ])
 
-// Provide modal control to child components
 provide('showComingSoon', () => {
   showComingSoon.value = true
 })
 
-// Initialize on mount
 onMounted(() => {
   initialize()
 })
