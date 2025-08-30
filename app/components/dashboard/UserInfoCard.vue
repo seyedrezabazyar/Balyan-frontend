@@ -67,11 +67,12 @@
 </template>
 
 <script setup>
-interface Props {
-  user: any
-}
-
-defineProps<Props>()
+defineProps({
+  user: {
+    type: Object,
+    default: () => ({})
+  }
+})
 
 const formatDate = (dateString) => {
   if (!dateString) return null

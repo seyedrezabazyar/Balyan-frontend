@@ -24,20 +24,12 @@
 </template>
 
 <script setup>
-interface Stat {
-  title: string
-  value: string
-  change: string
-  changeType: 'positive' | 'negative' | 'neutral'
-  icon: string
-  color: 'primary' | 'success' | 'warning' | 'info'
-}
-
-interface Props {
-  stats: Stat[]
-}
-
-defineProps<Props>()
+defineProps({
+  stats: {
+    type: Array,
+    default: () => []
+  }
+})
 </script>
 
 <style scoped>

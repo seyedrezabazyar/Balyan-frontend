@@ -17,16 +17,14 @@
 </template>
 
 <script setup>
-interface Props {
-  modelValue: boolean
-}
+defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  }
+})
 
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-}
-
-defineProps<Props>()
-defineEmits<Emits>()
+defineEmits(['update:modelValue'])
 </script>
 
 <style scoped>

@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-const { user, isLoggedIn, init } = useAuth()
+const { user, isLoggedIn, initialize } = useAuth()
 
 const displayName = computed(() => {
   if (user.value?.name) return user.value.name
@@ -117,7 +117,7 @@ const displayName = computed(() => {
   return 'کاربر مهمان'
 })
 
-onMounted(() => init())
+onMounted(() => initialize())  // 👈 این خط رو تغییر دادم از init() به initialize()
 </script>
 
 <style scoped>

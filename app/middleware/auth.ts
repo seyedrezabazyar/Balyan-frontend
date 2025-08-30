@@ -1,15 +1,15 @@
 // middleware/auth.ts
 export default defineNuxtRouteMiddleware((to, from) => {
-  // Only run on client side
-  if (process.client) {
-    const { initialize, isLoggedIn } = useAuth()
+  // Skip middleware on server side
+  if (process.server) return
 
-    // Initialize auth state
-    initialize()
+  const { initialize, isLoggedIn } = useAuth()
 
-    // Check if user is authenticated
-    if (!isLoggedIn.value) {
-      return navigateTo('/auth')
-    }
+  // Initialize auth state
+  initialize()
+
+  // Check if user is authenticated
+  if (!isLoggedIn.value) {
+    return navigateTo('/auth')
   }
 })

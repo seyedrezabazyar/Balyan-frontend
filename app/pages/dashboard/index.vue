@@ -24,14 +24,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import WelcomeCard from '~/components/dashboard/WelcomeCard.vue'
-import StatsGrid from '~/components/dashboard/StatsGrid.vue'
-import QuickActions from '~/components/dashboard/QuickActions.vue'
-import RecentActivity from '~/components/dashboard/RecentActivity.vue'
-import UserInfoCard from '~/components/dashboard/UserInfoCard.vue'
-import ComingSoonModal from '~/components/dashboard/ComingSoonModal.vue'
-
+<script setup>
 definePageMeta({
   middleware: 'auth',
   layout: 'default'
@@ -56,33 +49,33 @@ const dashboardStats = computed(() => [
     title: 'کاربران فعال',
     value: '1,247',
     change: '+12%',
-    changeType: 'positive' as const,
+    changeType: 'positive',
     icon: '👥',
-    color: 'primary' as const
+    color: 'primary'
   },
   {
     title: 'درآمد ماهانه',
     value: '45.2M',
     change: '+8%',
-    changeType: 'positive' as const,
+    changeType: 'positive',
     icon: '💰',
-    color: 'success' as const
+    color: 'success'
   },
   {
     title: 'سفارشات جدید',
     value: '189',
     change: '-3%',
-    changeType: 'negative' as const,
+    changeType: 'negative',
     icon: '📦',
-    color: 'warning' as const
+    color: 'warning'
   },
   {
     title: 'رشد فروش',
     value: '24%',
     change: 'نسبت به ماه قبل',
-    changeType: 'positive' as const,
+    changeType: 'positive',
     icon: '📈',
-    color: 'info' as const
+    color: 'info'
   }
 ])
 
