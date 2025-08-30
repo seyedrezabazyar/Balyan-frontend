@@ -50,14 +50,12 @@
             />
           </div>
 
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'در حال ورود...' : 'ورود' }}
+          <button type="button" @click="requestOTP" class="btn-link">
+            ورود با کد یکبار مصرف
           </button>
 
-          <div class="divider">یا</div>
-
-          <button type="button" @click="requestOTP" class="btn btn-secondary">
-            ورود با کد یکبار مصرف
+          <button type="submit" class="btn btn-primary" :disabled="loading">
+            {{ loading ? 'در حال ورود...' : 'ورود' }}
           </button>
         </form>
 
@@ -194,12 +192,10 @@ const handleIdentifier = async () => {
     if (checkResult.success && checkResult.data) {
       userHasPassword.value = checkResult.data.has_password || false
       
-      // تصمیم‌گیری بر اساس نوع identifier و وجود پسورد
-      if (isEmail.value && userHasPassword.value) {
-        // اگر ایمیل است و پسورد دارد، صفحه پسورد را نشان بده
+      // اگر کاربر پسورد دارد (ایمیل یا شماره)، مرحله پسورد را نمایش بده؛ در غیر این صورت OTP
+      if (userHasPassword.value) {
         step.value = 'password'
       } else {
-        // در غیر این صورت، مستقیم OTP ارسال کن
         await requestOTP()
       }
     } else {
