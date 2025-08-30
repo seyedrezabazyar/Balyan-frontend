@@ -12,40 +12,46 @@
       <nav class="nav desktop-nav">
         <NuxtLink to="/" class="nav-link">خانه</NuxtLink>
 
-        <template v-if="isLoggedIn">
-          <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
-          <NuxtLink to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
-          <NuxtLink to="/dashboard/gallery/books" class="nav-link">گالری</NuxtLink>
-        </template>
+        <ClientOnly>
+          <template v-if="isLoggedIn">
+            <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
+            <NuxtLink to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
+            <NuxtLink to="/dashboard/gallery/books" class="nav-link">گالری</NuxtLink>
+          </template>
+        </ClientOnly>
 
         <!-- User Menu -->
-        <div v-if="isLoggedIn" class="user-menu" ref="userMenuRef">
-          <button @click="toggleUserMenu" class="user-btn">
-            <div class="user-avatar">
-              {{ getInitials(user?.name) }}
-            </div>
-            <span class="user-name">{{ displayName }}</span>
-            <ChevronDownIcon class="chevron" :class="{ rotated: showUserMenu }" />
-          </button>
+        <ClientOnly>
+          <div v-if="isLoggedIn" class="user-menu" ref="userMenuRef">
+            <button @click="toggleUserMenu" class="user-btn">
+              <div class="user-avatar">
+                {{ getInitials(user?.name) }}
+              </div>
+              <span class="user-name">{{ displayName }}</span>
+              <ChevronDownIcon class="chevron" :class="{ rotated: showUserMenu }" />
+            </button>
 
-          <Transition name="dropdown">
-            <div v-if="showUserMenu" class="user-dropdown">
-              <NuxtLink to="/dashboard/profile" @click="closeUserMenu" class="dropdown-item">
-                <UserIcon class="icon" />
-                <span>پروفایل</span>
-              </NuxtLink>
-              <button @click="handleLogout" class="dropdown-item logout">
-                <LogOutIcon class="icon" />
-                <span>خروج</span>
-              </button>
-            </div>
-          </Transition>
-        </div>
+            <Transition name="dropdown">
+              <div v-if="showUserMenu" class="user-dropdown">
+                <NuxtLink to="/dashboard/profile" @click="closeUserMenu" class="dropdown-item">
+                  <UserIcon class="icon" />
+                  <span>پروفایل</span>
+                </NuxtLink>
+                <button @click="handleLogout" class="dropdown-item logout">
+                  <LogOutIcon class="icon" />
+                  <span>خروج</span>
+                </button>
+              </div>
+            </Transition>
+          </div>
+        </ClientOnly>
 
         <!-- Auth Button -->
-        <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
-          ورود / ثبت نام
-        </NuxtLink>
+        <ClientOnly>
+          <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
+            ورود / ثبت نام
+          </NuxtLink>
+        </ClientOnly>
       </nav>
 
       <!-- Mobile Menu Button -->
