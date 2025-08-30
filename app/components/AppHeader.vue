@@ -77,6 +77,8 @@
 </template>
 
 <script setup>
+import { h } from 'vue'
+
 const { user, isLoggedIn, logout } = useAuth()
 const { showToast } = useToast()
 
@@ -142,23 +144,49 @@ onUnmounted(() => {
 
 // Components
 const ChevronDownIcon = {
-  template: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'
+  render() {
+    return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'm6 9 6 6 6-6' })
+    ])
+  }
 }
 
 const UserIcon = {
-  template: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+  render() {
+    return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }),
+      h('circle', { cx: '12', cy: '7', r: '4' })
+    ])
+  }
 }
 
 const LogOutIcon = {
-  template: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+  render() {
+    return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' }),
+      h('polyline', { points: '16 17 21 12 16 7' }),
+      h('line', { x1: '21', y1: '12', x2: '9', y2: '12' })
+    ])
+  }
 }
 
 const MenuIcon = {
-  template: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/></svg>'
+  render() {
+    return h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('line', { x1: '4', y1: '12', x2: '20', y2: '12' }),
+      h('line', { x1: '4', y1: '6', x2: '20', y2: '6' }),
+      h('line', { x1: '4', y1: '18', x2: '20', y2: '18' })
+    ])
+  }
 }
 
 const XIcon = {
-  template: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12"/><path d="m6 6 12 12"/></svg>'
+  render() {
+    return h('svg', { width: '24', height: '24', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'm18 6-12 12' }),
+      h('path', { d: 'm6 6 12 12' })
+    ])
+  }
 }
 </script>
 
