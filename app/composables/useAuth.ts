@@ -110,6 +110,20 @@ export const useAuth = () => {
     }
   }
 
+  // بررسی وجود کاربر و پسورد
+  const checkUserIdentifier = async (identifier: string) => {
+    try {
+      const result = await api<ApiResponse>('/auth/check-identifier', {
+        method: 'POST',
+        body: { identifier } as any
+      })
+      return result
+    } catch (err) {
+      // در صورت خطا، فرض کن کاربر جدید است
+      return { success: false, data: null }
+    }
+  }
+
   // ورود با رمز عبور
   const loginPassword = async (identifier: string, password: string) => {
     loading.value = true
@@ -206,6 +220,7 @@ export const useAuth = () => {
     token: readonly(token),
     loading: readonly(loading),
     isLoggedIn,
+    checkUserIdentifier,
     loginPassword,
     sendOTP,
     verifyOTP,

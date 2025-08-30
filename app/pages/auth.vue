@@ -121,7 +121,7 @@ definePageMeta({
 })
 
 // Composables
-const { loginPassword, sendOTP, verifyOTP, loading } = useAuth()
+const { loginPassword, sendOTP, verifyOTP, checkUserIdentifier, loading } = useAuth()
 const router = useRouter()
 
 // State
@@ -131,6 +131,7 @@ const password = ref('')
 const otp = ref('')
 const error = ref('')
 const timer = ref(0)
+const userHasPassword = ref(true) // Default to true until we check
 let timerInterval = null
 
 // Computed
@@ -186,12 +187,27 @@ const stopTimer = () => {
 const handleIdentifier = async () => {
   error.value = ''
   
-  // تصمیم‌گیری بر اساس نوع identifier
-  if (isEmail.value) {
-    // برای ایمیل، ابتدا رمز عبور را امتحان می‌کنیم
-    step.value = 'password'
-  } else {
-    // برای موبایل، مستقیم OTP ارسال می‌کنیم
+  try {
+    // Check if user exists and has password
+    const checkResult = await checkUserIdentifier(identifier.value)
+    
+    if (checkResult.success && checkResult.data) {
+      userHasPassword.value = checkResult.data.has_password || false
+      
+      // تصمیم‌گیری بر اساس نوع identifier و وجود پسورد
+      if (isEmail.value && userHasPassword.value) {
+        // اگر ایمیل است و پسورد دارد، صفحه پسورد را نشان بده
+        step.value = 'password'
+      } else {
+        // در غیر این صورت، مستقیم OTP ارسال کن
+        await requestOTP()
+      }
+    } else {
+      // اگر کاربر وجود ندارد، برای ثبت نام OTP ارسال کن
+      await requestOTP()
+    }
+  } catch (err) {
+    // در صورت خطا، فرض کن کاربر جدید است و OTP ارسال کن
     await requestOTP()
   }
 }
