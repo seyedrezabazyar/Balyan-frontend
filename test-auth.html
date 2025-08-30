@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست سیستم احراز هویت</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 32px;
+            color: #1a1a1a;
+        }
+        
+        .test-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #374151;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: monospace;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        
+        .result.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تست سیستم احراز هویت</h1>
+        
+        <div class="info">
+            ⚠️ توجه: این صفحه برای تست مستقیم API ها طراحی شده است.
+            <br>API Base: <strong id="apiBase">http://127.0.0.1:8000/api</strong>
+        </div>
+        
+        <!-- تست ورود با رمز عبور -->
+        <div class="test-section">
+            <div class="test-title">1. تست ورود با رمز عبور</div>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label>ایمیل:</label>
+                    <input type="email" id="email" value="admin@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>رمز عبور:</label>
+                    <input type="password" id="password" value="password" required>
+                </div>
+                <button type="submit">ورود با رمز عبور</button>
+            </form>
+            <div id="passwordResult"></div>
+        </div>
+        
+        <!-- تست ارسال OTP -->
+        <div class="test-section">
+            <div class="test-title">2. تست ارسال کد OTP</div>
+            <form id="otpForm">
+                <div class="form-group">
+                    <label>شماره موبایل:</label>
+                    <input type="tel" id="phone" value="+989123456789" required>
+                </div>
+                <button type="submit">ارسال کد</button>
+            </form>
+            <div id="otpResult"></div>
+        </div>
+        
+        <!-- تست تایید OTP -->
+        <div class="test-section">
+            <div class="test-title">3. تست تایید کد OTP</div>
+            <form id="verifyForm">
+                <div class="form-group">
+                    <label>شماره موبایل:</label>
+                    <input type="tel" id="verifyPhone" value="+989123456789" required>
+                </div>
+                <div class="form-group">
+                    <label>کد OTP:</label>
+                    <input type="text" id="otpCode" value="123456" maxlength="6" required>
+                </div>
+                <button type="submit">تایید کد</button>
+            </form>
+            <div id="verifyResult"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        
+        // Helper function to show result
+        function showResult(elementId, success, data) {
+            const element = document.getElementById(elementId);
+            element.className = success ? 'result success' : 'result error';
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        // Test login with password
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'در حال ارسال...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        identifier: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('passwordResult', data.success, data);
+                
+                if (data.success && data.tokens) {
+                    localStorage.setItem('auth_token', data.tokens.access_token);
+                    localStorage.setItem('auth_user', JSON.stringify(data.user));
+                }
+            } catch (error) {
+                showResult('passwordResult', false, { error: error.message });
+            } finally {
+                button.disabled = false;
+                button.textContent = 'ورود با رمز عبور';
+            }
+        });
+        
+        // Test send OTP
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'در حال ارسال...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        identifier: document.getElementById('phone').value
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('otpResult', data.success, data);
+            } catch (error) {
+                showResult('otpResult', false, { error: error.message });
+            } finally {
+                button.disabled = false;
+                button.textContent = 'ارسال کد';
+            }
+        });
+        
+        // Test verify OTP
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'در حال تایید...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        identifier: document.getElementById('verifyPhone').value,
+                        otp: document.getElementById('otpCode').value
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('verifyResult', data.success, data);
+                
+                if (data.success && data.tokens) {
+                    localStorage.setItem('auth_token', data.tokens.access_token);
+                    localStorage.setItem('auth_user', JSON.stringify(data.user));
+                }
+            } catch (error) {
+                showResult('verifyResult', false, { error: error.message });
+            } finally {
+                button.disabled = false;
+                button.textContent = 'تایید کد';
+            }
+        });
+    </script>
+</body>
+</html>
