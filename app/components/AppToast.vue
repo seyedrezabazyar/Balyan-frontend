@@ -27,25 +27,53 @@
 <script setup>
 const { toasts, removeToast } = useToast()
 
-// Icons
+// Icons (render functions to avoid runtime template compilation)
+import { h } from 'vue'
+
 const CheckIcon = {
-  template: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>'
+  render() {
+    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('polyline', { points: '20 6 9 17 4 12' })
+    ])
+  }
 }
 
 const XCircleIcon = {
-  template: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>'
+  render() {
+    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('circle', { cx: '12', cy: '12', r: '10' }),
+      h('path', { d: 'm15 9-6 6' }),
+      h('path', { d: 'm9 9 6 6' })
+    ])
+  }
 }
 
 const AlertTriangleIcon = {
-  template: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="m12 17 .01 0"/></svg>'
+  render() {
+    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z' }),
+      h('path', { d: 'M12 9v4' }),
+      h('path', { d: 'm12 17 .01 0' })
+    ])
+  }
 }
 
 const InfoIcon = {
-  template: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>'
+  render() {
+    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('circle', { cx: '12', cy: '12', r: '10' }),
+      h('path', { d: 'm9 12 2 2 4-4' })
+    ])
+  }
 }
 
 const XIcon = {
-  template: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12"/><path d="m6 6 12 12"/></svg>'
+  render() {
+    return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+      h('path', { d: 'm18 6-12 12' }),
+      h('path', { d: 'm6 6 12 12' })
+    ])
+  }
 }
 
 const getIcon = (type) => {
