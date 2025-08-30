@@ -3,6 +3,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Only run on client side
   if (process.server) return
 
+  // Prevent redirect loop
+  if (to.path === '/dashboard') return
+
   const { waitForInitialization, isLoggedIn } = useAuth()
 
   try {
@@ -10,11 +13,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     await waitForInitialization()
 
     console.log('👤 Guest middleware - isLoggedIn:', isLoggedIn.value)
+    console.log('📍 Current path:', to.path)
+    console.log('📍 From path:', from?.path)
 
     // Redirect authenticated users to dashboard
     if (isLoggedIn.value) {
       console.log('✅ User already authenticated, redirecting to /dashboard')
-      return navigateTo('/dashboard')
+      return navigateTo('/dashboard', { replace: true })
     }
 
     console.log('👤 User not authenticated, allowing access to guest page')
