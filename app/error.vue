@@ -29,7 +29,7 @@
 <script setup>
 const props = defineProps({ error: Object });
 
-definePageMeta({ layout: false });
+// definePageMeta({ layout: false });
 
 const errorTitle = computed(() =>
   props.error?.statusCode === 404 ? 'صفحه یافت نشد' : 'خطایی رخ داده'
