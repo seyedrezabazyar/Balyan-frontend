@@ -2,8 +2,20 @@
 <template>
   <div class="dashboard">
     <div class="welcome-section">
-      <h1>خوش آمدید، {{ displayName }}! 👋</h1>
-      <p>{{ welcomeMessage }}</p>
+      <div class="welcome-header">
+        <div>
+          <h1>خوش آمدید، {{ displayName }}! 👋</h1>
+          <p>{{ welcomeMessage }}</p>
+        </div>
+        <button @click="handleLogout" class="btn-logout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          خروج از سیستم
+        </button>
+      </div>
     </div>
 
     <!-- Stats Cards -->
@@ -115,7 +127,8 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-const { user, init } = useAuth()
+const { user, init, logout } = useAuth()
+const { showToast } = useToast()
 const showModal = ref(false)
 
 const displayName = computed(() => {
@@ -141,6 +154,15 @@ const formatDate = (dateString) => {
 }
 
 onMounted(() => init())
+
+const handleLogout = async () => {
+  try {
+    await logout()
+    showToast('خروج با موفقیت انجام شد', 'success')
+  } catch (error) {
+    showToast('خطا در خروج از سیستم', 'error')
+  }
+}
 </script>
 
 <style scoped>
@@ -155,7 +177,18 @@ onMounted(() => init())
   padding: 32px;
   margin-bottom: 32px;
   box-shadow: var(--shadow);
-  text-align: center;
+}
+
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.welcome-header > div {
+  text-align: right;
 }
 
 .welcome-section h1 {
@@ -167,6 +200,32 @@ onMounted(() => init())
   color: var(--gray);
   margin: 0;
   font-size: 1.1rem;
+}
+
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-logout:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-logout:active {
+  transform: translateY(0);
 }
 
 .stats-grid {
@@ -355,6 +414,20 @@ onMounted(() => init())
 @media (max-width: 768px) {
   .welcome-section {
     padding: 24px;
+  }
+
+  .welcome-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .welcome-header > div {
+    text-align: center;
+  }
+
+  .btn-logout {
+    width: 100%;
+    justify-content: center;
   }
 
   .stats-grid {
