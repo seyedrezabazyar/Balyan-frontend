@@ -1,15 +1,25 @@
-// middleware/auth.ts
-export default defineNuxtRouteMiddleware((to, from) => {
+// app/middleware/auth.ts - نسخه بهبود یافته
+export default defineNuxtRouteMiddleware(async (to, from) => {
   // Skip middleware on server side
   if (process.server) return
 
-  const { initialize, isLoggedIn } = useAuth()
+  const { waitForInitialization, isLoggedIn } = useAuth()
 
-  // Initialize auth state
-  initialize()
+  try {
+    // منتظر می‌مانیم تا auth initialization کامل شود
+    await waitForInitialization()
 
-  // Check if user is authenticated
-  if (!isLoggedIn.value) {
+    console.log('🔐 Auth middleware - isLoggedIn:', isLoggedIn.value)
+
+    // Check if user is authenticated
+    if (!isLoggedIn.value) {
+      console.log('❌ User not authenticated, redirecting to /auth')
+      return navigateTo('/auth')
+    }
+
+    console.log('✅ User authenticated, allowing access')
+  } catch (error) {
+    console.error('❌ Auth middleware error:', error)
     return navigateTo('/auth')
   }
 })

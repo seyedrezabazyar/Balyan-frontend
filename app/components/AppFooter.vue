@@ -1,4 +1,4 @@
-<!-- components/AppFooter.vue -->
+<!-- components/AppFooter.vue - نسخه اصلاح شده -->
 <template>
   <footer class="footer">
     <div class="footer-container">
@@ -19,8 +19,9 @@
           <h3>لینک‌های سریع</h3>
           <ul class="footer-links">
             <li><NuxtLink to="/">صفحه اصلی</NuxtLink></li>
-            <li><NuxtLink to="/dashboard" v-if="isLoggedIn">داشبورد</NuxtLink></li>
-            <li><NuxtLink to="/auth" v-else>ورود</NuxtLink></li>
+            <!-- اصلاح v-if/v-else -->
+            <li v-if="isLoggedIn"><NuxtLink to="/dashboard">داشبورد</NuxtLink></li>
+            <li v-else><NuxtLink to="/auth">ورود</NuxtLink></li>
           </ul>
         </div>
 

@@ -1,4 +1,4 @@
-<!-- components/AppHeader.vue -->
+<!-- components/AppHeader.vue - نسخه اصلاح شده -->
 <template>
   <header class="header">
     <div class="header-container">
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Auth Button -->
-        <NuxtLink v-else to="/auth" class="btn btn-primary">
+        <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
           ورود / ثبت نام
         </NuxtLink>
       </nav>
@@ -68,7 +68,7 @@
           <button @click="handleLogout" class="mobile-nav-link logout">خروج</button>
         </template>
 
-        <NuxtLink v-else to="/auth" @click="closeMobileMenu" class="mobile-nav-link primary">
+        <NuxtLink v-if="!isLoggedIn" to="/auth" @click="closeMobileMenu" class="mobile-nav-link primary">
           ورود / ثبت نام
         </NuxtLink>
       </nav>
@@ -422,3 +422,4 @@ const XIcon = {
     padding: 0 1rem;
   }
 }
+</style>

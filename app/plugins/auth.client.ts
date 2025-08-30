@@ -1,20 +1,22 @@
-// plugins/auth.client.ts
+// app/plugins/auth.client.ts - فقط plugin
 export default defineNuxtPlugin(async () => {
   const { initialize, isLoggedIn } = useAuth()
 
-  // Initialize auth from localStorage
-  initialize()
+  console.log('🚀 Auth plugin initializing...')
 
-  // Optional: Refresh user data if logged in
-  if (isLoggedIn.value) {
-    try {
-      await nextTick()
-      // Here you can add logic to refresh user data from server
-      // const { refreshUser } = useAuth()
-      // await refreshUser()
-    } catch (error) {
-      console.warn('Failed to refresh user data:', error)
-      // Handle token expiration or invalid token
+  try {
+    // Initialize auth from localStorage
+    await initialize()
+
+    console.log('📱 Auth plugin - isLoggedIn:', isLoggedIn.value)
+
+    // اگر کاربر لاگین است، می‌توانیم اطلاعات اضافی fetch کنیم
+    if (isLoggedIn.value) {
+      console.log('✅ User is logged in, auth plugin completed successfully')
+    } else {
+      console.log('❌ User is not logged in')
     }
+  } catch (error) {
+    console.error('❌ Auth plugin initialization failed:', error)
   }
 })

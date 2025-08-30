@@ -1,3 +1,4 @@
+// app/composables/useAuth.ts - نسخه بهبود یافته
 interface User {
   id: number
   name: string
@@ -21,9 +22,32 @@ interface ApiResponse<T = any> {
 }
 
 export const useAuth = () => {
-  const user = useState<User | null>('auth.user', () => null)
-  const token = useState<string>('auth.token', () => '')
+  // استفاده از مقادیر پیش‌فرض که از localStorage می‌خوانیم
+  const user = useState<User | null>('auth.user', () => {
+    if (process.client) {
+      try {
+        const savedUser = localStorage.getItem('auth_user')
+        return savedUser ? JSON.parse(savedUser) : null
+      } catch {
+        return null
+      }
+    }
+    return null
+  })
+
+  const token = useState<string>('auth.token', () => {
+    if (process.client) {
+      try {
+        return localStorage.getItem('auth_access_token') || ''
+      } catch {
+        return ''
+      }
+    }
+    return ''
+  })
+
   const loading = useState<boolean>('auth.loading', () => false)
+  const initialized = useState<boolean>('auth.initialized', () => false)
 
   const config = useRuntimeConfig()
   const apiUrl = config.public.apiBase
@@ -60,20 +84,56 @@ export const useAuth = () => {
     }
   }
 
-  const initialize = () => {
-    if (!process.client) return
+  // تابع initialize بهبود یافته
+  const initialize = async () => {
+    if (!process.client || initialized.value) return
 
     try {
+      console.log('🔄 Initializing auth...')
+
       const savedToken = localStorage.getItem('auth_access_token')
       const savedUser = localStorage.getItem('auth_user')
 
+      console.log('📦 Saved token exists:', !!savedToken)
+      console.log('👤 Saved user exists:', !!savedUser)
+
       if (savedToken && savedUser) {
-        token.value = savedToken
-        user.value = JSON.parse(savedUser)
+        const userData = JSON.parse(savedUser)
+
+        // بررسی اعتبار token با تست API call
+        try {
+          const response = await fetch(`${apiUrl}/user/profile`, {
+            headers: {
+              'Authorization': `Bearer ${savedToken}`,
+              'Accept': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            // Token معتبر است
+            token.value = savedToken
+            user.value = userData
+            console.log('✅ Auth restored successfully')
+          } else {
+            // Token نامعتبر است
+            console.log('❌ Token invalid, clearing auth')
+            clearAuth()
+          }
+        } catch (error) {
+          // خطا در درخواست API - احتمالاً مشکل شبکه
+          console.log('⚠️ Network error, using cached auth')
+          token.value = savedToken
+          user.value = userData
+        }
+      } else {
+        console.log('❌ No saved auth data found')
       }
+
+      initialized.value = true
     } catch (error) {
-      console.error('Auth initialization error:', error)
+      console.error('❌ Auth initialization error:', error)
       clearAuth()
+      initialized.value = true
     }
   }
 
@@ -82,19 +142,44 @@ export const useAuth = () => {
     token.value = userToken
 
     if (process.client) {
-      localStorage.setItem('auth_user', JSON.stringify(userData))
-      localStorage.setItem('auth_access_token', userToken)
+      try {
+        localStorage.setItem('auth_user', JSON.stringify(userData))
+        localStorage.setItem('auth_access_token', userToken)
+        console.log('💾 Auth data saved to localStorage')
+      } catch (error) {
+        console.error('❌ Failed to save auth data:', error)
+      }
     }
   }
 
   const clearAuth = () => {
     user.value = null
     token.value = ''
+    initialized.value = false
 
     if (process.client) {
-      ['auth_user', 'auth_access_token', 'auth_refresh_token'].forEach(key =>
-        localStorage.removeItem(key)
-      )
+      try {
+        localStorage.removeItem('auth_user')
+        localStorage.removeItem('auth_access_token')
+        localStorage.removeItem('auth_refresh_token')
+        console.log('🗑️ Auth data cleared from localStorage')
+      } catch (error) {
+        console.error('❌ Failed to clear auth data:', error)
+      }
+    }
+  }
+
+  // منتظر ماندن تا initialize کامل شود
+  const waitForInitialization = async () => {
+    if (initialized.value) return
+
+    await initialize()
+
+    // اگر هنوز initialize نشده، کمی صبر می‌کنیم
+    let attempts = 0
+    while (!initialized.value && attempts < 10) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+      attempts++
     }
   }
 
@@ -232,8 +317,10 @@ export const useAuth = () => {
     user: readonly(user),
     token: readonly(token),
     loading: readonly(loading),
+    initialized: readonly(initialized),
     isLoggedIn,
     initialize,
+    waitForInitialization,
     checkUser,
     loginPassword,
     sendOTP,
