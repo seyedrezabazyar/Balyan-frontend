@@ -138,14 +138,20 @@ export const useAuth = () => {
   }
 
   const saveAuth = (userData: User, userToken: string) => {
-    user.value = userData
-    token.value = userToken
-
     if (process.client) {
       try {
+        // Save to localStorage first
         localStorage.setItem('auth_user', JSON.stringify(userData))
         localStorage.setItem('auth_access_token', userToken)
         console.log('💾 Auth data saved to localStorage')
+        
+        // Then update reactive state
+        user.value = userData
+        token.value = userToken
+        initialized.value = true
+        
+        console.log('✅ Auth state updated - user:', userData)
+        console.log('✅ Auth state updated - token exists:', !!userToken)
       } catch (error) {
         console.error('❌ Failed to save auth data:', error)
       }

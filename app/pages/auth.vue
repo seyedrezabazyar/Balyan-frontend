@@ -93,11 +93,11 @@
         </button>
       </div>
 
-      <!-- Step 4: Success -->
+      <!-- Step 4: Success (This should not be shown as we navigate immediately) -->
       <div v-else-if="step === 4" class="success-step">
         <div class="success-icon">✅</div>
         <h2>ورود موفق!</h2>
-        <p>به سیستم خوش آمدید</p>
+        <p>در حال انتقال به داشبورد...</p>
       </div>
 
       <!-- Error message -->
@@ -189,8 +189,8 @@ const handlePassword = async () => {
   try {
     const result = await loginPassword(form.identifier, form.password)
     if (result.success) {
-      step.value = 4
-      setTimeout(() => navigateTo('/dashboard'), 2000)
+      // Navigate immediately after successful login without showing success step
+      await navigateTo('/dashboard', { replace: true })
     }
   } catch (err) {
     error.value = err.message
@@ -218,8 +218,8 @@ const handleOTP = async () => {
   try {
     const result = await verifyOTP(form.identifier, form.otp, form.name)
     if (result.success) {
-      step.value = 4
-      setTimeout(() => navigateTo('/dashboard'), 2000)
+      // Navigate immediately after successful OTP verification without showing success step
+      await navigateTo('/dashboard', { replace: true })
     }
   } catch (err) {
     error.value = err.message
