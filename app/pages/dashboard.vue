@@ -92,7 +92,7 @@
           <p>مشاهده و مدیریت کاربران سیستم</p>
         </NuxtLink>
 
-        <NuxtLink to="/profile" class="action-card">
+        <NuxtLink to="/dashboard/profile" class="action-card">
           <div class="action-icon">👤</div>
           <h3>ویرایش پروفایل</h3>
           <p>مدیریت اطلاعات شخصی</p>
@@ -127,7 +127,7 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-const { user, init, logout } = useAuth()
+const { user, restoreAuth, logout } = useAuth()
 const { showToast } = useToast()
 const showModal = ref(false)
 
@@ -153,7 +153,7 @@ const formatDate = (dateString) => {
   }
 }
 
-onMounted(() => init())
+onMounted(() => restoreAuth())
 
 const handleLogout = async () => {
   try {

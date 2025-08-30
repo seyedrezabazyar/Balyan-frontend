@@ -35,6 +35,7 @@ export const useAuth = () => {
   const user = useState<User | null>('auth.user', () => null)
   const token = useState<string>('auth.token', () => '')
   const loading = useState<boolean>('auth.loading', () => false)
+  const initialized = useState<boolean>('auth.initialized', () => false)
 
   const config = useRuntimeConfig()
   const apiUrl = config.public.apiBase
@@ -94,8 +95,11 @@ export const useAuth = () => {
   }
 
   // بازیابی اطلاعات از localStorage
-  const restoreAuth = () => {
-    if (!process.client) return
+  const restoreAuth = async () => {
+    if (!process.client) {
+      initialized.value = true
+      return
+    }
 
     const savedToken = localStorage.getItem('auth_token')
     const savedUser = localStorage.getItem('auth_user')
@@ -107,6 +111,26 @@ export const useAuth = () => {
       } catch {
         clearAuth()
       }
+    }
+    
+    initialized.value = true
+  }
+  
+  // Initialize function (alias for restoreAuth for compatibility)
+  const initialize = async () => {
+    if (!initialized.value) {
+      await restoreAuth()
+    }
+  }
+  
+  // Wait for initialization
+  const waitForInitialization = async () => {
+    if (initialized.value) return
+    
+    // Wait up to 2 seconds for initialization
+    for (let i = 0; i < 20; i++) {
+      if (initialized.value) return
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
   }
 
@@ -219,6 +243,7 @@ export const useAuth = () => {
     user: readonly(user),
     token: readonly(token),
     loading: readonly(loading),
+    initialized: readonly(initialized),
     isLoggedIn,
     checkUserIdentifier,
     loginPassword,
@@ -227,6 +252,8 @@ export const useAuth = () => {
     logout,
     fetchUser,
     clearAuth,
-    restoreAuth
+    restoreAuth,
+    initialize,
+    waitForInitialization
   }
 }
