@@ -76,14 +76,30 @@ const fetchBooks = async () => {
     })
 
     const res = await api(`/api/v1/books?${params.toString()}`)
-    books.value = res.data || res.items || res.results || []
+    
+    // Handle different response structures
+    if (res.data && Array.isArray(res.data)) {
+      books.value = res.data
+    } else if (Array.isArray(res)) {
+      books.value = res
+    } else if (res.items && Array.isArray(res.items)) {
+      books.value = res.items
+    } else if (res.results && Array.isArray(res.results)) {
+      books.value = res.results
+    } else {
+      books.value = []
+    }
 
     // try common meta shapes
-    const m = res.meta || res.pagination || {}
-    meta.total = m.total || m.total_items || books.value.length
-    meta.per_page = m.per_page || m.perPage || meta.per_page
+    const m = res.meta || res.pagination || res.links || {}
+    meta.total = m.total || m.total_items || m.total_count || books.value.length
+    meta.per_page = m.per_page || m.perPage || m.limit || 24
+    
+    console.log('Books API Response:', res)
+    console.log('Extracted books:', books.value)
   } catch (e) {
-    showError('خطا در دریافت لیست کتاب‌ها')
+    console.error('Error fetching books:', e)
+    showError(`خطا در دریافت لیست کتاب‌ها: ${e.message || 'خطای ناشناخته'}`)
   } finally {
     loading.value = false
   }

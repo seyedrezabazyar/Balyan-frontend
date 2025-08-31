@@ -45,24 +45,49 @@ export const useAuth = () => {
   // تابع API ساده‌تر
   const api = async <T = any>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit & { body?: any } = {}
   ): Promise<T> => {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...(token.value && { Authorization: `Bearer ${token.value}` })
     }
 
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      ...options,
-      headers: { ...headers, ...options.headers },
-      body: options.body ? JSON.stringify(options.body) : undefined
-    })
+    // Only add Content-Type for requests with body
+    if (options.body && options.method !== 'GET') {
+      headers['Content-Type'] = 'application/json'
+    }
 
-    const data = await response.json()
+    const requestOptions: RequestInit = {
+      ...options,
+      headers: { ...headers, ...options.headers }
+    }
+
+    // Handle body - only stringify if it's an object and not already a string
+    if (options.body && typeof options.body === 'object') {
+      requestOptions.body = JSON.stringify(options.body)
+    } else if (options.body) {
+      requestOptions.body = options.body
+    }
+
+    const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)
+
+    let data: any
+    const contentType = response.headers.get('content-type')
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json()
+    } else {
+      // If not JSON, return text as is
+      const text = await response.text()
+      try {
+        data = JSON.parse(text)
+      } catch {
+        data = { message: text }
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || `خطا در درخواست`)
+      throw new Error(data.message || data.error || `خطا در درخواست: ${response.status}`)
     }
 
     return data
@@ -137,7 +162,7 @@ export const useAuth = () => {
   // بررسی وجود کاربر و پسورد
   const checkUserIdentifier = async (identifier: string) => {
     try {
-      const result = await api<ApiResponse>('/auth/check-user', {
+      const result = await api<ApiResponse>('/api/auth/check-user', {
         method: 'POST',
         body: { identifier } as any
       })
@@ -152,7 +177,7 @@ export const useAuth = () => {
   const loginPassword = async (identifier: string, password: string) => {
     loading.value = true
     try {
-      const result = await api<ApiResponse>('/auth/login-password', {
+      const result = await api<ApiResponse>('/api/auth/login-password', {
         method: 'POST',
         body: { identifier, password } as any
       })
@@ -171,7 +196,7 @@ export const useAuth = () => {
   const sendOTP = async (identifier: string) => {
     loading.value = true
     try {
-      const result = await api<ApiResponse>('/auth/send-otp', {
+      const result = await api<ApiResponse>('/api/auth/send-otp', {
         method: 'POST',
         body: { identifier } as any
       })
@@ -185,7 +210,7 @@ export const useAuth = () => {
   const verifyOTP = async (identifier: string, otp: string) => {
     loading.value = true
     try {
-      const result = await api<ApiResponse>('/auth/verify-otp', {
+      const result = await api<ApiResponse>('/api/auth/verify-otp', {
         method: 'POST',
         body: { identifier, otp } as any
       })
@@ -204,7 +229,7 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       if (token.value) {
-        await api('/auth/logout', { method: 'POST' })
+        await api('/api/auth/logout', { method: 'POST' })
       }
     } catch {
       // ignore errors
@@ -219,7 +244,7 @@ export const useAuth = () => {
     if (!token.value) return null
 
     try {
-      const result = await api<ApiResponse>('/auth/user', {
+      const result = await api<ApiResponse>('/api/auth/user', {
         method: 'GET'
       })
       
@@ -245,6 +270,7 @@ export const useAuth = () => {
     loading: readonly(loading),
     initialized: readonly(initialized),
     isLoggedIn,
+    api,
     checkUserIdentifier,
     loginPassword,
     sendOTP,

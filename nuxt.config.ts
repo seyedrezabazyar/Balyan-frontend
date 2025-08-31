@@ -30,7 +30,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000/api',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000',
       appName: 'سیستم مدیریت پیشرفته'
     }
@@ -39,7 +39,7 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       '/api': {
-        target: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000/api',
+        target: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000',
         changeOrigin: true
       }
     }
