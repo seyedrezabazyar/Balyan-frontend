@@ -17,6 +17,7 @@ interface Tokens {
   refresh_token?: string
   token_type?: string
   expires_in?: number
+  expires_at?: string
 }
 
 interface ApiResponse<T = any> {
@@ -34,6 +35,8 @@ interface ApiResponse<T = any> {
 export const useAuth = () => {
   const user = useState<User | null>('auth.user', () => null)
   const token = useState<string>('auth.token', () => '')
+  const refreshToken = useState<string>('auth.refreshToken', () => '')
+  const expiresAt = useState<string | null>('auth.expiresAt', () => null)
   const loading = useState<boolean>('auth.loading', () => false)
   const initialized = useState<boolean>('auth.initialized', () => false)
 
@@ -69,7 +72,8 @@ export const useAuth = () => {
       requestOptions.body = options.body
     }
 
-    const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)
+    const url = endpoint.startsWith('/api/') ? endpoint : `${apiUrl}${endpoint}`
+    const response = await fetch(url, requestOptions)
 
     let data: any
     const contentType = response.headers.get('content-type')
@@ -97,12 +101,38 @@ export const useAuth = () => {
   const saveAuth = (userData: User, tokens: Tokens) => {
     user.value = userData
     token.value = tokens.access_token
+    if (tokens.refresh_token) {
+      refreshToken.value = tokens.refresh_token
+    }
+    expiresAt.value = tokens.expires_at || null
 
     if (process.client) {
       localStorage.setItem('auth_user', JSON.stringify(userData))
       localStorage.setItem('auth_token', tokens.access_token)
       if (tokens.refresh_token) {
         localStorage.setItem('auth_refresh_token', tokens.refresh_token)
+      }
+      if (tokens.expires_at) {
+        localStorage.setItem('auth_expires_at', tokens.expires_at)
+      }
+    }
+  }
+
+  // به‌روزرسانی فقط توکن‌ها
+  const updateTokens = (tokens: Tokens) => {
+    token.value = tokens.access_token
+    if (tokens.refresh_token) {
+      refreshToken.value = tokens.refresh_token
+    }
+    expiresAt.value = tokens.expires_at || null
+
+    if (process.client) {
+      localStorage.setItem('auth_token', tokens.access_token)
+      if (tokens.refresh_token) {
+        localStorage.setItem('auth_refresh_token', tokens.refresh_token)
+      }
+      if (tokens.expires_at) {
+        localStorage.setItem('auth_expires_at', tokens.expires_at)
       }
     }
   }
@@ -111,11 +141,14 @@ export const useAuth = () => {
   const clearAuth = () => {
     user.value = null
     token.value = ''
+    refreshToken.value = ''
+    expiresAt.value = null
 
     if (process.client) {
       localStorage.removeItem('auth_user')
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_refresh_token')
+      localStorage.removeItem('auth_expires_at')
     }
   }
 
@@ -128,11 +161,15 @@ export const useAuth = () => {
 
     const savedToken = localStorage.getItem('auth_token')
     const savedUser = localStorage.getItem('auth_user')
+    const savedRefresh = localStorage.getItem('auth_refresh_token')
+    const savedExpiresAt = localStorage.getItem('auth_expires_at')
 
     if (savedToken && savedUser) {
       try {
         token.value = savedToken
         user.value = JSON.parse(savedUser)
+        refreshToken.value = savedRefresh || ''
+        expiresAt.value = savedExpiresAt || null
       } catch {
         clearAuth()
       }
@@ -207,12 +244,12 @@ export const useAuth = () => {
   }
 
   // تایید OTP
-  const verifyOTP = async (identifier: string, otp: string) => {
+  const verifyOTP = async (identifier: string, otp: string, name: string | null = null) => {
     loading.value = true
     try {
       const result = await api<ApiResponse>('/api/auth/verify-otp', {
         method: 'POST',
-        body: { identifier, otp } as any
+        body: { identifier, otp, name } as any
       })
 
       if (result.success && result.tokens && result.user) {
@@ -222,6 +259,75 @@ export const useAuth = () => {
       return result
     } finally {
       loading.value = false
+    }
+  }
+
+  // رفرش توکن‌ها
+  const refreshTokens = async (): Promise<boolean> => {
+    if (!process.client) return false
+    const currentRefresh = refreshToken.value || localStorage.getItem('auth_refresh_token') || ''
+    if (!currentRefresh) return false
+
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentRefresh}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const result = await response.json()
+      if (response.ok && result.success && result.tokens) {
+        updateTokens(result.tokens)
+        return true
+      }
+    } catch {
+      // ignore
+    }
+
+    clearAuth()
+    return false
+  }
+
+  // بروزرسانی پروفایل
+  const updateProfile = async (payload: { name?: string; phone?: string }) => {
+    const result = await api<ApiResponse>('/api/auth/profile/update', {
+      method: 'POST',
+      body: payload as any
+    })
+    if (result.success && result.user) {
+      user.value = result.user
+      if (process.client) localStorage.setItem('auth_user', JSON.stringify(result.user))
+    }
+    return result
+  }
+
+  // ست کردن رمز عبور برای کاربران OTP-only
+  const setPassword = async (payload: { password: string; password_confirmation: string }) => {
+    return api<ApiResponse>('/api/auth/password/set', {
+      method: 'POST',
+      body: payload as any
+    })
+  }
+
+  // تغییر رمز عبور
+  const updatePassword = async (payload: { current_password: string; password: string; password_confirmation: string }) => {
+    return api<ApiResponse>('/api/auth/password/update', {
+      method: 'POST',
+      body: payload as any
+    })
+  }
+
+  // خروج از تمام دستگاه‌ها
+  const logoutAll = async () => {
+    try {
+      if (token.value) {
+        await api('/api/auth/logout-all', { method: 'POST' })
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -267,9 +373,12 @@ export const useAuth = () => {
   return {
     user: readonly(user),
     token: readonly(token),
+    refreshToken: readonly(refreshToken),
+    expiresAt: readonly(expiresAt),
     loading: readonly(loading),
     initialized: readonly(initialized),
     isLoggedIn,
+    isAuthenticated: isLoggedIn,
     api,
     checkUserIdentifier,
     loginPassword,
@@ -280,6 +389,11 @@ export const useAuth = () => {
     clearAuth,
     restoreAuth,
     initialize,
-    waitForInitialization
+    waitForInitialization,
+    refreshTokens,
+    updateProfile,
+    setPassword,
+    updatePassword,
+    logoutAll
   }
 }
