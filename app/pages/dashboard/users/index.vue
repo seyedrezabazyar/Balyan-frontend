@@ -685,5 +685,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Import all the styles from the users-management-page artifact */
+@import '@/assets/css/users-dashboard.css';
 </style>
