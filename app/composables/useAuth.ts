@@ -137,7 +137,7 @@ export const useAuth = () => {
   // بررسی وجود کاربر و پسورد
   const checkUserIdentifier = async (identifier: string) => {
     try {
-      const result = await api<ApiResponse>('/auth/check-identifier', {
+      const result = await api<ApiResponse>('/auth/check-user', {
         method: 'POST',
         body: { identifier } as any
       })
