@@ -43,6 +43,18 @@ const primaryActions = [
     route: '/dashboard/users'
   },
   {
+    title: 'کتاب‌ها',
+    description: 'مدیریت ساده کتاب‌ها',
+    icon: '📚',
+    route: '/dashboard/books'
+  },
+  {
+    title: 'دسته‌ها',
+    description: 'افزودن/حذف دسته‌ها',
+    icon: '🏷️',
+    route: '/dashboard/categories'
+  },
+  {
     title: 'گالری تصاویر',
     description: 'بررسی و تایید تصاویر کتاب‌ها',
     icon: '🖼️',

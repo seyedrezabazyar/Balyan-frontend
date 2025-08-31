@@ -16,6 +16,8 @@
           <template v-if="isLoggedIn">
             <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
             <NuxtLink to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
+            <NuxtLink to="/dashboard/books" class="nav-link">کتاب‌ها</NuxtLink>
+            <NuxtLink to="/dashboard/categories" class="nav-link">دسته‌ها</NuxtLink>
             <NuxtLink to="/dashboard/gallery/books" class="nav-link">گالری</NuxtLink>
           </template>
         </ClientOnly>
@@ -69,6 +71,8 @@
         <template v-if="isLoggedIn">
           <NuxtLink to="/dashboard" @click="closeMobileMenu" class="mobile-nav-link">داشبورد</NuxtLink>
           <NuxtLink to="/dashboard/users" @click="closeMobileMenu" class="mobile-nav-link">کاربران</NuxtLink>
+          <NuxtLink to="/dashboard/books" @click="closeMobileMenu" class="mobile-nav-link">کتاب‌ها</NuxtLink>
+          <NuxtLink to="/dashboard/categories" @click="closeMobileMenu" class="mobile-nav-link">دسته‌ها</NuxtLink>
           <NuxtLink to="/dashboard/gallery/books" @click="closeMobileMenu" class="mobile-nav-link">گالری</NuxtLink>
           <NuxtLink to="/dashboard/profile" @click="closeMobileMenu" class="mobile-nav-link">پروفایل</NuxtLink>
           <button @click="handleLogout" class="mobile-nav-link logout">خروج</button>
