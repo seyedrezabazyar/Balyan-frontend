@@ -248,10 +248,9 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-const { token } = useAuth()
+const { token, isAuthenticated, user: authUser } = useAuth()
 const showToast = inject('showToast', () => {})
-const config = useRuntimeConfig()
-const apiBase = config.public.apiBase
+const api = useApi()
 
 // State
 const users = ref([])
@@ -288,18 +287,41 @@ const otpUsers = computed(() => users.value.filter(u => u.preferred_method === '
 
 // Methods
 const fetchUsers = async () => {
+  if (!token.value) {
+    showToast('لطفا ابتدا وارد شوید', 'error')
+    await navigateTo('/auth')
+    return
+  }
+  
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
-      headers: { 'Authorization': `Bearer ${token.value}` }
+    const response = await fetch('/api/auth/users', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
     })
 
     if (response.ok) {
       const data = await response.json()
-      users.value = data.users || []
+      users.value = data.data || data.users || []
+      console.log('Users loaded:', users.value)
+    } else if (response.status === 401) {
+      showToast('نشست شما منقضی شده است. لطفا دوباره وارد شوید', 'error')
+      await navigateTo('/auth')
+    } else if (response.status === 403) {
+      showToast('شما دسترسی به این بخش را ندارید', 'error')
+      await navigateTo('/dashboard')
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      showToast(errorData.message || 'خطا در بارگذاری کاربران', 'error')
     }
   } catch (error) {
-    showToast('خطا در بارگذاری کاربران', 'error')
+    console.error('Error fetching users:', error)
+    showToast('خطا در ارتباط با سرور', 'error')
   } finally {
     loading.value = false
   }
@@ -334,33 +356,22 @@ const addUser = async () => {
     return
   }
 
+  loading.value = true
+  
   try {
-    loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: newUser.name,
-        email: newUser.email || null,
-        phone: newUser.phone || null,
-        preferred_method: newUser.method,
-        password: newUser.method === 'password' ? newUser.password : null
-      })
+    const data = await api.post('/api/auth/users', {
+      name: newUser.name,
+      email: newUser.email || null,
+      phone: newUser.phone || null,
+      preferred_method: newUser.method,
+      password: newUser.method === 'password' ? newUser.password : null
     })
-
-    if (response.ok) {
+    
+    if (data) {
       showToast('کاربر با موفقیت افزوده شد', 'success')
       closeAddModal()
       await fetchUsers()
-    } else {
-      const error = await response.json()
-      showToast(error.message || 'خطا در افزودن کاربر', 'error')
     }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
   } finally {
     loading.value = false
   }
@@ -374,12 +385,14 @@ const editUser = (user) => {
 const updateUser = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
+    const response = await fetch(`/api/auth/users/${editingUser.value.id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token.value}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({
         name: editingUser.value.name,
         email: editingUser.value.email || null,
@@ -412,9 +425,14 @@ const toggleUser = async (user) => {
   const wasActive = getStatus(user) === 'active'
 
   try {
-    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
+    const response = await fetch(`/api/auth/users/${user.id}/toggle-lock`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token.value}` }
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
     })
 
     if (response.ok) {
@@ -441,8 +459,15 @@ const closeViewModal = () => {
   viewingUser.value = null
 }
 
-onMounted(() => {
-  fetchUsers()
+onMounted(async () => {
+  // Check if user is authenticated
+  if (!isAuthenticated.value) {
+    await navigateTo('/auth')
+    return
+  }
+  
+  // Fetch users if authenticated
+  await fetchUsers()
 })
 </script>
 
