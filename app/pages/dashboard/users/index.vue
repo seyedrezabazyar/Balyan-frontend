@@ -413,10 +413,8 @@
 <script setup>
 definePageMeta({ middleware: 'auth' })
 
-const { token } = useAuth()
-const showToast = inject('showToast', () => {})
-const config = useRuntimeConfig()
-const apiBase = config.public.apiBase
+const { token, api, waitForInitialization, initialized } = useAuth()
+const { showToast } = useToast()
 
 // State
 const users = ref([])
@@ -538,24 +536,23 @@ const filterUsers = () => {
 }
 
 // API calls
+const getErrorMessage = (err) => {
+  try {
+    if (!err) return 'خطا'
+    if (typeof err === 'string') return err
+    if (err.message) return err.message
+    return String(err)
+  } catch {
+    return 'خطا'
+  }
+}
 const fetchUsers = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
-      headers: {
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      }
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      users.value = data.users || data.data || []
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در بارگذاری کاربران', 'error')
-    }
+    const data = await api('/api/auth/users', { method: 'GET' })
+    users.value = data?.users || data?.data || []
   } catch (e) {
-    showToast('خطا در ارتباط با سرور', 'error')
+    showToast(getErrorMessage(e) || 'خطا در بارگذاری کاربران', 'error')
   } finally {
     loading.value = false
   }
@@ -569,31 +566,22 @@ const addUser = async () => {
 
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
+    await api('/api/auth/users', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      },
-      body: JSON.stringify({
+      body: {
         name: newUser.name,
         email: newUser.email || null,
         phone: newUser.phone || null,
         preferred_method: newUser.preferred_method,
         password: newUser.preferred_method === 'password' ? newUser.password : null
-      })
+      }
     })
 
-    if (response.ok) {
-      showToast('کاربر با موفقیت افزوده شد', 'success')
-      closeAddModal()
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در افزودن کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
+    showToast('کاربر با موفقیت افزوده شد', 'success')
+    closeAddModal()
+    await fetchUsers()
+  } catch (e) {
+    showToast(getErrorMessage(e) || 'خطا در افزودن کاربر', 'error')
   } finally {
     loading.value = false
   }
@@ -607,30 +595,21 @@ const editUser = (user) => {
 const updateUser = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
+    await api(`/api/auth/users/${editingUser.value.id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      },
-      body: JSON.stringify({
+      body: {
         name: editingUser.value.name,
         email: editingUser.value.email || null,
         phone: editingUser.value.phone || null,
         preferred_method: editingUser.value.preferred_method
-      })
+      }
     })
 
-    if (response.ok) {
-      showToast('کاربر با موفقیت ویرایش شد', 'success')
-      closeEditModal()
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در ویرایش کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
+    showToast('کاربر با موفقیت ویرایش شد', 'success')
+    closeEditModal()
+    await fetchUsers()
+  } catch (e) {
+    showToast(getErrorMessage(e) || 'خطا در ویرایش کاربر', 'error')
   } finally {
     loading.value = false
   }
@@ -645,22 +624,11 @@ const toggleUserStatus = async (user) => {
   const wasLocked = getUserStatus(user) !== 'active'
 
   try {
-    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
-      method: 'POST',
-      headers: {
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      }
-    })
-
-    if (response.ok) {
-      showToast(`کاربر ${wasLocked ? 'فعال' : 'غیرفعال'} شد`, 'success')
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در تغییر وضعیت کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
+    await api(`/api/auth/users/${user.id}/toggle-lock`, { method: 'POST' })
+    showToast(`کاربر ${wasLocked ? 'فعال' : 'غیرفعال'} شد`, 'success')
+    await fetchUsers()
+  } catch (e) {
+    showToast(getErrorMessage(e) || 'خطا در تغییر وضعیت کاربر', 'error')
   }
 }
 
@@ -679,8 +647,9 @@ const closeViewModal = () => {
   viewingUser.value = null
 }
 
-onMounted(() => {
-  fetchUsers()
+onMounted(async () => {
+  await waitForInitialization()
+  await fetchUsers()
 })
 </script>
 
