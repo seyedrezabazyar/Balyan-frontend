@@ -541,7 +541,7 @@ const filterUsers = () => {
 const fetchUsers = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
+    const response = await fetch('/api/auth/users', {
       headers: {
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
       }
@@ -569,7 +569,7 @@ const addUser = async () => {
 
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
+    const response = await fetch('/api/auth/users', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -607,7 +607,7 @@ const editUser = (user) => {
 const updateUser = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
+    const response = await fetch(`/api/auth/users/${editingUser.value.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -645,7 +645,7 @@ const toggleUserStatus = async (user) => {
   const wasLocked = getUserStatus(user) !== 'active'
 
   try {
-    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
+    const response = await fetch(`/api/auth/users/${user.id}/toggle-lock`, {
       method: 'POST',
       headers: {
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
