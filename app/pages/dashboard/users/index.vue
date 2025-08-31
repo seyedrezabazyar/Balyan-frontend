@@ -416,7 +416,7 @@ definePageMeta({ middleware: 'auth' })
 const { token } = useAuth()
 const showToast = inject('showToast', () => {})
 const config = useRuntimeConfig()
-const apiBase = config.public.apiBase
+const apiBase = '/api'
 
 // State
 const users = ref([])
