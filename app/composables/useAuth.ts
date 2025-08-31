@@ -245,6 +245,7 @@ export const useAuth = () => {
     loading: readonly(loading),
     initialized: readonly(initialized),
     isLoggedIn,
+    api,
     checkUserIdentifier,
     loginPassword,
     sendOTP,

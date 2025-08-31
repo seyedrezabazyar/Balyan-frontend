@@ -57,10 +57,10 @@ const fetchBook = async () => {
   if (!slug.value) return
   loading.value = true
   try {
-    const res = await api(`/api/v1/books/${slug.value}`)
+    const res = await api(`/v1/books/${slug.value}`)
     book.value = res.data || res.book || res
 
-    const rel = await api(`/api/v1/books/${slug.value}/related`)
+    const rel = await api(`/v1/books/${slug.value}/related`)
     related.value = rel.data || rel.items || []
   } catch (e) {
     showError('خطا در دریافت اطلاعات کتاب')

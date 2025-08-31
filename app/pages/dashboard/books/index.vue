@@ -75,7 +75,7 @@ const fetchBooks = async () => {
       ...(q.value ? { q: q.value } : {})
     })
 
-    const res = await api(`/api/v1/books?${params.toString()}`)
+    const res = await api(`/v1/books?${params.toString()}`)
     books.value = res.data || res.items || res.results || []
 
     // try common meta shapes
