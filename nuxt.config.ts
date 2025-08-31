@@ -38,10 +38,22 @@ export default defineNuxtConfig({
 
   nitro: {
     devProxy: {
-      '/api': {
-        target: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000',
-        changeOrigin: true
+      '/api/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       }
+    },
+    cors: true,
+    corsOptions: {
+      origin: '*',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
     }
   },
 
