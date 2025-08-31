@@ -541,7 +541,7 @@ const filterUsers = () => {
 const fetchUsers = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/users`, {
+    const response = await fetch(`${apiBase}/auth/users`, {
       headers: {
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
       }
@@ -569,7 +569,7 @@ const addUser = async () => {
 
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/users`, {
+    const response = await fetch(`${apiBase}/auth/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -607,7 +607,7 @@ const editUser = (user) => {
 const updateUser = async () => {
   try {
     loading.value = true
-    const response = await fetch(`${apiBase}/users/${editingUser.value.id}`, {
+    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -642,11 +642,10 @@ const viewUser = (user) => {
 }
 
 const toggleUserStatus = async (user) => {
-  const isLocked = getUserStatus(user) !== 'active'
-  const action = isLocked ? 'activate' : 'deactivate'
+  const wasLocked = getUserStatus(user) !== 'active'
 
   try {
-    const response = await fetch(`${apiBase}/users/${user.id}/${action}`, {
+    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
       method: 'POST',
       headers: {
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
@@ -654,7 +653,7 @@ const toggleUserStatus = async (user) => {
     })
 
     if (response.ok) {
-      showToast(`کاربر ${action === 'activate' ? 'فعال' : 'غیرفعال'} شد`, 'success')
+      showToast(`کاربر ${wasLocked ? 'فعال' : 'غیرفعال'} شد`, 'success')
       await fetchUsers()
     } else {
       const error = await response.json().catch(() => ({}))

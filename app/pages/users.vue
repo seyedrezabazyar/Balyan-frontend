@@ -250,6 +250,8 @@ definePageMeta({ middleware: 'auth' })
 
 const { token } = useAuth()
 const showToast = inject('showToast', () => {})
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
 
 // State
 const users = ref([])
@@ -288,7 +290,7 @@ const otpUsers = computed(() => users.value.filter(u => u.preferred_method === '
 const fetchUsers = async () => {
   try {
     loading.value = true
-    const response = await fetch('http://127.0.0.1:8000/api/users', {
+    const response = await fetch(`${apiBase}/auth/users`, {
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
 
@@ -334,7 +336,7 @@ const addUser = async () => {
 
   try {
     loading.value = true
-    const response = await fetch('http://127.0.0.1:8000/api/users', {
+    const response = await fetch(`${apiBase}/auth/users`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.value}`,
@@ -372,7 +374,7 @@ const editUser = (user) => {
 const updateUser = async () => {
   try {
     loading.value = true
-    const response = await fetch(`http://127.0.0.1:8000/api/users/${editingUser.value.id}`, {
+    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token.value}`,
@@ -407,16 +409,16 @@ const viewUser = (user) => {
 }
 
 const toggleUser = async (user) => {
-  const action = getStatus(user) === 'active' ? 'deactivate' : 'activate'
+  const wasActive = getStatus(user) === 'active'
 
   try {
-    const response = await fetch(`http://127.0.0.1:8000/api/users/${user.id}/${action}`, {
+    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
 
     if (response.ok) {
-      showToast(`کاربر ${action === 'activate' ? 'فعال' : 'غیرفعال'} شد`, 'success')
+      showToast(`کاربر ${wasActive ? 'غیرفعال' : 'فعال'} شد`, 'success')
       await fetchUsers()
     }
   } catch {
