@@ -411,9 +411,278 @@
 </template>
 
 <script setup>
-// Import the users management page content here
-// This would include all the reactive data, computed properties, and methods
-// from the users-management-page artifact
+definePageMeta({ middleware: 'auth' })
+
+const { token } = useAuth()
+const showToast = inject('showToast', () => {})
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
+
+// State
+const users = ref([])
+const loading = ref(true)
+
+// Filters & search
+const searchQuery = ref('')
+const statusFilter = ref('')
+const methodFilter = ref('')
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = 10
+
+// Modals & forms
+const showAddModal = ref(false)
+const showEditModal = ref(false)
+const showViewModal = ref(false)
+const editingUser = ref({})
+const viewingUser = ref(null)
+const newUser = reactive({
+  name: '',
+  email: '',
+  phone: '',
+  preferred_method: 'password',
+  password: ''
+})
+
+// Utils
+const getInitials = (name) => {
+  if (!name) return 'ک'
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .substring(0, 2)
+}
+
+const getUserStatus = (user) => {
+  // Treat locked/inactive the same visually; prefer 'locked' label if locked_at exists
+  if (user?.locked_at || user?.status === 'inactive' || user?.disabled) return 'locked'
+  return 'active'
+}
+
+const getUserStatusText = (user) => {
+  const s = getUserStatus(user)
+  if (s === 'locked') return 'قفل شده'
+  if (s === 'inactive') return 'غیرفعال'
+  return 'فعال'
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  try {
+    return new Intl.DateTimeFormat('fa-IR').format(new Date(date))
+  } catch {
+    return ''
+  }
+}
+
+// Computed stats
+const activeUsersCount = computed(() => users.value.filter(u => getUserStatus(u) === 'active').length)
+const verifiedUsersCount = computed(() => users.value.filter(u => u.email_verified_at || u.phone_verified_at).length)
+const otpUsersCount = computed(() => users.value.filter(u => u.preferred_method === 'otp').length)
+
+// Filtering & pagination
+const filteredUsers = computed(() => {
+  let list = users.value
+
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter(u =>
+      (u.name && u.name.toLowerCase().includes(q)) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
+      (u.phone && u.phone.includes(q)) ||
+      (u.username && String(u.username).toLowerCase().includes(q))
+    )
+  }
+
+  if (statusFilter.value) {
+    if (statusFilter.value === 'active') {
+      list = list.filter(u => getUserStatus(u) === 'active')
+    } else if (statusFilter.value === 'inactive' || statusFilter.value === 'locked') {
+      list = list.filter(u => getUserStatus(u) !== 'active')
+    } else {
+      list = list.filter(u => getUserStatus(u) === statusFilter.value)
+    }
+  }
+
+  if (methodFilter.value) {
+    list = list.filter(u => u.preferred_method === methodFilter.value)
+  }
+
+  return list
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pageSize)))
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredUsers.value.slice(start, start + pageSize)
+})
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2
+  const pages = []
+  const start = Math.max(1, current - delta)
+  const end = Math.min(total, current + delta)
+  for (let p = start; p <= end; p++) pages.push(p)
+  if (!pages.includes(1)) pages.unshift(1)
+  if (!pages.includes(total)) pages.push(total)
+  return Array.from(new Set(pages)).sort((a, b) => a - b)
+})
+
+const filterUsers = () => {
+  currentPage.value = 1
+}
+
+// API calls
+const fetchUsers = async () => {
+  try {
+    loading.value = true
+    const response = await fetch(`${apiBase}/users`, {
+      headers: {
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      users.value = data.users || data.data || []
+    } else {
+      const error = await response.json().catch(() => ({}))
+      showToast(error.message || 'خطا در بارگذاری کاربران', 'error')
+    }
+  } catch (e) {
+    showToast('خطا در ارتباط با سرور', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const addUser = async () => {
+  if (!newUser.name.trim()) {
+    showToast('نام کاربر الزامی است', 'error')
+    return
+  }
+
+  try {
+    loading.value = true
+    const response = await fetch(`${apiBase}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
+      },
+      body: JSON.stringify({
+        name: newUser.name,
+        email: newUser.email || null,
+        phone: newUser.phone || null,
+        preferred_method: newUser.preferred_method,
+        password: newUser.preferred_method === 'password' ? newUser.password : null
+      })
+    })
+
+    if (response.ok) {
+      showToast('کاربر با موفقیت افزوده شد', 'success')
+      closeAddModal()
+      await fetchUsers()
+    } else {
+      const error = await response.json().catch(() => ({}))
+      showToast(error.message || 'خطا در افزودن کاربر', 'error')
+    }
+  } catch {
+    showToast('خطا در ارتباط با سرور', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const editUser = (user) => {
+  editingUser.value = { ...user }
+  showEditModal.value = true
+}
+
+const updateUser = async () => {
+  try {
+    loading.value = true
+    const response = await fetch(`${apiBase}/users/${editingUser.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
+      },
+      body: JSON.stringify({
+        name: editingUser.value.name,
+        email: editingUser.value.email || null,
+        phone: editingUser.value.phone || null,
+        preferred_method: editingUser.value.preferred_method
+      })
+    })
+
+    if (response.ok) {
+      showToast('کاربر با موفقیت ویرایش شد', 'success')
+      closeEditModal()
+      await fetchUsers()
+    } else {
+      const error = await response.json().catch(() => ({}))
+      showToast(error.message || 'خطا در ویرایش کاربر', 'error')
+    }
+  } catch {
+    showToast('خطا در ارتباط با سرور', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const viewUser = (user) => {
+  viewingUser.value = user
+  showViewModal.value = true
+}
+
+const toggleUserStatus = async (user) => {
+  const isLocked = getUserStatus(user) !== 'active'
+  const action = isLocked ? 'activate' : 'deactivate'
+
+  try {
+    const response = await fetch(`${apiBase}/users/${user.id}/${action}`, {
+      method: 'POST',
+      headers: {
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
+      }
+    })
+
+    if (response.ok) {
+      showToast(`کاربر ${action === 'activate' ? 'فعال' : 'غیرفعال'} شد`, 'success')
+      await fetchUsers()
+    } else {
+      const error = await response.json().catch(() => ({}))
+      showToast(error.message || 'خطا در تغییر وضعیت کاربر', 'error')
+    }
+  } catch {
+    showToast('خطا در ارتباط با سرور', 'error')
+  }
+}
+
+const closeAddModal = () => {
+  showAddModal.value = false
+  Object.assign(newUser, { name: '', email: '', phone: '', preferred_method: 'password', password: '' })
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  editingUser.value = {}
+}
+
+const closeViewModal = () => {
+  showViewModal.value = false
+  viewingUser.value = null
+}
+
+onMounted(() => {
+  fetchUsers()
+})
 </script>
 
 <style scoped>
