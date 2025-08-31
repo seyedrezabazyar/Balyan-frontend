@@ -38,7 +38,8 @@ export const useAuth = () => {
   const initialized = useState<boolean>('auth.initialized', () => false)
 
   const config = useRuntimeConfig()
-  const apiUrl = config.public.apiBase
+  // Use Nuxt server proxy endpoints ("/api"), not direct backend URL, to avoid CORS issues
+  const apiBase = ''
 
   const isLoggedIn = computed(() => !!(user.value && token.value))
 
@@ -69,7 +70,7 @@ export const useAuth = () => {
       requestOptions.body = options.body
     }
 
-    const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)
+    const response = await fetch(`${apiBase}${endpoint}`, requestOptions)
 
     let data: any
     const contentType = response.headers.get('content-type')
