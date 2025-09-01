@@ -74,6 +74,8 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+
 const { user, isLoggedIn, isAdmin, logout } = useAuth()
 const { showToast } = useToast()
 const { getInitials } = useUtils()
