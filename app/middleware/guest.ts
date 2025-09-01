@@ -1,4 +1,3 @@
-// app/middleware/guest.ts - ساده شده
 export default defineNuxtRouteMiddleware((to, from) => {
   // Only run on client side
   if (process.server) return

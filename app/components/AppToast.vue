@@ -20,7 +20,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { toasts, removeToast } = useToast()
 
 const getIcon = (type: string) => {

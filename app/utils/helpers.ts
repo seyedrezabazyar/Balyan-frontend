@@ -33,6 +33,18 @@ export const formatters = {
   }
 }
 
+// Standalone debounce export for direct imports
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
 // Utility functions
 export const utils = {
   // Debounce function
