@@ -28,7 +28,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const isRefreshing = ref(false)
 
 const activities = ref([

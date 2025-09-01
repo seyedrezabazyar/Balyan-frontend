@@ -1,11 +1,11 @@
 import type { User, Tokens, ApiResponse } from '~/types'
 
-const user = useState<User | null>('auth.user', () => null)
-const token = useState<string>('auth.token', () => '')
-const loading = useState<boolean>('auth.loading', () => false)
-const initialized = useState<boolean>('auth.initialized', () => false)
-
 export const useAuth = () => {
+  const user = useState<User | null>('auth.user', () => null)
+  const token = useState<string>('auth.token', () => '')
+  const loading = useState<boolean>('auth.loading', () => false)
+  const initialized = useState<boolean>('auth.initialized', () => false)
+  
   const config = useRuntimeConfig()
   const apiUrl = config.public.apiBase
 

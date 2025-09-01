@@ -90,7 +90,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { isAdmin } = useAuth()
 
 // Mock stats - در واقعیت باید از API بیاید

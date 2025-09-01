@@ -57,7 +57,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // Import all the reactive data, computed properties, and methods
 // from the profile-edit-page artifact
 

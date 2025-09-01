@@ -32,7 +32,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const showComingSoon = inject('showComingSoon')
 
 const primaryActions = [

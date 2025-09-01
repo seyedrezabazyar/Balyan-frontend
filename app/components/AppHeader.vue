@@ -73,7 +73,7 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { user, isLoggedIn, isAdmin, logout } = useAuth()
 const { showToast } = useToast()
 const { getInitials } = useUtils()
