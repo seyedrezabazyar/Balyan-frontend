@@ -1,4 +1,17 @@
-// app/composables/useAuth.ts - نسخه ساده و بهینه شده
+// app/composables/useAuth.ts - نسخه کامل با مدیریت نقش‌ها و دسترسی‌ها
+interface Permission {
+  id: number
+  name: string
+  display_name: string
+}
+
+interface Role {
+  id: number
+  name: string
+  display_name: string
+  permissions?: Permission[]
+}
+
 interface User {
   id: number
   name: string
@@ -10,6 +23,8 @@ interface User {
   preferred_method?: 'password' | 'otp'
   avatar_url?: string
   last_login_at?: string
+  roles?: Role[]
+  is_admin?: boolean
 }
 
 interface Tokens {
@@ -41,6 +56,66 @@ export const useAuth = () => {
   const apiUrl = config.public.apiBase
 
   const isLoggedIn = computed(() => !!(user.value && token.value))
+  
+  // Check if user has specific role
+  const hasRole = (roleName: string | string[]): boolean => {
+    if (!user.value?.roles) return false
+    
+    const userRoles = user.value.roles.map(r => r.name)
+    
+    if (Array.isArray(roleName)) {
+      return roleName.some(role => userRoles.includes(role))
+    }
+    
+    return userRoles.includes(roleName)
+  }
+  
+  // Check if user has specific permission
+  const hasPermission = (permissionName: string | string[]): boolean => {
+    if (!user.value?.roles) return false
+    
+    const userPermissions: string[] = []
+    user.value.roles.forEach(role => {
+      role.permissions?.forEach(permission => {
+        if (!userPermissions.includes(permission.name)) {
+          userPermissions.push(permission.name)
+        }
+      })
+    })
+    
+    if (Array.isArray(permissionName)) {
+      return permissionName.some(perm => userPermissions.includes(perm))
+    }
+    
+    return userPermissions.includes(permissionName)
+  }
+  
+  // Check if user is admin
+  const isAdmin = computed(() => {
+    return user.value?.is_admin || hasRole('admin')
+  })
+  
+  // Get all user permissions
+  const userPermissions = computed(() => {
+    const permissions: Permission[] = []
+    const addedIds = new Set<number>()
+    
+    user.value?.roles?.forEach(role => {
+      role.permissions?.forEach(permission => {
+        if (!addedIds.has(permission.id)) {
+          permissions.push(permission)
+          addedIds.add(permission.id)
+        }
+      })
+    })
+    
+    return permissions
+  })
+  
+  // Get all user roles
+  const userRoles = computed(() => {
+    return user.value?.roles || []
+  })
 
   // تابع API ساده‌تر
   const api = async <T = any>(
@@ -207,12 +282,12 @@ export const useAuth = () => {
   }
 
   // تایید OTP
-  const verifyOTP = async (identifier: string, otp: string) => {
+  const verifyOTP = async (identifier: string, otp: string, name?: string) => {
     loading.value = true
     try {
       const result = await api<ApiResponse>('/api/auth/verify-otp', {
         method: 'POST',
-        body: { identifier, otp } as any
+        body: { identifier, otp, ...(name && { name }) } as any
       })
 
       if (result.success && result.tokens && result.user) {
@@ -250,12 +325,39 @@ export const useAuth = () => {
       
       if (result.user) {
         user.value = result.user
+        // Save updated user data
+        if (process.client) {
+          localStorage.setItem('auth_user', JSON.stringify(result.user))
+        }
       }
       
       return result.user
     } catch {
       clearAuth()
       return null
+    }
+  }
+
+  // Update profile
+  const updateProfile = async (data: Partial<User>) => {
+    loading.value = true
+    try {
+      const result = await api<ApiResponse>('/api/auth/profile/update', {
+        method: 'POST',
+        body: data as any
+      })
+      
+      if (result.success && result.user) {
+        user.value = result.user
+        // Save updated user data
+        if (process.client) {
+          localStorage.setItem('auth_user', JSON.stringify(result.user))
+        }
+      }
+      
+      return result
+    } finally {
+      loading.value = false
     }
   }
 
@@ -270,6 +372,11 @@ export const useAuth = () => {
     loading: readonly(loading),
     initialized: readonly(initialized),
     isLoggedIn,
+    isAdmin,
+    userRoles,
+    userPermissions,
+    hasRole,
+    hasPermission,
     api,
     checkUserIdentifier,
     loginPassword,
@@ -277,6 +384,7 @@ export const useAuth = () => {
     verifyOTP,
     logout,
     fetchUser,
+    updateProfile,
     clearAuth,
     restoreAuth,
     initialize,

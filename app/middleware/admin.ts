@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   // Only run on client side after auth is initialized
   if (process.server) return
 
-  const { user, isLoggedIn, initialized, waitForInitialization } = useAuth()
+  const { user, isLoggedIn, initialized, isAdmin, hasRole } = useAuth()
   const { showToast } = useToast()
 
   // Wait for auth initialization if not ready
@@ -17,8 +17,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // Check if user has admin privileges
-  if (!user.value?.is_admin) {
+  if (!isAdmin.value && !hasRole('admin')) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
-    return navigateTo('/dashboard', { replace: true })
+    return navigateTo('/access-denied', { replace: true })
   }
 })
