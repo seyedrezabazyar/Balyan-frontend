@@ -97,4 +97,3 @@ li {
   background: #5a67d8;
 }
 </style>
-</template>
