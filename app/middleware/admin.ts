@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // Only run on client side after auth is initialized
   if (process.server) return
 
-  const { isLoggedIn, isAdmin, hasRole, waitForInitialization } = useAuth()
+  const { isLoggedIn, isAdmin, hasRole, waitForInitialization, user } = useAuth()
   const { showToast } = useToast()
 
   // Ensure auth initialization completes before checks
@@ -15,7 +15,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   // Check if user has admin privileges
-  if (!isAdmin.value && !hasRole(['admin', 'super-admin', 'super_admin'])) {
+  // Check both is_admin field and roles
+  const hasAdminAccess = user.value?.is_admin === true || 
+                         isAdmin.value || 
+                         hasRole(['admin', 'super-admin', 'super_admin'])
+  
+  if (!hasAdminAccess) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
     return navigateTo('/access-denied', { replace: true })
   }
