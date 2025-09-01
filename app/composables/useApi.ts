@@ -110,6 +110,8 @@ export const useApi = () => {
       const token = getAccessToken()
       if (token) {
         requestHeaders.Authorization = `Bearer ${token}`
+      } else {
+        console.warn('No access token found for authenticated request to:', endpoint)
       }
     }
 
