@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { storeToRefs } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -123,5 +124,114 @@ export const useAuthStore = defineStore('auth', () => {
 
 // Export composable wrapper
 export const useAuth = () => {
-  return useAuthStore();
+  const store = useAuthStore();
+  const { user, token, isAdmin, isLoggedIn, initialized, loading } = storeToRefs(store);
+
+  const api = async (url: string, options: { method?: string; body?: any; headers?: Record<string, string> } = {}) => {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      ...(options.headers || {})
+    };
+
+    if (token.value) {
+      headers.Authorization = `Bearer ${token.value}`;
+    }
+
+    return await $fetch(url, {
+      method: options.method || 'GET',
+      headers,
+      body: options.body
+    });
+  };
+
+  const updateProfile = async (data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    username?: string;
+    preferred_method?: 'password' | 'otp';
+  }) => {
+    const result: any = await api('/api/auth/profile/update', {
+      method: 'POST',
+      body: data
+    });
+
+    if (result?.success && result.user) {
+      // Merge and persist updated user
+      user.value = { ...(user.value || {}), ...result.user } as any;
+      if (process.client) {
+        localStorage.setItem('auth_user', JSON.stringify(user.value));
+      }
+    }
+
+    return result;
+  };
+
+  const setPassword = async (password: string, password_confirmation: string) => {
+    return await api('/api/auth/profile/password', {
+      method: 'POST',
+      body: { action: 'set', password, password_confirmation }
+    });
+  };
+
+  const updatePassword = async (
+    current_password: string,
+    password: string,
+    password_confirmation: string
+  ) => {
+    return await api('/api/auth/profile/password', {
+      method: 'POST',
+      body: { action: 'change', current_password, password, password_confirmation }
+    });
+  };
+
+  const uploadAvatar = async (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    // Note: $fetch handles FormData automatically
+    return await $fetch('/api/auth/profile/avatar', {
+      method: 'POST',
+      headers: token.value ? { Authorization: `Bearer ${token.value}` } : {},
+      body: formData
+    });
+  };
+
+  const logoutAll = async () => {
+    const result: any = await api('/api/auth/profile/logout-all', { method: 'POST' });
+    // Clear local auth and rely on page flow to redirect
+    store.clearAuth();
+    return result;
+  };
+
+  return {
+    // Refs
+    user,
+    token,
+    isAdmin,
+    isLoggedIn,
+    initialized,
+    loading,
+
+    // Helpers
+    api,
+
+    // Methods from store
+    hasPermission: store.hasPermission,
+    fetchUser: store.fetchUser,
+    logout: store.logout,
+    clearAuth: store.clearAuth,
+    restoreAuth: store.restoreAuth,
+    checkUserIdentifier: store.checkUserIdentifier,
+    loginPassword: store.loginPassword,
+    sendOTP: store.sendOTP,
+    verifyOTP: store.verifyOTP,
+
+    // Profile methods
+    updateProfile,
+    setPassword,
+    updatePassword,
+    uploadAvatar,
+    logoutAll
+  };
 };

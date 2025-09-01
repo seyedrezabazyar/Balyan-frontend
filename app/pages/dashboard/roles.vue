@@ -266,7 +266,7 @@ interface PermissionGroup {
 }
 
 // Composables
-const { api } = useApi()
+const { api } = useAuth()
 const { showToast } = useToast()
 
 // State

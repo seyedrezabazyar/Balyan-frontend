@@ -37,8 +37,7 @@ definePageMeta({
   layout: 'dashboard'
 })
 
-const { user, token, isAdmin, hasPermission, fetchUser, clearAuth } = useAuth()
-const { api } = useApi()
+const { user, token, isAdmin, hasPermission, fetchUser, clearAuth, api } = useAuth()
 
 const userInfo = computed(() => ({
   user: user.value,
