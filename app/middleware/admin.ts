@@ -17,7 +17,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // Check if user has admin privileges
-  if (!isAdmin.value && !hasRole('admin')) {
+  if (!isAdmin.value) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
     return navigateTo('/access-denied', { replace: true })
   }
