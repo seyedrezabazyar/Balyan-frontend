@@ -1,3 +1,5 @@
+import { validators, formatters, utils } from '~/utils/helpers'
+
 export const useUtils = () => {
   /**
    * Get initials from a name string
@@ -129,6 +131,9 @@ export const useUtils = () => {
     debounce,
     generateId,
     isEmpty,
-    deepClone
+    deepClone,
+    validators,
+    formatters,
+    utils
   }
 }
