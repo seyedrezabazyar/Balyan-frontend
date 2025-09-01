@@ -11,20 +11,55 @@
       <div class="welcome-card">
         <h1>{{ displayName }}! 👋</h1>
         <p>{{ welcomeMessage }}</p>
+        <div class="user-badge" :class="{ 'admin-badge': user?.is_admin }">
+          {{ user?.is_admin ? '🛡️ مدیر سیستم' : '👤 کاربر عادی' }}
+        </div>
       </div>
 
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div v-for="stat in dashboardStats" :key="stat.title" class="stat-card">
-          <div :class="['stat-icon', stat.color]">
-            {{ stat.icon }}
+      <!-- User Section - Visible to all users -->
+      <div class="section user-section">
+        <div class="section-header">
+          <h2>📊 بخش کاربران</h2>
+          <p>این بخش برای تمام کاربران قابل مشاهده است</p>
+        </div>
+        
+        <!-- User Stats Grid -->
+        <div class="stats-grid">
+          <div v-for="stat in userStats" :key="stat.title" class="stat-card">
+            <div :class="['stat-icon', stat.color]">
+              {{ stat.icon }}
+            </div>
+            <div class="stat-content">
+              <h3>{{ stat.title }}</h3>
+              <p class="stat-value">{{ stat.value }}</p>
+              <p :class="['stat-change', `change-${stat.changeType}`]">
+                {{ stat.changeType === 'positive' ? '↗' : '↘' }} {{ stat.change }}
+              </p>
+            </div>
           </div>
-          <div class="stat-content">
-            <h3>{{ stat.title }}</h3>
-            <p class="stat-value">{{ stat.value }}</p>
-            <p :class="['stat-change', `change-${stat.changeType}`]">
-              {{ stat.changeType === 'positive' ? '↗' : '↘' }} {{ stat.change }}
-            </p>
+        </div>
+      </div>
+
+      <!-- Admin Section - Only visible to admins -->
+      <div v-if="user?.is_admin" class="section admin-section">
+        <div class="section-header">
+          <h2>⚙️ بخش مدیریت</h2>
+          <p>این بخش فقط برای مدیران قابل مشاهده است</p>
+        </div>
+        
+        <!-- Admin Stats Grid -->
+        <div class="stats-grid">
+          <div v-for="stat in adminStats" :key="stat.title" class="stat-card admin-stat">
+            <div :class="['stat-icon', stat.color]">
+              {{ stat.icon }}
+            </div>
+            <div class="stat-content">
+              <h3>{{ stat.title }}</h3>
+              <p class="stat-value">{{ stat.value }}</p>
+              <p :class="['stat-change', `change-${stat.changeType}`]">
+                {{ stat.changeType === 'positive' ? '↗' : '↘' }} {{ stat.change }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -96,9 +131,44 @@ const welcomeMessage = computed(() => {
 })
 
 // Data
-const dashboardStats = ref([
+const userStats = ref([
   {
-    title: 'کاربران فعال',
+    title: 'پروفایل شما',
+    value: 'فعال',
+    change: 'بروزرسانی شده',
+    changeType: 'positive',
+    icon: '👤',
+    color: 'primary'
+  },
+  {
+    title: 'آخرین ورود',
+    value: 'امروز',
+    change: '2 ساعت پیش',
+    changeType: 'positive',
+    icon: '🔐',
+    color: 'success'
+  },
+  {
+    title: 'پیام‌های شما',
+    value: '5',
+    change: '2 جدید',
+    changeType: 'positive',
+    icon: '💬',
+    color: 'info'
+  },
+  {
+    title: 'فعالیت‌ها',
+    value: '23',
+    change: 'این هفته',
+    changeType: 'positive',
+    icon: '📊',
+    color: 'warning'
+  }
+])
+
+const adminStats = ref([
+  {
+    title: 'کل کاربران',
     value: '1,247',
     change: '+12%',
     changeType: 'positive',
@@ -106,28 +176,28 @@ const dashboardStats = ref([
     color: 'primary'
   },
   {
-    title: 'درآمد ماهانه',
-    value: '45.2M',
-    change: '+8%',
+    title: 'کاربران آنلاین',
+    value: '89',
+    change: '+5',
     changeType: 'positive',
-    icon: '💰',
+    icon: '🟢',
     color: 'success'
   },
   {
-    title: 'سفارشات جدید',
-    value: '189',
-    change: '-3%',
-    changeType: 'negative',
-    icon: '📦',
+    title: 'درخواست‌های جدید',
+    value: '34',
+    change: '+8',
+    changeType: 'positive',
+    icon: '📨',
     color: 'warning'
   },
   {
-    title: 'رشد فروش',
-    value: '24%',
-    change: '+5%',
-    changeType: 'positive',
+    title: 'گزارشات سیستم',
+    value: '12',
+    change: '-2',
+    changeType: 'negative',
     icon: '📈',
-    color: 'info'
+    color: 'danger'
   }
 ])
 
@@ -238,6 +308,7 @@ const refreshActivity = () => {
   padding: 2rem;
   box-shadow: var(--shadow);
   text-align: center;
+  position: relative;
 }
 
 .welcome-card h1 {
@@ -248,7 +319,62 @@ const refreshActivity = () => {
 
 .welcome-card p {
   color: var(--gray);
+  margin: 0.5rem 0;
+}
+
+.user-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+.user-badge.admin-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.section {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-top: 2rem;
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--gray-100);
+}
+
+.section-header h2 {
+  color: var(--dark);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+
+.section-header p {
+  color: var(--gray-600);
   margin: 0;
+  font-size: 0.875rem;
+}
+
+.user-section {
+  border-top: 3px solid var(--primary);
+}
+
+.admin-section {
+  border-top: 3px solid #764ba2;
+  background: linear-gradient(to bottom, rgba(118, 75, 162, 0.02), white);
+}
+
+.admin-stat {
+  background: linear-gradient(to bottom right, rgba(118, 75, 162, 0.05), white);
 }
 
 .stats-grid {

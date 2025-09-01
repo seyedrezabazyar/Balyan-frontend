@@ -80,23 +80,97 @@ export const useAuthStore = defineStore('auth', () => {
     initialized.value = true;
   };
 
-  const checkUserIdentifier = async () => {
-    // TODO: Implement
-    return { success: false };
+  const checkUserIdentifier = async (identifier: string) => {
+    try {
+      // For demo, we'll check if user exists
+      return { 
+        success: true, 
+        exists: true,
+        method: 'password'
+      };
+    } catch (error) {
+      return { success: false };
+    }
   };
 
-  const loginPassword = async () => {
-    // TODO: Implement
-    return { success: false };
+  const loginPassword = async (identifier: string, password: string) => {
+    try {
+      loading.value = true;
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier, password }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.statusMessage || 'خطا در ورود');
+      }
+      
+      if (result.success) {
+        token.value = result.token;
+        user.value = result.user;
+        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('auth_user', JSON.stringify(result.user));
+        showToast('ورود با موفقیت انجام شد', 'success');
+        return { success: true };
+      }
+      
+      throw new Error(result.message || 'خطا در ورود');
+    } catch (error: any) {
+      showToast(error.message || 'خطا در ورود', 'error');
+      return { success: false, message: error.message };
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const register = async (identifier: string, password: string, name: string) => {
+    try {
+      loading.value = true;
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier, password, name }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.statusMessage || 'خطا در ثبت نام');
+      }
+      
+      if (result.success) {
+        token.value = result.token;
+        user.value = result.user;
+        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('auth_user', JSON.stringify(result.user));
+        showToast('ثبت نام با موفقیت انجام شد', 'success');
+        return { success: true };
+      }
+      
+      throw new Error(result.message || 'خطا در ثبت نام');
+    } catch (error: any) {
+      showToast(error.message || 'خطا در ثبت نام', 'error');
+      return { success: false, message: error.message };
+    } finally {
+      loading.value = false;
+    }
   };
 
   const sendOTP = async () => {
-    // TODO: Implement
+    // TODO: Implement OTP
+    showToast('ارسال کد یکبار مصرف در حال حاضر غیرفعال است', 'info');
     return { success: false };
   };
 
   const verifyOTP = async () => {
-    // TODO: Implement
+    // TODO: Implement OTP verification
     return { success: false };
   };
 
@@ -116,6 +190,7 @@ export const useAuthStore = defineStore('auth', () => {
     restoreAuth,
     checkUserIdentifier,
     loginPassword,
+    register,
     sendOTP,
     verifyOTP
   };

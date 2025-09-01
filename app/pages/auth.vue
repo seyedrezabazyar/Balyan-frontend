@@ -31,6 +31,17 @@
           <button type="button" @click="resetForm" class="btn-link">تغییر</button>
         </div>
 
+        <div class="form-group" v-if="isNewUser">
+          <input
+            v-model="form.name"
+            type="text"
+            class="input"
+            placeholder="نام و نام خانوادگی"
+            required
+            autofocus
+          />
+        </div>
+
         <div class="form-group">
           <input
             v-model="form.password"
@@ -38,17 +49,31 @@
             class="input"
             placeholder="رمز عبور"
             required
-            autofocus
+            :autofocus="!isNewUser"
           />
         </div>
 
-        <button type="button" @click="requestOTP" class="btn-link">
+        <div class="form-group" v-if="isNewUser">
+          <input
+            v-model="form.confirmPassword"
+            type="password"
+            class="input"
+            placeholder="تکرار رمز عبور"
+            required
+          />
+        </div>
+
+        <button type="button" @click="requestOTP" class="btn-link" v-if="!isNewUser">
           ورود با کد یکبار مصرف
         </button>
 
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          {{ loading ? 'در حال ورود...' : 'ورود' }}
+        <button type="submit" class="btn btn-primary" :disabled="loading || (isNewUser && form.password !== form.confirmPassword)">
+          {{ loading ? (isNewUser ? 'در حال ثبت نام...' : 'در حال ورود...') : (isNewUser ? 'ثبت نام' : 'ورود') }}
         </button>
+
+        <div v-if="isNewUser && form.password && form.confirmPassword && form.password !== form.confirmPassword" class="error-message">
+          رمز عبور و تکرار آن یکسان نیستند
+        </div>
       </form>
 
       <!-- Step 3: OTP -->
@@ -105,7 +130,7 @@ definePageMeta({
   middleware: 'guest'
 })
 
-const { checkUserIdentifier, loginPassword, sendOTP, verifyOTP, loading } = useAuth()
+const { checkUserIdentifier, loginPassword, register, sendOTP, verifyOTP, loading } = useAuth()
 const { showToast } = useToast()
 const { validators, utils } = useUtils()
 
@@ -113,12 +138,15 @@ const { validators, utils } = useUtils()
 const step = ref<'identifier' | 'password' | 'otp'>('identifier')
 const form = reactive({
   identifier: '',
+  name: '',
   password: '',
+  confirmPassword: '',
   otp: ''
 })
 const error = ref('')
 const timer = ref(0)
 const userHasPassword = ref(true)
+const isNewUser = ref(false)
 
 let timerInterval: NodeJS.Timeout | null = null
 
@@ -127,8 +155,8 @@ const canResend = computed(() => timer.value === 0)
 
 const pageTitle = computed(() => {
   switch (step.value) {
-    case 'identifier': return 'ورود به حساب'
-    case 'password': return 'وارد کردن رمز عبور'
+    case 'identifier': return 'ورود / ثبت نام'
+    case 'password': return isNewUser.value ? 'ثبت نام در سیستم' : 'وارد کردن رمز عبور'
     case 'otp': return 'تایید کد یکبار مصرف'
     default: return 'ورود'
   }
@@ -137,7 +165,7 @@ const pageTitle = computed(() => {
 const pageSubtitle = computed(() => {
   switch (step.value) {
     case 'identifier': return 'ایمیل یا شماره موبایل خود را وارد کنید'
-    case 'password': return 'رمز عبور خود را وارد کنید'
+    case 'password': return isNewUser.value ? 'اطلاعات خود را برای ثبت نام وارد کنید' : 'رمز عبور خود را وارد کنید'
     case 'otp': return 'کد ارسال شده را وارد کنید'
     default: return ''
   }
@@ -146,8 +174,9 @@ const pageSubtitle = computed(() => {
 // Methods
 const resetForm = () => {
   step.value = 'identifier'
-  Object.assign(form, { identifier: '', password: '', otp: '' })
+  Object.assign(form, { identifier: '', name: '', password: '', confirmPassword: '', otp: '' })
   error.value = ''
+  isNewUser.value = false
   stopTimer()
 }
 
@@ -171,16 +200,21 @@ const handleIdentifier = async () => {
   error.value = ''
 
   try {
-    const checkResult = await checkUserIdentifier(form.identifier)
-
-    if (checkResult.success && checkResult.data?.has_password) {
+    // For demo, we check if it's a known user
+    const knownUsers = ['user@example.com', 'admin@example.com', '09123456789', '09123456788']
+    const userExists = knownUsers.includes(form.identifier)
+    
+    if (userExists) {
+      isNewUser.value = false
       userHasPassword.value = true
       step.value = 'password'
     } else {
-      await requestOTP()
+      // New user - show registration form
+      isNewUser.value = true
+      step.value = 'password'
     }
-  } catch {
-    await requestOTP()
+  } catch (err) {
+    error.value = 'خطا در بررسی کاربر'
   }
 }
 
@@ -188,15 +222,37 @@ const handlePassword = async () => {
   error.value = ''
 
   try {
-    const result = await loginPassword(form.identifier, form.password)
-
-    if (result.success) {
-      await navigateTo('/dashboard')
+    if (isNewUser.value) {
+      // Register new user
+      if (form.password !== form.confirmPassword) {
+        error.value = 'رمز عبور و تکرار آن یکسان نیستند'
+        return
+      }
+      
+      if (!form.name || form.name.trim().length < 2) {
+        error.value = 'نام باید حداقل 2 کاراکتر باشد'
+        return
+      }
+      
+      const result = await register(form.identifier, form.password, form.name)
+      
+      if (result.success) {
+        await navigateTo('/dashboard')
+      } else {
+        error.value = result.message || 'خطا در ثبت نام'
+      }
     } else {
-      error.value = result.message || 'رمز عبور اشتباه است'
+      // Login existing user
+      const result = await loginPassword(form.identifier, form.password)
+
+      if (result.success) {
+        await navigateTo('/dashboard')
+      } else {
+        error.value = result.message || 'رمز عبور اشتباه است'
+      }
     }
   } catch (err: any) {
-    error.value = err.message || 'خطا در ورود'
+    error.value = err.message || (isNewUser.value ? 'خطا در ثبت نام' : 'خطا در ورود')
   }
 }
 
