@@ -102,7 +102,16 @@ export const useAuth = () => {
     if (savedToken && savedUser) {
       try {
         token.value = savedToken
-        user.value = JSON.parse(savedUser)
+        const userData = JSON.parse(savedUser)
+        
+        // Ensure is_admin is set based on roles if not provided
+        if (userData.is_admin === undefined && userData.roles) {
+          userData.is_admin = userData.roles.some((role: any) => 
+            role.name === 'admin' || role.name === 'super-admin'
+          )
+        }
+        
+        user.value = userData
         // Ensure both token keys are set for compatibility
         storage.set('auth_token', savedToken)
         storage.set('access_token', savedToken)
@@ -131,6 +140,14 @@ export const useAuth = () => {
 
       if (result.success && result.tokens && result.user) {
         console.log('Login successful, user data:', result.user)
+        
+        // Ensure is_admin is set based on roles if not provided
+        if (result.user.is_admin === undefined && result.user.roles) {
+          result.user.is_admin = result.user.roles.some((role: any) => 
+            role.name === 'admin' || role.name === 'super-admin'
+          )
+        }
+        
         saveAuth(result.user, result.tokens)
         // Fetch full user data with permissions after login
         await fetchUser()
@@ -163,6 +180,14 @@ export const useAuth = () => {
 
       if (result.success && result.tokens && result.user) {
         console.log('OTP verification successful, user data:', result.user)
+        
+        // Ensure is_admin is set based on roles if not provided
+        if (result.user.is_admin === undefined && result.user.roles) {
+          result.user.is_admin = result.user.roles.some((role: any) => 
+            role.name === 'admin' || role.name === 'super-admin'
+          )
+        }
+        
         saveAuth(result.user, result.tokens)
         // Fetch full user data with permissions after login
         await fetchUser()
@@ -192,12 +217,42 @@ export const useAuth = () => {
     try {
       const result = await api<ApiResponse>('/api/auth/user')
       console.log('Fetched user data from API:', result)
-      if (result.user) {
-        user.value = result.user
-        storage.set('auth_user', JSON.stringify(result.user))
-        console.log('User data saved with permissions:', result.user.permissions)
+      
+      // Handle both direct user response and wrapped response
+      const userData = result.user || result.data || result
+      
+      if (userData) {
+        // Ensure is_admin is properly set
+        if (userData.is_admin === undefined && userData.roles) {
+          // Check if user has admin role
+          userData.is_admin = userData.roles.some((role: any) => 
+            role.name === 'admin' || role.name === 'super-admin'
+          )
+        }
+        
+        // Extract permissions from roles if not directly provided
+        if (!userData.permissions && userData.roles) {
+          const allPermissions = new Set<string>()
+          userData.roles.forEach((role: any) => {
+            if (role.permissions) {
+              role.permissions.forEach((perm: any) => {
+                allPermissions.add(typeof perm === 'string' ? perm : perm.name)
+              })
+            }
+          })
+          userData.permissions = Array.from(allPermissions)
+        }
+        
+        user.value = userData
+        storage.set('auth_user', JSON.stringify(userData))
+        console.log('User data saved:', {
+          name: userData.name,
+          is_admin: userData.is_admin,
+          roles: userData.roles?.map((r: any) => r.name || r),
+          permissions: userData.permissions
+        })
       }
-      return result.user
+      return userData
     } catch (error) {
       console.error('Failed to fetch user:', error)
       clearAuth()

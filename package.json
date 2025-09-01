@@ -15,6 +15,7 @@
     "clean": "rm -rf .nuxt dist .output node_modules/.cache"
   },
   "dependencies": {
+    "@nuxt/icon": "^2.0.0",
     "nuxt": "^3.13.0",
     "vue": "^3.5.0"
   },

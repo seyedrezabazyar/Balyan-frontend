@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware(async () => {
   if (process.server) return
 
-  const { isLoggedIn, isAdmin, user, initialized } = useAuth()
+  const { isLoggedIn, isAdmin, user, initialized, fetchUser, hasRole, hasPermission } = useAuth()
   const { showToast } = useToast()
 
   // Wait for initialization
@@ -18,6 +18,11 @@ export default defineNuxtRouteMiddleware(async () => {
     return navigateTo('/auth', { replace: true })
   }
 
+  // Fetch fresh user data if needed
+  if (!user.value?.permissions && !user.value?.is_admin) {
+    await fetchUser()
+  }
+
   // Debug: Log user information
   console.log('Admin Middleware Debug:', {
     user: user.value,
@@ -27,14 +32,15 @@ export default defineNuxtRouteMiddleware(async () => {
     permissions: user.value?.permissions
   })
 
-  // Check if user has admin access or users.view permission
-  const hasAdminAccess = user.value?.is_admin || 
+  // Check if user has admin access
+  const hasAdminAccess = user.value?.is_admin === true || 
                         isAdmin.value || 
-                        user.value?.permissions?.includes('users.view')
+                        hasRole(['admin', 'super-admin']) ||
+                        hasPermission(['users.view', 'users.manage', 'admin.access'])
 
   if (!hasAdminAccess) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
-    console.error('Access denied. User does not have admin access or users.view permission')
-    return navigateTo('/access-denied', { replace: true })
+    console.error('Access denied. User does not have admin access')
+    return navigateTo('/dashboard', { replace: true })
   }
 })
