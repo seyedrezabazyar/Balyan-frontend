@@ -17,7 +17,8 @@ export interface User {
   failed_attempts?: number
   created_at: string
   updated_at?: string
-  roles?: Role[]
+  roles?: string[] | Role[]
+  permissions?: string[]
 }
 
 export interface Role {

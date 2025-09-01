@@ -18,6 +18,15 @@ export default defineNuxtRouteMiddleware(async () => {
     return navigateTo('/auth', { replace: true })
   }
 
+  // Debug: Log user information
+  console.log('Admin Middleware Debug:', {
+    user: user.value,
+    is_admin: user.value?.is_admin,
+    isAdmin: isAdmin.value,
+    roles: user.value?.roles,
+    permissions: user.value?.permissions
+  })
+
   const hasAdminAccess = user.value?.is_admin || isAdmin.value
 
   if (!hasAdminAccess) {

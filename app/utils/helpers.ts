@@ -33,19 +33,22 @@ export const formatters = {
   }
 }
 
+// Debounce function - exported separately for easier access
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout | null = null
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
 // Utility functions
 export const utils = {
-  // Debounce function
-  debounce: <T extends (...args: any[]) => any>(
-    func: T,
-    wait: number
-  ): ((...args: Parameters<T>) => void) => {
-    let timeout: NodeJS.Timeout | null = null
-    return (...args: Parameters<T>) => {
-      if (timeout) clearTimeout(timeout)
-      timeout = setTimeout(() => func(...args), wait)
-    }
-  },
+  // Debounce function (also available as utils.debounce)
+  debounce,
 
   // Get identifier type
   getIdentifierType: (identifier: string): 'email' | 'phone' | 'unknown' => {
