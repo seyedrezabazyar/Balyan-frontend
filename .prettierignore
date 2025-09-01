@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Nuxt
+.nuxt
+.output
+.data
+dist
+
+# Misc
+*.min.js
+*.min.css
+coverage
+.nyc_output

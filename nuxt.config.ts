@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   srcDir: 'app/',
   compatibilityDate: '2024-11-01',
 
-  css: ['~/assets/css/main.css'],
+  css: ['@/assets/css/main.css'],
 
   typescript: {
     typeCheck: false,
@@ -59,11 +59,24 @@ export default defineNuxtConfig({
   components: [
     {
       path: '~/components',
-      pathPrefix: false
+      pathPrefix: false,
+      global: false
     }
   ],
 
   imports: {
-    dirs: ['composables/**', 'utils/**']
+    dirs: ['composables/**', 'utils/**', 'types/**']
+  },
+
+  experimental: {
+    payloadExtraction: false,
+    inlineSSRStyles: false,
+    renderJsonPayloads: true
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ['vue', 'vue-router']
+    }
   }
 })

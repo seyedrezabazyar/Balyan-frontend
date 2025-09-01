@@ -1,19 +1,4 @@
-interface User {
-  id: number
-  name: string
-  username?: string
-  email?: string
-  phone?: string
-  email_verified_at?: string
-  phone_verified_at?: string
-  preferred_method: 'password' | 'otp'
-  last_login_at?: string
-  created_at: string
-  is_admin?: boolean
-  status?: string
-  locked_until?: string
-  failed_attempts?: number
-}
+import type { User } from '~/types'
 
 interface CreateUserData {
   name: string

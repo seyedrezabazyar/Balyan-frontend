@@ -1,50 +1,5 @@
-// app/composables/useAuth.ts - نسخه کامل با مدیریت نقش‌ها و دسترسی‌ها
-interface Permission {
-  id: number
-  name: string
-  display_name: string
-}
-
-interface Role {
-  id: number
-  name: string
-  display_name: string
-  permissions?: Permission[]
-}
-
-interface User {
-  id: number
-  name: string
-  email?: string
-  phone?: string
-  username?: string
-  email_verified_at?: string
-  phone_verified_at?: string
-  preferred_method?: 'password' | 'otp'
-  avatar_url?: string
-  last_login_at?: string
-  roles?: Role[]
-  is_admin?: boolean
-}
-
-interface Tokens {
-  access_token: string
-  refresh_token?: string
-  token_type?: string
-  expires_in?: number
-}
-
-interface ApiResponse<T = any> {
-  success: boolean
-  message?: string
-  data?: T
-  user?: User
-  tokens?: Tokens
-  is_new_user?: boolean
-  status?: string
-  type?: string
-  debug_code?: string
-}
+// app/composables/useAuth.ts
+import type { User, Role, Permission, Tokens, ApiResponse } from '~/types'
 
 export const useAuth = () => {
   const user = useState<User | null>('auth.user', () => null)
