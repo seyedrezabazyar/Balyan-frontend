@@ -1,11 +1,8 @@
-// app/middleware/guest.ts - ساده شده
-export default defineNuxtRouteMiddleware((to, from) => {
-  // Only run on client side
+export default defineNuxtRouteMiddleware(() => {
   if (process.server) return
 
   const { isLoggedIn } = useAuth()
 
-  // Redirect authenticated users to dashboard
   if (isLoggedIn.value) {
     return navigateTo('/dashboard', { replace: true })
   }
