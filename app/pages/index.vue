@@ -8,12 +8,17 @@
         <p>مدیریت کاربران و احراز هویت با تکنولوژی‌های مدرن</p>
 
         <div class="hero-actions">
-          <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
-            شروع کنید
-          </NuxtLink>
-          <NuxtLink v-else to="/dashboard" class="btn btn-primary">
-            ورود به داشبورد
-          </NuxtLink>
+          <ClientOnly>
+            <template #fallback>
+              <a href="/auth" class="btn btn-primary">شروع کنید</a>
+            </template>
+            <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
+              شروع کنید
+            </NuxtLink>
+            <NuxtLink v-else to="/dashboard" class="btn btn-primary">
+              ورود به داشبورد
+            </NuxtLink>
+          </ClientOnly>
         </div>
       </div>
 
@@ -30,8 +35,18 @@
             <div class="demo-user">
               <div class="demo-avatar">👤</div>
               <div class="demo-info">
-                <div class="demo-name">{{ displayName }}</div>
-                <div class="demo-status">{{ isLoggedIn ? 'آنلاین' : 'آفلاین' }}</div>
+                <div class="demo-name">
+                  <ClientOnly>
+                    <template #fallback>کاربر مهمان</template>
+                    {{ displayName }}
+                  </ClientOnly>
+                </div>
+                <div class="demo-status">
+                  <ClientOnly>
+                    <template #fallback>آفلاین</template>
+                    {{ isLoggedIn ? 'آنلاین' : 'آفلاین' }}
+                  </ClientOnly>
+                </div>
               </div>
             </div>
             <div class="demo-stats">

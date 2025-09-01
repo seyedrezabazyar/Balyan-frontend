@@ -271,6 +271,12 @@ export const useAuth = () => {
 
       if (result.success && result.tokens && result.user) {
         saveAuth(result.user, result.tokens)
+        // Fetch full user profile to ensure roles/is_admin are populated before guards run
+        try {
+          await fetchUser()
+        } catch {
+          // ignore profile fetch errors here
+        }
       }
 
       return result
@@ -304,6 +310,12 @@ export const useAuth = () => {
 
       if (result.success && result.tokens && result.user) {
         saveAuth(result.user, result.tokens)
+        // Fetch full user profile to ensure roles/is_admin are populated before guards run
+        try {
+          await fetchUser()
+        } catch {
+          // ignore profile fetch errors here
+        }
       }
 
       return result
@@ -336,10 +348,11 @@ export const useAuth = () => {
       })
       
       if (result.user) {
-        user.value = result.user
+        // Merge to preserve existing flags like is_admin/roles if backend omits them
+        user.value = { ...(user.value || {}), ...result.user }
         // Save updated user data
         if (process.client) {
-          localStorage.setItem('auth_user', JSON.stringify(result.user))
+          localStorage.setItem('auth_user', JSON.stringify(user.value))
         }
       }
       
