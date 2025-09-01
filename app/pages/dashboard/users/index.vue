@@ -142,6 +142,7 @@
               </span>
             </th>
             <th>اطلاعات تماس</th>
+            <th>نقش‌ها</th>
             <th>وضعیت</th>
             <th>روش ورود</th>
             <th @click="sortBy('last_login_at')" class="sortable">
@@ -206,6 +207,12 @@
                 </div>
               </div>
             </td>
+            <td>
+              <div class="roles-list">
+                <span v-for="role in user.roles || []" :key="role.id" class="role-badge">{{ role.display_name || role.name }}</span>
+                <span v-if="!user.roles || user.roles.length === 0" class="role-badge empty">-</span>
+              </div>
+            </td>
             <td class="status-cell">
               <span :class="['status-badge', getUserStatus(user)]">
                 {{ getUserStatusText(user) }}
@@ -231,6 +238,14 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+                <button @click="manageRoles(user)" class="action-btn" title="مدیریت نقش‌ها">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 7H4" />
+                    <path d="M14 17H4" />
+                    <circle cx="17" cy="17" r="3" />
+                    <circle cx="7" cy="7" r="3" />
                   </svg>
                 </button>
                 <button
@@ -485,6 +500,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Role Management Modal -->
+    <div v-if="showRoleModal" class="modal-overlay" @click="closeRoleModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>مدیریت نقش‌های {{ selectedUser?.name }}</h3>
+          <button @click="closeRoleModal" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="rolesLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>در حال بارگذاری نقش‌ها...</p>
+          </div>
+          <div v-else>
+            <div class="roles-grid">
+              <label v-for="role in allRoles" :key="role.id" class="role-item">
+                <input type="checkbox" :checked="userHasRole(role)" @change="toggleRole(role)" />
+                <span>{{ role.display_name || role.name }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -510,6 +549,8 @@ const {
   resetUserPassword
 } = useUsers()
 
+const { roles: rolesRef, fetchRoles, assignRoleToUser, removeRoleFromUser } = useRoles()
+
 // State
 const searchQuery = ref('')
 const sortField = ref('created_at')
@@ -534,10 +575,13 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showViewModal = ref(false)
 const showResetPasswordModal = ref(false)
+const showRoleModal = ref(false)
 
 const editingUser = ref({})
 const viewingUser = ref(null)
 const resetingUser = ref(null)
+const selectedUser = ref(null)
+const rolesLoading = ref(false)
 
 const newUser = reactive({
   name: '',
@@ -554,6 +598,7 @@ const resetPasswordForm = reactive({
 
 // Computed
 const userStats = computed(() => stats.value)
+const allRoles = computed(() => rolesRef.value || [])
 
 const visiblePages = computed(() => {
   const total = pagination.last_page
@@ -743,6 +788,35 @@ const resetPassword = (user) => {
   showResetPasswordModal.value = true
 }
 
+const manageRoles = (user) => {
+  selectedUser.value = user
+  showRoleModal.value = true
+}
+
+const closeRoleModal = () => {
+  showRoleModal.value = false
+  selectedUser.value = null
+}
+
+const userHasRole = (role) => {
+  if (!selectedUser.value?.roles) return false
+  return selectedUser.value.roles.some(r => r.id === role.id)
+}
+
+const toggleRole = async (role) => {
+  if (!selectedUser.value) return
+  const hasRole = userHasRole(role)
+  const ok = hasRole
+    ? await removeRoleFromUser(selectedUser.value.id, role.id)
+    : await assignRoleToUser(selectedUser.value.id, role.id)
+  if (ok) {
+    await loadUsers()
+    // update selectedUser from refreshed list
+    const updated = users.value.find(u => u.id === selectedUser.value.id)
+    if (updated) selectedUser.value = updated
+  }
+}
+
 const handleResetPassword = async () => {
   if (!isValidPassword.value || !resetingUser.value) return
 
@@ -781,10 +855,13 @@ const closeResetPasswordModal = () => {
 
 // Lifecycle
 onMounted(async () => {
+  rolesLoading.value = true
   await Promise.all([
     loadUsers(),
-    fetchUserStats()
+    fetchUserStats(),
+    fetchRoles(true)
   ])
+  rolesLoading.value = false
 })
 </script>
 
@@ -860,5 +937,35 @@ onMounted(async () => {
 
 .warning .stat-value {
   color: #f59e0b;
+}
+
+.roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-badge {
+  background: var(--gray-100);
+  color: var(--dark);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.role-badge.empty {
+  opacity: 0.6;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.role-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

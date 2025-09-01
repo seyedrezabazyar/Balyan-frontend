@@ -17,8 +17,11 @@ export default defineNuxtRouteMiddleware((to, from) => {
   }
 
   // Check if user has admin privileges
-  if (!user.value?.is_admin) {
+  const hasAdminRole = Array.isArray((user.value as any)?.roles) && (user.value as any).roles.some((r: any) => r.name === 'admin')
+  const isAdmin = !!user.value?.is_admin || hasAdminRole
+
+  if (!isAdmin) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
-    return navigateTo('/dashboard', { replace: true })
+    return navigateTo('/access-denied', { replace: true })
   }
 })

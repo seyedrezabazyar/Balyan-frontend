@@ -69,25 +69,44 @@ export const useAuth = () => {
       requestOptions.body = options.body
     }
 
-    const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)
+    // Execute request function to allow retry after refresh
+    const doRequest = async () => {
+      const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)
 
-    let data: any
-    const contentType = response.headers.get('content-type')
-    
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json()
-    } else {
-      // If not JSON, return text as is
-      const text = await response.text()
-      try {
-        data = JSON.parse(text)
-      } catch {
-        data = { message: text }
+      let data: any
+      const contentType = response.headers.get('content-type')
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        // If not JSON, return text as is
+        const text = await response.text()
+        try {
+          data = JSON.parse(text)
+        } catch {
+          data = { message: text }
+        }
+      }
+
+      return { ok: response.ok, status: response.status, data }
+    }
+
+    let { ok, status, data } = await doRequest()
+
+    // Attempt token refresh on 401 once
+    if (!ok && status === 401 && process.client) {
+      const refreshed = await refreshTokens()
+      if (refreshed) {
+        // Update Authorization header with new token and retry
+        if (token.value) {
+          requestOptions.headers = { ...(requestOptions.headers || {}), Authorization: `Bearer ${token.value}` }
+        }
+        ;({ ok, status, data } = await doRequest())
       }
     }
 
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `خطا در درخواست: ${response.status}`)
+    if (!ok) {
+      throw new Error(data.message || data.error || `خطا در درخواست: ${status}`)
     }
 
     return data
@@ -156,6 +175,44 @@ export const useAuth = () => {
     for (let i = 0; i < 20; i++) {
       if (initialized.value) return
       await new Promise(resolve => setTimeout(resolve, 100))
+    }
+  }
+
+  // Refresh access token using refresh token
+  const refreshTokens = async (): Promise<boolean> => {
+    if (!process.client) return false
+    try {
+      const refreshToken = localStorage.getItem('auth_refresh_token')
+      if (!refreshToken) return false
+
+      const response = await fetch(`${apiUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${refreshToken}`
+        }
+      })
+
+      const contentType = response.headers.get('content-type')
+      const data = contentType && contentType.includes('application/json')
+        ? await response.json()
+        : await response.text()
+
+      if (!response.ok) {
+        clearAuth()
+        return false
+      }
+
+      const tokens: Tokens | undefined = (data && data.tokens) || undefined
+      const userData: User | undefined = (data && data.user) || user.value || undefined
+      if (tokens && userData) {
+        saveAuth(userData, tokens)
+        return true
+      }
+      return false
+    } catch {
+      clearAuth()
+      return false
     }
   }
 
@@ -280,6 +337,7 @@ export const useAuth = () => {
     clearAuth,
     restoreAuth,
     initialize,
-    waitForInitialization
+    waitForInitialization,
+    refreshTokens
   }
 }

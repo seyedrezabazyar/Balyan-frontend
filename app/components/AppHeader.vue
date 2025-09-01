@@ -15,7 +15,7 @@
         <ClientOnly>
           <template v-if="isLoggedIn">
             <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
-            <NuxtLink to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
+            <NuxtLink v-if="canManageUsers" to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
             <NuxtLink to="/dashboard/books" class="nav-link">کتاب‌ها</NuxtLink>
             <NuxtLink to="/dashboard/categories" class="nav-link">دسته‌ها</NuxtLink>
             <NuxtLink to="/dashboard/gallery/books" class="nav-link">گالری</NuxtLink>
@@ -70,7 +70,7 @@
 
         <template v-if="isLoggedIn">
           <NuxtLink to="/dashboard" @click="closeMobileMenu" class="mobile-nav-link">داشبورد</NuxtLink>
-          <NuxtLink to="/dashboard/users" @click="closeMobileMenu" class="mobile-nav-link">کاربران</NuxtLink>
+          <NuxtLink v-if="canManageUsers" to="/dashboard/users" @click="closeMobileMenu" class="mobile-nav-link">کاربران</NuxtLink>
           <NuxtLink to="/dashboard/books" @click="closeMobileMenu" class="mobile-nav-link">کتاب‌ها</NuxtLink>
           <NuxtLink to="/dashboard/categories" @click="closeMobileMenu" class="mobile-nav-link">دسته‌ها</NuxtLink>
           <NuxtLink to="/dashboard/gallery/books" @click="closeMobileMenu" class="mobile-nav-link">گالری</NuxtLink>
@@ -101,6 +101,13 @@ const userMenuRef = ref(null)
 const displayName = computed(() => {
   if (!user.value) return 'کاربر'
   return user.value.name || user.value.email?.split('@')[0] || user.value.phone || 'کاربر'
+})
+
+const canManageUsers = computed(() => {
+  if (!user.value) return false
+  const roles = Array.isArray(user.value.roles) ? user.value.roles : []
+  const hasAdminRole = roles.some(r => r && r.name === 'admin')
+  return !!(user.value.is_admin || hasAdminRole)
 })
 
 // Methods

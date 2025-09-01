@@ -6,14 +6,7 @@ export default defineNuxtPlugin(() => {
   window.fetch = async (...args) => {
     try {
       const response = await originalFetch(...args)
-      
-      // Handle 401 errors globally
-      if (response.status === 401 && !args[0].toString().includes('/auth/login')) {
-        const { clearAuth } = useAuth()
-        clearAuth()
-        await navigateTo('/auth')
-      }
-      
+      // Let composables (e.g., useAuth.api) handle 401/refresh logic
       return response
     } catch (error) {
       // Log network errors

@@ -13,6 +13,7 @@ interface User {
   status?: string
   locked_until?: string
   failed_attempts?: number
+  roles?: Array<{ id: number; name: string; display_name: string }>
 }
 
 interface CreateUserData {
