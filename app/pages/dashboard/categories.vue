@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth', layout: 'default' })
+definePageMeta({ middleware: 'auth', layout: 'dashboard' })
 
 const { api } = useAuth()
 const { showError, showSuccess } = useToast()

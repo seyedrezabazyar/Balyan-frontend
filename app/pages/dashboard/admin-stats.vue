@@ -91,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: ['auth', 'admin'], layout: 'dashboard' })
 const { isAdmin } = useAuth()
 
 // Mock stats - در واقعیت باید از API بیاید

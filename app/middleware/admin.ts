@@ -1,15 +1,27 @@
-import { defineNuxtMiddleware } from '#app';
 import { useAuth } from '~/composables/useAuth';
 
-export default defineNuxtMiddleware(async (to, from) => {
-  const { isAdmin, hasPermission } = useAuth();
-
-  // Skip middleware during SSR to avoid hydration issues
+export default defineNuxtRouteMiddleware((to) => {
   if (process.server) return;
 
-  const permission = to.meta.permission;
-  if (permission && !isAdmin.value && !hasPermission(permission)) {
-    console.warn('Access denied. User does not have admin role or required permission:', permission);
-    return navigateTo('/access-denied');
+  const { isLoggedIn, isAdmin, hasPermission } = useAuth();
+
+  // Must be authenticated (auth middleware should handle this too)
+  if (!isLoggedIn.value) {
+    return navigateTo('/auth', { replace: true });
+  }
+
+  const requiredPermission = to.meta.permission as string | string[] | undefined;
+
+  // If explicit permission is set, allow if admin or has that permission
+  if (requiredPermission) {
+    if (!isAdmin.value && !hasPermission(requiredPermission)) {
+      return navigateTo('/access-denied', { replace: true });
+    }
+    return;
+  }
+
+  // No explicit permission provided: treat this middleware as admin-only
+  if (!isAdmin.value) {
+    return navigateTo('/access-denied', { replace: true });
   }
 });

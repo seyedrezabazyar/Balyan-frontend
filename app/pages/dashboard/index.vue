@@ -77,7 +77,7 @@
 <script setup lang="ts">
 definePageMeta({
   middleware: 'auth',
-  layout: 'default'
+  layout: 'dashboard'
 })
 
 const { user, initialized } = useAuth()

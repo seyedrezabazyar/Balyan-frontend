@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'auth', layout: 'default' })
+definePageMeta({ middleware: 'auth', layout: 'dashboard' })
 
 const route = useRoute()
 const { api } = useAuth()

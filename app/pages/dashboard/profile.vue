@@ -414,7 +414,7 @@ import { ref, computed, onMounted } from 'vue'
 // Page metadata
 definePageMeta({
   middleware: 'auth',
-  layout: 'default'
+  layout: 'dashboard'
 })
 
 // Use auth composable
