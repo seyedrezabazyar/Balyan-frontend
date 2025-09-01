@@ -96,7 +96,10 @@ export const useAuth = () => {
   
   // Check if user is admin
   const isAdmin = computed(() => {
-    return Boolean(user.value?.is_admin) || hasRole(['admin', 'super-admin', 'super_admin'])
+    const isAdminField = Boolean(user.value?.is_admin)
+    const hasAdminRole = hasRole(['admin', 'super-admin', 'super_admin'])
+    
+    return isAdminField || hasAdminRole
   })
   
   // Get all user permissions
@@ -187,9 +190,12 @@ export const useAuth = () => {
 
     if (process.client) {
       localStorage.setItem('auth_user', JSON.stringify(userData))
+      // Save with both names for compatibility
       localStorage.setItem('auth_token', tokens.access_token)
+      localStorage.setItem('access_token', tokens.access_token)
       if (tokens.refresh_token) {
         localStorage.setItem('auth_refresh_token', tokens.refresh_token)
+        localStorage.setItem('refresh_token', tokens.refresh_token)
       }
     }
   }
@@ -202,7 +208,9 @@ export const useAuth = () => {
     if (process.client) {
       localStorage.removeItem('auth_user')
       localStorage.removeItem('auth_token')
+      localStorage.removeItem('access_token')
       localStorage.removeItem('auth_refresh_token')
+      localStorage.removeItem('refresh_token')
     }
   }
 
@@ -213,14 +221,17 @@ export const useAuth = () => {
       return
     }
 
-    const savedToken = localStorage.getItem('auth_token')
+    // Try both naming conventions
+    const savedToken = localStorage.getItem('auth_token') || localStorage.getItem('access_token')
     const savedUser = localStorage.getItem('auth_user')
 
     if (savedToken && savedUser) {
       try {
         token.value = savedToken
-        user.value = JSON.parse(savedUser)
-      } catch {
+        const parsedUser = JSON.parse(savedUser)
+        user.value = parsedUser
+      } catch (error) {
+        console.error('[Auth] Error restoring auth:', error)
         clearAuth()
       }
     }
