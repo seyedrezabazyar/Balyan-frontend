@@ -11,6 +11,36 @@ export const useAuth = () => {
 
   const isLoggedIn = computed(() => !!(user.value && token.value))
   const isAdmin = computed(() => Boolean(user.value?.is_admin))
+  
+  // Role and permission helpers
+  const hasRole = (role: string | string[]): boolean => {
+    if (!user.value?.roles) return false
+    const roles = Array.isArray(role) ? role : [role]
+    
+    // Handle both string array and Role object array
+    const userRoles = user.value.roles
+    if (Array.isArray(userRoles)) {
+      // Check if roles are strings or objects
+      if (userRoles.length > 0 && typeof userRoles[0] === 'string') {
+        return roles.some(r => (userRoles as string[]).includes(r))
+      } else {
+        // Handle Role objects
+        const roleNames = (userRoles as any[]).map(r => r.name || r)
+        return roles.some(r => roleNames.includes(r))
+      }
+    }
+    return false
+  }
+  
+  const hasPermission = (permission: string | string[]): boolean => {
+    if (!user.value) return false
+    // Admin has all permissions
+    if (user.value.is_admin) return true
+    if (!user.value.permissions) return false
+    
+    const permissions = Array.isArray(permission) ? permission : [permission]
+    return permissions.some(p => user.value?.permissions?.includes(p))
+  }
 
   // Storage helpers
   const storage = {
@@ -266,6 +296,8 @@ export const useAuth = () => {
     initialized: readonly(initialized),
     isLoggedIn,
     isAdmin,
+    hasRole,
+    hasPermission,
     api,
     checkUserIdentifier,
     loginPassword,
