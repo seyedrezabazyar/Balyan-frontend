@@ -179,6 +179,81 @@ export const useAuth = () => {
     }
   }
 
+  const setPassword = async (password: string, passwordConfirmation: string) => {
+    loading.value = true
+    try {
+      const result = await api<ApiResponse>('/api/auth/profile/password', {
+        method: 'POST',
+        body: {
+          action: 'set',
+          password,
+          password_confirmation: passwordConfirmation
+        }
+      })
+      return result
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updatePassword = async (currentPassword: string, password: string, passwordConfirmation: string) => {
+    loading.value = true
+    try {
+      const result = await api<ApiResponse>('/api/auth/profile/password', {
+        method: 'POST',
+        body: {
+          action: 'change',
+          current_password: currentPassword,
+          password,
+          password_confirmation: passwordConfirmation
+        }
+      })
+      return result
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const uploadAvatar = async (file: File) => {
+    loading.value = true
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      const result = await api<ApiResponse>('/api/auth/profile/avatar', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (result.success && result.avatar_url) {
+        if (user.value) {
+          user.value = { ...user.value, avatar_url: result.avatar_url }
+          storage.set('auth_user', JSON.stringify(user.value))
+        }
+      }
+      return result
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const logoutAll = async () => {
+    loading.value = true
+    try {
+      const result = await api<ApiResponse>('/api/auth/profile/logout-all', {
+        method: 'POST'
+      })
+      
+      if (result.success) {
+        clearAuth()
+        await navigateTo('/auth')
+      }
+      return result
+    } finally {
+      loading.value = false
+    }
+  }
+
   // Initialize on client
   if (process.client && !initialized.value) {
     restoreAuth()
@@ -199,6 +274,10 @@ export const useAuth = () => {
     logout,
     fetchUser,
     updateProfile,
+    setPassword,
+    updatePassword,
+    uploadAvatar,
+    logoutAll,
     clearAuth,
     restoreAuth
   }
