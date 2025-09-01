@@ -1,15 +1,14 @@
+import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useToast } from './useToast';
-import { defineStore } from 'pinia';
 
-export const useAuth = defineStore('auth', () => {
+export const useAuthStore = defineStore('auth', () => {
   const user = ref(null);
   const token = ref(null);
   const isAdmin = computed(() => user.value?.is_admin || false);
 
-  const { showToast } = useToast();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const fetchUser = async () => {
     if (!token.value) return null;
@@ -68,5 +67,61 @@ export const useAuth = defineStore('auth', () => {
     localStorage.removeItem('auth_token');
   };
 
-  return { user, token, isAdmin, hasPermission, fetchUser, logout };
+  const isLoggedIn = computed(() => !!token.value && !!user.value);
+  const initialized = ref(false);
+
+  const restoreAuth = () => {
+    const savedToken = localStorage.getItem('auth_token');
+    const savedUser = localStorage.getItem('auth_user');
+    if (savedToken && savedUser) {
+      token.value = savedToken;
+      user.value = JSON.parse(savedUser);
+    }
+    initialized.value = true;
+  };
+
+  const checkUserIdentifier = async () => {
+    // TODO: Implement
+    return { success: false };
+  };
+
+  const loginPassword = async () => {
+    // TODO: Implement
+    return { success: false };
+  };
+
+  const sendOTP = async () => {
+    // TODO: Implement
+    return { success: false };
+  };
+
+  const verifyOTP = async () => {
+    // TODO: Implement
+    return { success: false };
+  };
+
+  const loading = ref(false);
+
+  return {
+    user,
+    token,
+    isAdmin,
+    isLoggedIn,
+    initialized,
+    loading,
+    hasPermission,
+    fetchUser,
+    logout,
+    clearAuth,
+    restoreAuth,
+    checkUserIdentifier,
+    loginPassword,
+    sendOTP,
+    verifyOTP
+  };
 });
+
+// Export composable wrapper
+export const useAuth = () => {
+  return useAuthStore();
+};

@@ -2,6 +2,9 @@ export default defineNuxtConfig({
   srcDir: 'app/',
   compatibilityDate: '2024-11-01',
 
+  // Modules
+  modules: ['@pinia/nuxt'],
+
   // CSS و Assets
   css: ['@/assets/css/main.css'],
 

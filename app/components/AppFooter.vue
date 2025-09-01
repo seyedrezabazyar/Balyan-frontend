@@ -69,6 +69,8 @@
 </template>
 
 <script setup lang="ts">
+import { h } from 'vue'
+
 const { isLoggedIn } = useAuth()
 
 const currentYear = new Date().getFullYear()
