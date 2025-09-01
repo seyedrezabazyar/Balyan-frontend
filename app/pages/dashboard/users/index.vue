@@ -543,6 +543,7 @@ const fetchUsers = async () => {
     loading.value = true
     const response = await fetch(`${apiBase}/auth/users`, {
       headers: {
+        'Accept': 'application/json',
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
       }
     })
@@ -555,6 +556,7 @@ const fetchUsers = async () => {
       showToast(error.message || 'خطا در بارگذاری کاربران', 'error')
     }
   } catch (e) {
+    console.error('Error fetching users:', e)
     showToast('خطا در ارتباط با سرور', 'error')
   } finally {
     loading.value = false
@@ -645,9 +647,10 @@ const toggleUserStatus = async (user) => {
   const wasLocked = getUserStatus(user) !== 'active'
 
   try {
-    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-lock`, {
+    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-status`, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
       }
     })
