@@ -400,7 +400,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { debounce } from 'lodash-es'
+import { debounce } from '~/utils/helpers'
+import type { User, Role, Permission, Pagination, Statistics } from '~/types'
 
 // Define middleware
 definePageMeta({
@@ -408,50 +409,7 @@ definePageMeta({
   layout: 'dashboard'
 })
 
-// Types
-interface User {
-  id: number
-  name: string
-  email?: string
-  phone?: string
-  email_verified_at?: string
-  phone_verified_at?: string
-  roles?: Role[]
-  locked_until?: string
-  created_at: string
-  avatar_url?: string
-}
-
-interface Role {
-  id: number
-  name: string
-  display_name: string
-  description?: string
-  permissions?: Permission[]
-  users_count?: number
-}
-
-interface Permission {
-  id: number
-  name: string
-  display_name: string
-}
-
-interface Statistics {
-  total_users: number
-  verified_emails: number
-  verified_phones: number
-  users_with_password: number
-  recent_registrations: number
-  locked_accounts: number
-}
-
-interface Pagination {
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-}
+// Types are imported from ~/types
 
 // Composables
 const { api } = useApi()

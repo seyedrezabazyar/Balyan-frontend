@@ -1,11 +1,5 @@
 // app/composables/useApi.ts
-interface ApiResponse<T = any> {
-  success: boolean
-  message?: string
-  data?: T
-  meta?: any
-  errors?: Record<string, string[]>
-}
+import type { ApiResponse } from '~/types'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD'
 

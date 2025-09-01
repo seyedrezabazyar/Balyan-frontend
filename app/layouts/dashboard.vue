@@ -4,11 +4,14 @@
     <aside :class="['sidebar', { collapsed: sidebarCollapsed }]">
       <div class="sidebar-header">
         <div class="logo">
-          <Icon name="heroicons:book-open" class="logo-icon" />
+          <span class="logo-icon">📚</span>
           <span v-if="!sidebarCollapsed" class="logo-text">کتابخانه دیجیتال</span>
         </div>
         <button @click="toggleSidebar" class="toggle-btn">
-          <Icon :name="sidebarCollapsed ? 'heroicons:chevron-left' : 'heroicons:chevron-right'" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path v-if="sidebarCollapsed" d="M15 18l-6-6 6-6" />
+            <path v-else d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </div>
 
@@ -21,7 +24,7 @@
             class="nav-item"
             :class="{ active: isActive(item.path) }"
           >
-            <Icon :name="item.icon" class="nav-icon" />
+            <span class="nav-icon">{{ item.icon }}</span>
             <span v-if="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
           </NuxtLink>
@@ -33,13 +36,12 @@
               class="nav-item group-toggle"
               :class="{ active: isGroupActive(item) }"
             >
-              <Icon :name="item.icon" class="nav-icon" />
+              <span class="nav-icon">{{ item.icon }}</span>
               <span v-if="!sidebarCollapsed" class="nav-label">{{ item.label }}</span>
-              <Icon
-                v-if="!sidebarCollapsed"
-                :name="expandedGroups.includes(item.path) ? 'heroicons:chevron-down' : 'heroicons:chevron-left'"
-                class="group-arrow"
-              />
+              <svg v-if="!sidebarCollapsed" class="group-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path v-if="expandedGroups.includes(item.path)" d="M6 9l6 6 6-6" />
+                <path v-else d="M15 18l-6-6 6-6" />
+              </svg>
             </button>
             <div
               v-if="!sidebarCollapsed && expandedGroups.includes(item.path)"
@@ -52,7 +54,7 @@
                 class="nav-child"
                 :class="{ active: isActive(child.path) }"
               >
-                <Icon :name="child.icon" class="nav-icon small" />
+                <span class="nav-icon small">{{ child.icon }}</span>
                 <span class="nav-label">{{ child.label }}</span>
               </NuxtLink>
             </div>
@@ -74,7 +76,9 @@
           </div>
         </div>
         <button @click="handleLogout" class="logout-btn" :title="sidebarCollapsed ? 'خروج' : ''">
-          <Icon name="heroicons:arrow-left-on-rectangle" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
           <span v-if="!sidebarCollapsed">خروج</span>
         </button>
       </div>
@@ -89,11 +93,16 @@
         </div>
         <div class="header-right">
           <button class="header-btn notification-btn">
-            <Icon name="heroicons:bell" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
             <span class="notification-badge">3</span>
           </button>
           <button class="header-btn">
-            <Icon name="heroicons:cog-6-tooth" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 1.54l4.24 4.24M20.46 20.46l-4.24-4.24M1.54 20.46l4.24-4.24" />
+            </svg>
           </button>
         </div>
       </header>
@@ -134,59 +143,59 @@ const menuItems: MenuItem[] = [
   {
     path: '/dashboard',
     label: 'داشبورد',
-    icon: 'heroicons:home'
+    icon: '🏠'
   },
   {
     path: '/dashboard/profile',
     label: 'پروفایل',
-    icon: 'heroicons:user'
+    icon: '👤'
   },
   {
     path: '/dashboard/books',
     label: 'کتاب‌ها',
-    icon: 'heroicons:book-open',
+    icon: '📚',
     permission: ['books.view', 'books.create', 'books.edit']
   },
   {
     path: '/dashboard/categories',
     label: 'دسته‌بندی‌ها',
-    icon: 'heroicons:folder',
+    icon: '📁',
     permission: 'categories.view'
   },
   {
-    path: '/dashboard/gallery',
+    path: '/dashboard/gallery/books',
     label: 'گالری',
-    icon: 'heroicons:photo',
+    icon: '🖼️',
     permission: 'media.view'
   },
   {
     path: '#admin',
     label: 'مدیریت سیستم',
-    icon: 'heroicons:shield-check',
+    icon: '🛡️',
     role: 'admin',
     children: [
       {
         path: '/dashboard/users',
         label: 'کاربران',
-        icon: 'heroicons:users',
+        icon: '👥',
         permission: 'users.view'
       },
       {
         path: '/dashboard/roles',
         label: 'نقش‌ها',
-        icon: 'heroicons:shield-check',
+        icon: '🔐',
         permission: 'roles.view'
       },
       {
         path: '/dashboard/permissions',
         label: 'دسترسی‌ها',
-        icon: 'heroicons:key',
+        icon: '🔑',
         permission: 'permissions.view'
       },
       {
-        path: '/dashboard/AdminStats',
+        path: '/dashboard/admin-stats',
         label: 'آمار سیستم',
-        icon: 'heroicons:chart-bar',
+        icon: '📊',
         role: 'admin'
       }
     ]

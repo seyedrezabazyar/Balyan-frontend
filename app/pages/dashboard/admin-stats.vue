@@ -1,4 +1,4 @@
-<!-- components/dashboard/AdminStats.vue -->
+<!-- pages/dashboard/admin-stats.vue -->
 <template>
   <div v-if="isAdmin" class="admin-stats">
     <div class="section-header">

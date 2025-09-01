@@ -10,26 +10,26 @@
     <!-- Dashboard Content -->
     <template v-else-if="user">
       <!-- Welcome Section -->
-      <WelcomeCard
+      <LazyWelcomeCard
         :user="user"
         :display-name="displayName"
         :welcome-message="welcomeMessage"
       />
 
       <!-- Stats Grid -->
-      <StatsGrid :stats="dashboardStats" />
+      <LazyStatsGrid :stats="dashboardStats" />
 
       <!-- Quick Actions -->
-      <QuickActions />
+      <LazyQuickActions />
 
       <!-- Recent Activity -->
-      <RecentActivity v-if="user" />
+      <LazyRecentActivity v-if="user" />
 
       <!-- User Info Card -->
-      <UserInfoCard v-if="user" :user="user" />
+      <LazyUserInfoCard v-if="user" :user="user" />
 
       <!-- Coming Soon Modal -->
-      <ComingSoonModal v-model="showComingSoon" />
+      <LazyComingSoonModal v-model="showComingSoon" />
     </template>
 
     <!-- Error State -->
