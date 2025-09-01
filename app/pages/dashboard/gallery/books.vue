@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const pendingImages = ref([]);
 const loading = ref(true);
 const processingIds = ref([]);

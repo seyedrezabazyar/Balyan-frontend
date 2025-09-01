@@ -78,7 +78,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { user, isLoggedIn, restoreAuth } = useAuth()
 
 const displayName = computed(() => {

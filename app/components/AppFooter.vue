@@ -68,7 +68,7 @@
   </footer>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const { isLoggedIn } = useAuth()
 
 const currentYear = new Date().getFullYear()
