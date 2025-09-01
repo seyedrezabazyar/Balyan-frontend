@@ -471,15 +471,24 @@ const fetchUsers = async (page = 1) => {
       ...(filters.value.role && { role: filters.value.role })
     })
 
-    const response = await api(`/api/auth/users?${params}`)
+    console.log('Fetching users with token:', localStorage.getItem('access_token'))
+    const response = await api(`/api/auth/users/?${params}`)
+    console.log('Users response:', response)
     
     if (response.success) {
       users.value = response.data || []
       pagination.value = response.meta || null
+    } else if (response.message) {
+      showToast(response.message, 'error')
+      console.error('API returned error:', response)
     }
-  } catch (error) {
+  } catch (error: any) {
     showToast('خطا در دریافت لیست کاربران', 'error')
     console.error('Error fetching users:', error)
+    // Log the actual error response if available
+    if (error.data) {
+      console.error('Error data:', error.data)
+    }
   } finally {
     loading.value = false
   }

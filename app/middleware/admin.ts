@@ -27,10 +27,14 @@ export default defineNuxtRouteMiddleware(async () => {
     permissions: user.value?.permissions
   })
 
-  const hasAdminAccess = user.value?.is_admin || isAdmin.value
+  // Check if user has admin access or users.view permission
+  const hasAdminAccess = user.value?.is_admin || 
+                        isAdmin.value || 
+                        user.value?.permissions?.includes('users.view')
 
   if (!hasAdminAccess) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
+    console.error('Access denied. User does not have admin access or users.view permission')
     return navigateTo('/access-denied', { replace: true })
   }
 })

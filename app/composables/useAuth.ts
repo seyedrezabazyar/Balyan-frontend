@@ -80,8 +80,10 @@ export const useAuth = () => {
     token.value = tokens.access_token
     storage.set('auth_user', JSON.stringify(userData))
     storage.set('auth_token', tokens.access_token)
+    storage.set('access_token', tokens.access_token) // Add this for useApi compatibility
     if (tokens.refresh_token) {
       storage.set('refresh_token', tokens.refresh_token)
+      storage.set('auth_refresh_token', tokens.refresh_token) // Add this for useApi compatibility
     }
   }
 
@@ -94,13 +96,16 @@ export const useAuth = () => {
   const restoreAuth = () => {
     if (!process.client) return
 
-    const savedToken = storage.get('auth_token')
+    const savedToken = storage.get('auth_token') || storage.get('access_token')
     const savedUser = storage.get('auth_user')
 
     if (savedToken && savedUser) {
       try {
         token.value = savedToken
         user.value = JSON.parse(savedUser)
+        // Ensure both token keys are set for compatibility
+        storage.set('auth_token', savedToken)
+        storage.set('access_token', savedToken)
       } catch {
         clearAuth()
       }
@@ -125,7 +130,10 @@ export const useAuth = () => {
       })
 
       if (result.success && result.tokens && result.user) {
+        console.log('Login successful, user data:', result.user)
         saveAuth(result.user, result.tokens)
+        // Fetch full user data with permissions after login
+        await fetchUser()
       }
       return result
     } finally {
@@ -154,7 +162,10 @@ export const useAuth = () => {
       })
 
       if (result.success && result.tokens && result.user) {
+        console.log('OTP verification successful, user data:', result.user)
         saveAuth(result.user, result.tokens)
+        // Fetch full user data with permissions after login
+        await fetchUser()
       }
       return result
     } finally {
@@ -180,12 +191,15 @@ export const useAuth = () => {
 
     try {
       const result = await api<ApiResponse>('/api/auth/user')
+      console.log('Fetched user data from API:', result)
       if (result.user) {
         user.value = result.user
         storage.set('auth_user', JSON.stringify(result.user))
+        console.log('User data saved with permissions:', result.user.permissions)
       }
       return result.user
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch user:', error)
       clearAuth()
       return null
     }
