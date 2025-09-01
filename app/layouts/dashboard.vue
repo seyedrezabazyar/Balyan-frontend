@@ -109,204 +109,208 @@
 
       <!-- Page Content -->
       <main class="main-content">
-        <slot />
+        <NuxtPage />
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue';
+import { useAuth } from '~/composables/useAuth';
+import { usePermissions } from '~/composables/usePermissions';
 
 interface MenuItem {
-  path: string
-  label: string
-  icon: string
-  badge?: string | number
-  permission?: string | string[]
-  role?: string | string[]
-  children?: MenuItem[]
+  path: string;
+  label: string;
+  icon: string;
+  badge?: string | number;
+  permission?: string | string[];
+  children?: MenuItem[];
 }
 
 // Composables
-const route = useRoute()
-const router = useRouter()
-const { user, isAdmin, hasRole, hasPermission, logout } = useAuth()
-const { showToast } = useToast()
+const route = useRoute();
+const router = useRouter();
+const { user, isAdmin, hasPermission, logout } = useAuth();
+const { showToast } = useToast();
+const { canViewUsers, canViewRoles, canViewPermissions, canViewBooks, canViewCategories, canViewMedia } = usePermissions();
 
 // State
-const sidebarCollapsed = ref(false)
-const expandedGroups = ref<string[]>([])
+const sidebarCollapsed = ref(false);
+const expandedGroups = ref<string[]>([]);
 
 // Menu items with permissions
 const menuItems: MenuItem[] = [
   {
     path: '/dashboard',
     label: 'داشبورد',
-    icon: '🏠'
+    icon: '🏠',
   },
   {
     path: '/dashboard/profile',
     label: 'پروفایل',
-    icon: '👤'
+    icon: '👤',
   },
   {
     path: '/dashboard/books',
     label: 'کتاب‌ها',
     icon: '📚',
-    permission: ['books.view', 'books.create', 'books.edit']
+    permission: ['books.view', 'books.create', 'books.edit'],
   },
   {
     path: '/dashboard/categories',
     label: 'دسته‌بندی‌ها',
     icon: '📁',
-    permission: 'categories.view'
+    permission: 'categories.view',
   },
   {
     path: '/dashboard/gallery/books',
     label: 'گالری',
     icon: '🖼️',
-    permission: 'media.view'
+    permission: 'media.view',
   },
   {
     path: '#admin',
     label: 'مدیریت سیستم',
     icon: '🛡️',
-    role: 'admin',
+    permission: ['users.view', 'roles.view', 'permissions.view'],
     children: [
       {
         path: '/dashboard/users',
         label: 'کاربران',
         icon: '👥',
-        permission: 'users.view'
+        permission: 'users.view',
       },
       {
         path: '/dashboard/roles',
         label: 'نقش‌ها',
         icon: '🔐',
-        permission: 'roles.view'
+        permission: 'roles.view',
       },
       {
         path: '/dashboard/permissions',
         label: 'دسترسی‌ها',
         icon: '🔑',
-        permission: 'permissions.view'
+        permission: 'permissions.view',
       },
       {
         path: '/dashboard/admin-stats',
         label: 'آمار سیستم',
         icon: '📊',
-        role: 'admin'
-      }
-    ]
-  }
-]
+        permission: 'reports.view',
+      },
+    ],
+  },
+];
 
 // Computed
 const filteredMenuItems = computed(() => {
-  return menuItems.filter(item => {
-    // Check role requirement
-    if (item.role) {
-      if (!hasRole(item.role)) return false
-    }
-    
-    // Check permission requirement
+  return menuItems.filter((item) => {
+    // Skip permission check during SSR to avoid hydration issues
+    if (process.server) return true;
+
+    // Check if user is admin or has required permissions
     if (item.permission) {
-      if (!hasPermission(item.permission)) return false
+      if (!isAdmin.value && !hasPermission(item.permission)) return false;
     }
-    
+
     // Filter children if exists
     if (item.children) {
-      item.children = item.children.filter(child => {
-        if (child.role && !hasRole(child.role)) return false
-        if (child.permission && !hasPermission(child.permission)) return false
-        return true
-      })
-      
+      item.children = item.children.filter((child) => {
+        if (child.permission && !isAdmin.value && !hasPermission(child.permission)) return false;
+        return true;
+      });
+
       // If no children left, hide the parent
-      if (item.children.length === 0) return false
+      if (item.children.length === 0) return false;
     }
-    
-    return true
-  })
-})
+
+    return true;
+  });
+});
 
 const pageTitle = computed(() => {
   // Find current page in menu items
   const findTitle = (items: MenuItem[]): string => {
     for (const item of items) {
       if (item.path === route.path) {
-        return item.label
+        return item.label;
       }
       if (item.children) {
-        const childTitle = findTitle(item.children)
-        if (childTitle) return childTitle
+        const childTitle = findTitle(item.children);
+        if (childTitle) return childTitle;
       }
     }
-    return ''
-  }
-  
-  return findTitle(menuItems) || 'داشبورد'
-})
+    return '';
+  };
+
+  return findTitle(menuItems) || 'داشبورد';
+});
 
 const primaryRole = computed(() => {
-  if (isAdmin.value) return 'مدیر سیستم'
-  const role = user.value?.roles?.[0]
-  return role?.display_name || 'کاربر'
-})
+  if (isAdmin.value) return 'مدیر سیستم';
+  const role = user.value?.roles?.[0];
+  return role?.display_name || 'کاربر';
+});
 
 // Methods
 const toggleSidebar = () => {
-  sidebarCollapsed.value = !sidebarCollapsed.value
+  sidebarCollapsed.value = !sidebarCollapsed.value;
   if (sidebarCollapsed.value) {
-    expandedGroups.value = []
+    expandedGroups.value = [];
   }
-}
+};
 
 const toggleGroup = (path: string) => {
-  const index = expandedGroups.value.indexOf(path)
+  const index = expandedGroups.value.indexOf(path);
   if (index > -1) {
-    expandedGroups.value.splice(index, 1)
+    expandedGroups.value.splice(index, 1);
   } else {
-    expandedGroups.value.push(path)
+    expandedGroups.value.push(path);
   }
-}
+};
 
 const isActive = (path: string) => {
-  return route.path === path
-}
+  return route.path === path;
+};
 
 const isGroupActive = (item: MenuItem) => {
-  if (!item.children) return false
-  return item.children.some(child => route.path === child.path)
-}
+  if (!item.children) return false;
+  return item.children.some((child) => route.path === child.path);
+};
 
 const handleLogout = async () => {
   if (confirm('آیا از خروج اطمینان دارید؟')) {
-    await logout()
-    showToast('با موفقیت خارج شدید', 'success')
+    await logout();
+    showToast('با موفقیت خارج شدید', 'success');
+    router.push('/auth');
   }
-}
+};
 
 // Auto-expand active groups on mount
 onMounted(() => {
-  menuItems.forEach(item => {
-    if (item.children && isGroupActive(item)) {
-      expandedGroups.value.push(item.path)
+  if (process.client) {
+    menuItems.forEach((item) => {
+      if (item.children && isGroupActive(item)) {
+        expandedGroups.value.push(item.path);
+      }
+    });
+
+    // Restore sidebar state from localStorage
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      sidebarCollapsed.value = savedState === 'true';
     }
-  })
-  
-  // Restore sidebar state from localStorage
-  const savedState = localStorage.getItem('sidebarCollapsed')
-  if (savedState !== null) {
-    sidebarCollapsed.value = savedState === 'true'
   }
-})
+});
 
 // Save sidebar state to localStorage
 watch(sidebarCollapsed, (value) => {
-  localStorage.setItem('sidebarCollapsed', value.toString())
-})
+  if (process.client) {
+    localStorage.setItem('sidebarCollapsed', value.toString());
+  }
+});
 </script>
 
 <style scoped>
@@ -665,23 +669,23 @@ watch(sidebarCollapsed, (value) => {
     transition: right 0.3s ease;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
   }
-  
+
   .sidebar.mobile-open {
     right: 0;
   }
-  
+
   .sidebar.collapsed {
     width: 260px;
   }
-  
+
   .main-container {
     margin-right: 0;
   }
-  
+
   .main-header {
     padding: 1rem;
   }
-  
+
   .main-content {
     padding: 1rem;
   }

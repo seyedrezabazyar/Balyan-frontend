@@ -1,134 +1,92 @@
-// Mock users API endpoint for testing
 export default defineEventHandler(async (event) => {
-  // Mock users data
-  const mockUsers = [
-    {
-      id: 1,
-      name: 'علی محمدی',
-      username: 'ali_mohammadi',
-      email: 'ali@example.com',
-      phone: '09121234567',
-      preferred_method: 'password',
-      email_verified_at: '2024-01-15T10:30:00Z',
-      phone_verified_at: '2024-01-15T10:30:00Z',
-      last_login_at: '2024-12-20T14:30:00Z',
-      created_at: '2024-01-15T10:30:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    },
-    {
-      id: 2,
-      name: 'مریم احمدی',
-      username: 'maryam_ahmadi',
-      email: 'maryam@example.com',
-      phone: '09129876543',
-      preferred_method: 'otp',
-      email_verified_at: '2024-02-10T09:15:00Z',
-      phone_verified_at: null,
-      last_login_at: '2024-12-19T11:20:00Z',
-      created_at: '2024-02-10T09:15:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    },
-    {
-      id: 3,
-      name: 'رضا کریمی',
-      username: 'reza_karimi',
-      email: 'reza@example.com',
-      phone: '09351234567',
-      preferred_method: 'password',
-      email_verified_at: null,
-      phone_verified_at: '2024-03-05T14:20:00Z',
-      last_login_at: null,
-      created_at: '2024-03-05T14:20:00Z',
-      status: 'inactive',
-      locked_at: '2024-11-10T10:00:00Z',
-      disabled: true
-    },
-    {
-      id: 4,
-      name: 'فاطمه رضایی',
-      username: 'fatemeh_rezaei',
-      email: 'fatemeh@example.com',
-      phone: '09191234567',
-      preferred_method: 'otp',
-      email_verified_at: '2024-04-12T08:45:00Z',
-      phone_verified_at: '2024-04-12T08:45:00Z',
-      last_login_at: '2024-12-18T16:10:00Z',
-      created_at: '2024-04-12T08:45:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    },
-    {
-      id: 5,
-      name: 'محمد حسینی',
-      username: 'mohammad_hosseini',
-      email: 'mohammad@example.com',
-      phone: '09381234567',
-      preferred_method: 'password',
-      email_verified_at: '2024-05-20T12:00:00Z',
-      phone_verified_at: '2024-05-20T12:00:00Z',
-      last_login_at: '2024-12-17T09:30:00Z',
-      created_at: '2024-05-20T12:00:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    },
-    {
-      id: 6,
-      name: 'زهرا نوری',
-      username: 'zahra_nouri',
-      email: 'zahra@example.com',
-      phone: '09301234567',
-      preferred_method: 'otp',
-      email_verified_at: null,
-      phone_verified_at: '2024-06-15T15:30:00Z',
-      last_login_at: '2024-12-15T13:45:00Z',
-      created_at: '2024-06-15T15:30:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    },
-    {
-      id: 7,
-      name: 'حسین اکبری',
-      username: 'hossein_akbari',
-      email: 'hossein@example.com',
-      phone: '09361234567',
-      preferred_method: 'password',
-      email_verified_at: '2024-07-01T10:15:00Z',
-      phone_verified_at: null,
-      last_login_at: '2024-12-10T08:20:00Z',
-      created_at: '2024-07-01T10:15:00Z',
-      status: 'inactive',
-      locked_at: '2024-12-01T12:00:00Z',
-      disabled: true
-    },
-    {
-      id: 8,
-      name: 'سارا امینی',
-      username: 'sara_amini',
-      email: 'sara@example.com',
-      phone: '09151234567',
-      preferred_method: 'otp',
-      email_verified_at: '2024-08-10T11:30:00Z',
-      phone_verified_at: '2024-08-10T11:30:00Z',
-      last_login_at: '2024-12-20T17:00:00Z',
-      created_at: '2024-08-10T11:30:00Z',
-      status: 'active',
-      locked_at: null,
-      disabled: false
-    }
-  ]
+  const { user } = await getUserSession(event);
 
-  // Return the mock data
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Unauthorized',
+      message: 'لطفا ابتدا وارد شوید'
+    });
+  }
+
+  // Check if user has admin role or users.view permission
+  const hasAccess = user.is_admin || user.permissions?.includes('users.view');
+
+  if (!hasAccess) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
+      message: 'شما دسترسی به این بخش را ندارید',
+      data: { required_permissions: ['users.view'] }
+    });
+  }
+
+  // Query parameters
+  const query = getQuery(event);
+  const page = parseInt(query.page as string) || 1;
+  const perPage = parseInt(query.per_page as string) || 15;
+  const search = query.search as string;
+  const emailVerified = query.email_verified as string;
+  const phoneVerified = query.phone_verified as string;
+  const sortBy = query.sort_by as string || 'created_at';
+  const sortOrder = query.sort_order as string || 'desc';
+
+  // Build database query
+  let dbQuery = db.table('users')
+    .select(
+      'id',
+      'name',
+      'username',
+      'email',
+      'phone',
+      'preferred_method',
+      'email_verified_at',
+      'phone_verified_at',
+      'last_login_at',
+      'created_at',
+      'updated_at',
+      'avatar',
+      'province_id',
+      'city_id',
+      'is_admin',
+      'failed_attempts',
+      'locked_until'
+    );
+
+  // Apply search filter
+  if (search) {
+    dbQuery = dbQuery.where('name', 'like', `%${search}%`)
+      .orWhere('email', 'like', `%${search}%`)
+      .orWhere('phone', 'like', `%${search}%`);
+  }
+
+  // Apply email verification filter
+  if (emailVerified) {
+    dbQuery = dbQuery.where('email_verified_at', emailVerified === 'true' ? '!=' : '=', null);
+  }
+
+  // Apply phone verification filter
+  if (phoneVerified) {
+    dbQuery = dbQuery.where('phone_verified_at', phoneVerified === 'true' ? '!=' : '=', null);
+  }
+
+  // Apply sorting
+  dbQuery = dbQuery.orderBy(sortBy, sortOrder);
+
+  // Paginate results
+  const total = await dbQuery.clone().count('* as count').first();
+  const users = await dbQuery.offset((page - 1) * perPage).limit(perPage);
+
   return {
     success: true,
-    data: mockUsers,
-    users: mockUsers,
-    total: mockUsers.length
-  }
-})
+    data: users,
+    meta: {
+      current_page: page,
+      last_page: Math.ceil(total.count / perPage),
+      per_page: perPage,
+      total: total.count,
+      from: (page - 1) * perPage + 1,
+      to: Math.min(page * perPage, total.count)
+    }
+  };
+});
