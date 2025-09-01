@@ -1,4 +1,3 @@
-<!-- components/AppHeader.vue - نسخه اصلاح شده -->
 <template>
   <header class="header">
     <div class="header-container">
@@ -12,48 +11,39 @@
       <nav class="nav desktop-nav">
         <NuxtLink to="/" class="nav-link">خانه</NuxtLink>
 
-        <ClientOnly>
-          <template v-if="isLoggedIn">
-            <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
-            <NuxtLink to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
-            <NuxtLink to="/dashboard/books" class="nav-link">کتاب‌ها</NuxtLink>
-            <NuxtLink to="/dashboard/categories" class="nav-link">دسته‌ها</NuxtLink>
-            <NuxtLink to="/dashboard/gallery/books" class="nav-link">گالری</NuxtLink>
-          </template>
-        </ClientOnly>
+        <template v-if="isLoggedIn">
+          <NuxtLink to="/dashboard" class="nav-link">داشبورد</NuxtLink>
+          <NuxtLink v-if="isAdmin" to="/dashboard/users" class="nav-link">کاربران</NuxtLink>
+        </template>
 
         <!-- User Menu -->
-        <ClientOnly>
-          <div v-if="isLoggedIn" class="user-menu" ref="userMenuRef">
-            <button @click="toggleUserMenu" class="user-btn">
-              <div class="user-avatar">
-                {{ getInitials(user?.name) }}
-              </div>
-              <span class="user-name">{{ displayName }}</span>
-              <ChevronDownIcon class="chevron" :class="{ rotated: showUserMenu }" />
-            </button>
+        <div v-if="isLoggedIn" class="user-menu" ref="userMenuRef">
+          <button @click="toggleUserMenu" class="user-btn">
+            <div class="user-avatar">
+              {{ getInitials(user?.name) }}
+            </div>
+            <span class="user-name">{{ displayName }}</span>
+            <ChevronDownIcon :class="['chevron', { rotated: showUserMenu }]" />
+          </button>
 
-            <Transition name="dropdown">
-              <div v-if="showUserMenu" class="user-dropdown">
-                <NuxtLink to="/dashboard/profile" @click="closeUserMenu" class="dropdown-item">
-                  <UserIcon class="icon" />
-                  <span>پروفایل</span>
-                </NuxtLink>
-                <button @click="handleLogout" class="dropdown-item logout">
-                  <LogOutIcon class="icon" />
-                  <span>خروج</span>
-                </button>
-              </div>
-            </Transition>
-          </div>
-        </ClientOnly>
+          <Transition name="dropdown">
+            <div v-if="showUserMenu" class="user-dropdown">
+              <NuxtLink to="/dashboard/profile" @click="closeUserMenu" class="dropdown-item">
+                <UserIcon />
+                <span>پروفایل</span>
+              </NuxtLink>
+              <button @click="handleLogout" class="dropdown-item logout">
+                <LogOutIcon />
+                <span>خروج</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
 
         <!-- Auth Button -->
-        <ClientOnly>
-          <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
-            ورود / ثبت نام
-          </NuxtLink>
-        </ClientOnly>
+        <NuxtLink v-if="!isLoggedIn" to="/auth" class="btn btn-primary">
+          ورود / ثبت نام
+        </NuxtLink>
       </nav>
 
       <!-- Mobile Menu Button -->
@@ -70,10 +60,7 @@
 
         <template v-if="isLoggedIn">
           <NuxtLink to="/dashboard" @click="closeMobileMenu" class="mobile-nav-link">داشبورد</NuxtLink>
-          <NuxtLink to="/dashboard/users" @click="closeMobileMenu" class="mobile-nav-link">کاربران</NuxtLink>
-          <NuxtLink to="/dashboard/books" @click="closeMobileMenu" class="mobile-nav-link">کتاب‌ها</NuxtLink>
-          <NuxtLink to="/dashboard/categories" @click="closeMobileMenu" class="mobile-nav-link">دسته‌ها</NuxtLink>
-          <NuxtLink to="/dashboard/gallery/books" @click="closeMobileMenu" class="mobile-nav-link">گالری</NuxtLink>
+          <NuxtLink v-if="isAdmin" to="/dashboard/users" @click="closeMobileMenu" class="mobile-nav-link">کاربران</NuxtLink>
           <NuxtLink to="/dashboard/profile" @click="closeMobileMenu" class="mobile-nav-link">پروفایل</NuxtLink>
           <button @click="handleLogout" class="mobile-nav-link logout">خروج</button>
         </template>
@@ -87,10 +74,9 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
-
-const { user, isLoggedIn, logout } = useAuth()
+const { user, isLoggedIn, isAdmin, logout } = useAuth()
 const { showToast } = useToast()
+const { getInitials } = useUtils()
 
 // State
 const showUserMenu = ref(false)
@@ -104,11 +90,6 @@ const displayName = computed(() => {
 })
 
 // Methods
-const getInitials = (name) => {
-  if (!name) return 'ک'
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-}
-
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value
 }
@@ -129,7 +110,6 @@ const handleLogout = async () => {
   try {
     await logout()
     showToast('خروج با موفقیت انجام شد', 'success')
-    await navigateTo('/')
   } catch (error) {
     showToast('خطا در خروج از سیستم', 'error')
   }
@@ -152,7 +132,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-// Components
+// Icon components
 const ChevronDownIcon = {
   render() {
     return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
@@ -203,15 +183,15 @@ const XIcon = {
 <style scoped>
 .header {
   background: white;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .header-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 1rem;
   display: flex;
@@ -220,11 +200,10 @@ const XIcon = {
   height: 64px;
 }
 
-/* Logo */
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   text-decoration: none;
   font-weight: 700;
   font-size: 1.2rem;
@@ -235,7 +214,7 @@ const XIcon = {
   width: 36px;
   height: 36px;
   background: linear-gradient(135deg, var(--primary), #764ba2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,7 +222,6 @@ const XIcon = {
   color: white;
 }
 
-/* Desktop Navigation */
 .desktop-nav {
   display: flex;
   align-items: center;
@@ -253,8 +231,8 @@ const XIcon = {
 .nav-link {
   color: var(--gray);
   font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
   transition: var(--transition);
   text-decoration: none;
 }
@@ -262,10 +240,9 @@ const XIcon = {
 .nav-link:hover,
 .nav-link.router-link-active {
   color: var(--primary);
-  background: rgba(102, 126, 234, 0.1);
+  background: var(--primary-light);
 }
 
-/* User Menu */
 .user-menu {
   position: relative;
 }
@@ -273,18 +250,18 @@ const XIcon = {
 .user-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: var(--light);
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: var(--transition);
 }
 
 .user-btn:hover {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.05);
+  background: var(--primary-light);
 }
 
 .user-avatar {
@@ -315,12 +292,12 @@ const XIcon = {
 
 .user-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 0.5rem);
   right: 0;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   min-width: 180px;
   overflow: hidden;
   z-index: 1000;
@@ -329,9 +306,9 @@ const XIcon = {
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   width: 100%;
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background: none;
   border: none;
   text-align: right;
@@ -347,25 +324,19 @@ const XIcon = {
 
 .dropdown-item.logout {
   color: var(--danger);
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
 }
 
 .dropdown-item.logout:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger-light);
 }
 
-.dropdown-item .icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* Mobile Menu */
 .mobile-menu-btn {
   display: none;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 0.5rem;
   color: var(--dark);
 }
 
@@ -373,40 +344,39 @@ const XIcon = {
   display: none;
   flex-direction: column;
   padding: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   background: white;
 }
 
 .mobile-nav-link {
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   color: var(--gray);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   transition: var(--transition);
   background: none;
   border: none;
   text-align: right;
   cursor: pointer;
-  font-size: 1rem;
 }
 
 .mobile-nav-link:hover,
 .mobile-nav-link.router-link-active {
   color: var(--primary);
-  background: rgba(102, 126, 234, 0.1);
+  background: var(--primary-light);
 }
 
 .mobile-nav-link.primary {
   background: linear-gradient(135deg, var(--primary), #764ba2);
   color: white;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 0.5rem;
 }
 
 .mobile-nav-link.logout {
   color: var(--danger);
-  border-top: 1px solid #e5e7eb;
-  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
 }
 
 /* Transitions */
@@ -438,7 +408,6 @@ const XIcon = {
   max-height: 400px;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .desktop-nav {
     display: none;
@@ -454,10 +423,6 @@ const XIcon = {
 
   .logo-text {
     display: none;
-  }
-
-  .header-container {
-    padding: 0 1rem;
   }
 }
 </style>

@@ -1,89 +1,49 @@
-<!-- components/AppToast.vue -->
 <template>
   <Teleport to="body">
-    <div class="toast-container">
-      <TransitionGroup name="toast" tag="div">
-        <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          :class="['toast', `toast-${toast.type}`]"
-          @click="removeToast(toast.id)"
-        >
-          <div class="toast-icon">
-            <component :is="getIcon(toast.type)" />
-          </div>
-          <div class="toast-content">
-            <p class="toast-message">{{ toast.message }}</p>
-          </div>
-          <button @click.stop="removeToast(toast.id)" class="toast-close">
-            <XIcon />
-          </button>
-        </div>
-      </TransitionGroup>
-    </div>
+    <TransitionGroup name="toast" tag="div" class="toast-container">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        :class="['toast', `toast-${toast.type}`]"
+        @click="removeToast(toast.id)"
+      >
+        <component :is="getIcon(toast.type)" class="toast-icon" />
+        <p class="toast-message">{{ toast.message }}</p>
+        <button @click.stop="removeToast(toast.id)" class="toast-close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m18 6-12 12"/>
+            <path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+    </TransitionGroup>
   </Teleport>
 </template>
 
 <script setup>
 const { toasts, removeToast } = useToast()
 
-// Icons (render functions to avoid runtime template compilation)
-import { h } from 'vue'
-
-const CheckIcon = {
-  render() {
-    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+const getIcon = (type: string) => {
+  const icons = {
+    success: () => h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
       h('polyline', { points: '20 6 9 17 4 12' })
-    ])
-  }
-}
-
-const XCircleIcon = {
-  render() {
-    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    ]),
+    error: () => h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
       h('circle', { cx: '12', cy: '12', r: '10' }),
       h('path', { d: 'm15 9-6 6' }),
       h('path', { d: 'm9 9 6 6' })
-    ])
-  }
-}
-
-const AlertTriangleIcon = {
-  render() {
-    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    ]),
+    warning: () => h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
       h('path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z' }),
       h('path', { d: 'M12 9v4' }),
       h('path', { d: 'm12 17 .01 0' })
-    ])
-  }
-}
-
-const InfoIcon = {
-  render() {
-    return h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    ]),
+    info: () => h('svg', { width: '20', height: '20', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
       h('circle', { cx: '12', cy: '12', r: '10' }),
       h('path', { d: 'm9 12 2 2 4-4' })
     ])
   }
-}
-
-const XIcon = {
-  render() {
-    return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-      h('path', { d: 'm18 6-12 12' }),
-      h('path', { d: 'm6 6 12 12' })
-    ])
-  }
-}
-
-const getIcon = (type) => {
-  switch (type) {
-    case 'success': return CheckIcon
-    case 'error': return XCircleIcon
-    case 'warning': return AlertTriangleIcon
-    case 'info': return InfoIcon
-    default: return InfoIcon
-  }
+  return icons[type] || icons.info
 }
 </script>
 
@@ -118,41 +78,17 @@ const getIcon = (type) => {
   transform: translateX(8px);
 }
 
-.toast-success {
-  background: rgba(16, 185, 129, 0.95);
-  color: white;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.toast-error {
-  background: rgba(239, 68, 68, 0.95);
-  color: white;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.toast-warning {
-  background: rgba(245, 158, 11, 0.95);
-  color: white;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.toast-info {
-  background: rgba(59, 130, 246, 0.95);
-  color: white;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
+.toast-success { background: rgba(16, 185, 129, 0.95); color: white; }
+.toast-error { background: rgba(239, 68, 68, 0.95); color: white; }
+.toast-warning { background: rgba(245, 158, 11, 0.95); color: white; }
+.toast-info { background: rgba(59, 130, 246, 0.95); color: white; }
 
 .toast-icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-}
-
-.toast-content {
-  flex: 1;
 }
 
 .toast-message {
+  flex: 1;
   margin: 0;
   font-weight: 500;
   line-height: 1.4;
@@ -174,7 +110,6 @@ const getIcon = (type) => {
   opacity: 1;
 }
 
-/* Transitions */
 .toast-enter-active {
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -183,11 +118,7 @@ const getIcon = (type) => {
   transition: all 0.3s ease;
 }
 
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(-100%) scale(0.8);
-}
-
+.toast-enter-from,
 .toast-leave-to {
   opacity: 0;
   transform: translateX(-100%) scale(0.8);
@@ -197,7 +128,6 @@ const getIcon = (type) => {
   transition: transform 0.3s ease;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .toast-container {
     left: 1rem;

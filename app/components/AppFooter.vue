@@ -1,4 +1,3 @@
-<!-- components/AppFooter.vue - نسخه اصلاح شده -->
 <template>
   <footer class="footer">
     <div class="footer-container">
@@ -19,14 +18,8 @@
           <h3>لینک‌های سریع</h3>
           <ul class="footer-links">
             <li><NuxtLink to="/">صفحه اصلی</NuxtLink></li>
-            <ClientOnly>
-              <template v-if="isLoggedIn">
-                <li><NuxtLink to="/dashboard">داشبورد</NuxtLink></li>
-              </template>
-              <template v-else>
-                <li><NuxtLink to="/auth">ورود</NuxtLink></li>
-              </template>
-            </ClientOnly>
+            <li v-if="isLoggedIn"><NuxtLink to="/dashboard">داشبورد</NuxtLink></li>
+            <li v-if="!isLoggedIn"><NuxtLink to="/auth">ورود</NuxtLink></li>
           </ul>
         </div>
 
@@ -45,16 +38,16 @@
         <div class="footer-section">
           <h3>تماس با ما</h3>
           <ul class="footer-links">
-            <li>
-              <MailIcon class="icon" />
+            <li class="contact-item">
+              <MailIcon />
               <span>support@example.com</span>
             </li>
-            <li>
-              <PhoneIcon class="icon" />
+            <li class="contact-item">
+              <PhoneIcon />
               <span>۰۲۱-۱۲۳۴۵۶۷۸</span>
             </li>
-            <li>
-              <MapPinIcon class="icon" />
+            <li class="contact-item">
+              <MapPinIcon />
               <span>تهران، ایران</span>
             </li>
           </ul>
@@ -76,13 +69,11 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
-
 const { isLoggedIn } = useAuth()
 
 const currentYear = new Date().getFullYear()
 
-// Icons
+// Icon components
 const MailIcon = {
   render() {
     return h('svg', { width: '16', height: '16', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
@@ -118,7 +109,7 @@ const MapPinIcon = {
 }
 
 .footer-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -139,7 +130,7 @@ const MapPinIcon = {
 .footer-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   font-weight: 700;
   font-size: 1.2rem;
   color: white;
@@ -150,7 +141,7 @@ const MapPinIcon = {
   width: 32px;
   height: 32px;
   background: linear-gradient(135deg, var(--primary), #764ba2);
-  border-radius: 6px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -171,9 +162,6 @@ const MapPinIcon = {
 
 .footer-links li {
   margin-bottom: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .footer-links a {
@@ -186,9 +174,14 @@ const MapPinIcon = {
   color: var(--primary);
 }
 
-.footer-links .icon {
-  width: 16px;
-  height: 16px;
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d1d5db;
+}
+
+.contact-item svg {
   color: var(--primary);
 }
 

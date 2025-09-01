@@ -1,32 +1,25 @@
-<!-- app/layouts/default.vue - نسخه بهبود یافته -->
 <template>
   <div class="layout">
-    <!-- Header -->
     <AppHeader />
 
-    <!-- Main Content -->
     <main class="main-content">
       <div class="container">
         <NuxtPage />
       </div>
     </main>
 
-    <!-- Footer -->
     <AppFooter />
-
-    <!-- Toast Container -->
     <AppToast />
   </div>
 </template>
 
 <script setup>
-const { initialize, initialized } = useAuth()
+const { restoreAuth, initialized } = useAuth()
 
-// اطمینان از initialize شدن auth
-onMounted(async () => {
+// Initialize auth on client
+onMounted(() => {
   if (!initialized.value) {
-    console.log('🔄 Layout - initializing auth...')
-    await initialize()
+    restoreAuth()
   }
 })
 </script>
@@ -36,7 +29,6 @@ onMounted(async () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-family: var(--font-family);
   direction: rtl;
 }
 

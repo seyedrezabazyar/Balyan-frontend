@@ -1,107 +1,97 @@
 <template>
   <div class="auth-page">
     <div class="auth-container">
-      <!-- Logo -->
       <div class="logo">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 7V12C2 16.5 4.5 20.74 8 22C12 20.74 22 16.5 22 12V7L12 2Z" fill="currentColor" />
-        </svg>
+        <div class="logo-icon">⚡</div>
+        <h1>{{ pageTitle }}</h1>
+        <p>{{ pageSubtitle }}</p>
       </div>
 
-      <!-- Title -->
-      <h1 class="title">{{ pageTitle }}</h1>
-      <p class="subtitle">{{ pageSubtitle }}</p>
+      <!-- Step 1: Identifier -->
+      <form v-if="step === 'identifier'" @submit.prevent="handleIdentifier" class="auth-form">
+        <div class="form-group">
+          <input
+            v-model="form.identifier"
+            type="text"
+            class="input"
+            placeholder="ایمیل یا شماره موبایل"
+            required
+            autofocus
+          />
+        </div>
+        <button type="submit" class="btn btn-primary" :disabled="loading">
+          {{ loading ? 'در حال بررسی...' : 'ادامه' }}
+        </button>
+      </form>
 
-      <!-- Form Container -->
-      <div class="form-container">
-        <!-- Step 1: Enter Identifier -->
-        <form v-if="step === 'identifier'" @submit.prevent="handleIdentifier">
-          <div class="form-group">
-            <input
-              v-model="identifier"
-              type="text"
-              class="input"
-              placeholder="ایمیل یا شماره موبایل"
-              required
-              autofocus
-            />
-          </div>
+      <!-- Step 2: Password -->
+      <form v-else-if="step === 'password'" @submit.prevent="handlePassword" class="auth-form">
+        <div class="identifier-display">
+          <span>{{ form.identifier }}</span>
+          <button type="button" @click="resetForm" class="btn-link">تغییر</button>
+        </div>
 
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'در حال پردازش...' : 'ادامه' }}
-          </button>
-        </form>
+        <div class="form-group">
+          <input
+            v-model="form.password"
+            type="password"
+            class="input"
+            placeholder="رمز عبور"
+            required
+            autofocus
+          />
+        </div>
 
-        <!-- Step 2: Password -->
-        <form v-else-if="step === 'password'" @submit.prevent="handlePassword">
-          <div class="identifier-display">
-            <span>{{ identifier }}</span>
-            <button type="button" @click="resetForm" class="btn-link">تغییر</button>
-          </div>
+        <button type="button" @click="requestOTP" class="btn-link">
+          ورود با کد یکبار مصرف
+        </button>
 
-          <div class="form-group">
-            <input
-              v-model="password"
-              type="password"
-              class="input"
-              placeholder="رمز عبور"
-              required
-              autofocus
-            />
-          </div>
+        <button type="submit" class="btn btn-primary" :disabled="loading">
+          {{ loading ? 'در حال ورود...' : 'ورود' }}
+        </button>
+      </form>
 
-          <button type="button" @click="requestOTP" class="btn-link">
-            ورود با کد یکبار مصرف
-          </button>
+      <!-- Step 3: OTP -->
+      <form v-else-if="step === 'otp'" @submit.prevent="handleOTP" class="auth-form">
+        <div class="identifier-display">
+          <span>{{ form.identifier }}</span>
+          <button type="button" @click="resetForm" class="btn-link">تغییر</button>
+        </div>
 
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'در حال ورود...' : 'ورود' }}
-          </button>
-        </form>
+        <p class="otp-message">
+          کد 6 رقمی به {{ utils.getIdentifierType(form.identifier) === 'email' ? 'ایمیل' : 'شماره موبایل' }} شما ارسال شد
+        </p>
 
-        <!-- Step 3: OTP -->
-        <form v-else-if="step === 'otp'" @submit.prevent="handleOTP">
-          <div class="identifier-display">
-            <span>{{ identifier }}</span>
-            <button type="button" @click="resetForm" class="btn-link">تغییر</button>
-          </div>
+        <div class="form-group">
+          <input
+            v-model="form.otp"
+            type="text"
+            class="input otp-input"
+            placeholder="کد 6 رقمی"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+            autofocus
+          />
+        </div>
 
-          <p class="otp-message">
-            کد 6 رقمی به {{ isEmail ? 'ایمیل' : 'شماره موبایل' }} شما ارسال شد
-          </p>
+        <button type="submit" class="btn btn-primary" :disabled="loading || !validators.otp(form.otp)">
+          {{ loading ? 'در حال تایید...' : 'تایید و ورود' }}
+        </button>
 
-          <div class="form-group">
-            <input
-              v-model="otp"
-              type="text"
-              class="input otp-input"
-              placeholder="کد 6 رقمی"
-              maxlength="6"
-              pattern="[0-9]{6}"
-              required
-              autofocus
-            />
-          </div>
+        <button
+          v-if="canResend"
+          type="button"
+          @click="requestOTP"
+          class="btn-link resend-btn"
+        >
+          ارسال مجدد کد
+        </button>
+        <span v-else class="timer">
+          ارسال مجدد بعد از {{ timer }} ثانیه
+        </span>
+      </form>
 
-          <button type="submit" class="btn btn-primary" :disabled="loading || otp.length !== 6">
-            {{ loading ? 'در حال تایید...' : 'تایید و ورود' }}
-          </button>
-
-          <button 
-            v-if="canResend" 
-            type="button" 
-            @click="requestOTP" 
-            class="btn-link resend-btn"
-          >
-            ارسال مجدد کد
-          </button>
-          <span v-else class="timer">
-            ارسال مجدد بعد از {{ timer }} ثانیه
-          </span>
-        </form>
-      </div>
-
-      <!-- Error Message -->
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -110,30 +100,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
-
-// Middleware
 definePageMeta({
   layout: false,
   middleware: 'guest'
 })
 
-// Composables
-const { loginPassword, sendOTP, verifyOTP, checkUserIdentifier, loading } = useAuth()
-const router = useRouter()
+const { checkUserIdentifier, loginPassword, sendOTP, verifyOTP, loading } = useAuth()
+const { showToast } = useToast()
+const { validators, utils } = useUtils()
 
-// State
-const step = ref('identifier')
-const identifier = ref('')
-const password = ref('')
-const otp = ref('')
+// Form state
+const step = ref<'identifier' | 'password' | 'otp'>('identifier')
+const form = reactive({
+  identifier: '',
+  password: '',
+  otp: ''
+})
 const error = ref('')
 const timer = ref(0)
-const userHasPassword = ref(true) // Default to true until we check
-let timerInterval = null
+const userHasPassword = ref(true)
+
+let timerInterval: NodeJS.Timeout | null = null
 
 // Computed
-const isEmail = computed(() => identifier.value.includes('@'))
 const canResend = computed(() => timer.value === 0)
 
 const pageTitle = computed(() => {
@@ -157,9 +146,7 @@ const pageSubtitle = computed(() => {
 // Methods
 const resetForm = () => {
   step.value = 'identifier'
-  identifier.value = ''
-  password.value = ''
-  otp.value = ''
+  Object.assign(form, { identifier: '', password: '', otp: '' })
   error.value = ''
   stopTimer()
 }
@@ -168,9 +155,7 @@ const startTimer = (seconds = 120) => {
   timer.value = seconds
   timerInterval = setInterval(() => {
     timer.value--
-    if (timer.value <= 0) {
-      stopTimer()
-    }
+    if (timer.value <= 0) stopTimer()
   }, 1000)
 }
 
@@ -184,90 +169,77 @@ const stopTimer = () => {
 
 const handleIdentifier = async () => {
   error.value = ''
-  
+
   try {
-    // Check if user exists and has password
-    const checkResult = await checkUserIdentifier(identifier.value)
-    
-    if (checkResult.success && checkResult.data) {
-      userHasPassword.value = checkResult.data.has_password || false
-      
-      // اگر کاربر پسورد دارد (ایمیل یا شماره)، مرحله پسورد را نمایش بده؛ در غیر این صورت OTP
-      if (userHasPassword.value) {
-        step.value = 'password'
-      } else {
-        await requestOTP()
-      }
+    const checkResult = await checkUserIdentifier(form.identifier)
+
+    if (checkResult.success && checkResult.data?.has_password) {
+      userHasPassword.value = true
+      step.value = 'password'
     } else {
-      // اگر کاربر وجود ندارد، برای ثبت نام OTP ارسال کن
       await requestOTP()
     }
-  } catch (err) {
-    // در صورت خطا، فرض کن کاربر جدید است و OTP ارسال کن
+  } catch {
     await requestOTP()
   }
 }
 
 const handlePassword = async () => {
   error.value = ''
-  
+
   try {
-    const result = await loginPassword(identifier.value, password.value)
-    
+    const result = await loginPassword(form.identifier, form.password)
+
     if (result.success) {
-      // ورود موفق
-      await router.push('/dashboard')
+      await navigateTo('/dashboard')
     } else {
       error.value = result.message || 'رمز عبور اشتباه است'
     }
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'خطا در ورود'
   }
 }
 
 const requestOTP = async () => {
   error.value = ''
-  
+
   try {
-    const result = await sendOTP(identifier.value)
-    
+    const result = await sendOTP(form.identifier)
+
     if (result.success) {
       step.value = 'otp'
       startTimer(120)
-      
-      // نمایش کد در حالت debug (فقط برای تست)
+
       if (result.debug_code) {
-        console.log('Debug OTP Code:', result.debug_code)
+        console.log('Debug OTP:', result.debug_code)
       }
     } else {
       error.value = result.message || 'خطا در ارسال کد'
     }
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'خطا در ارسال کد'
   }
 }
 
 const handleOTP = async () => {
   error.value = ''
-  
+
   try {
-    const result = await verifyOTP(identifier.value, otp.value)
-    
+    const result = await verifyOTP(form.identifier, form.otp)
+
     if (result.success) {
-      // ورود موفق
       stopTimer()
-      await router.push('/dashboard')
+      await navigateTo('/dashboard')
     } else {
       error.value = result.message || 'کد وارد شده اشتباه است'
-      otp.value = ''
+      form.otp = ''
     }
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'خطا در تایید کد'
-    otp.value = ''
+    form.otp = ''
   }
 }
 
-// Cleanup
 onUnmounted(() => {
   stopTimer()
 })
@@ -280,66 +252,70 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem;
+  padding: 2rem 1rem;
+  direction: rtl;
 }
 
 .auth-container {
-  width: 100%;
-  max-width: 400px;
   background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 420px;
 }
 
 .logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-icon {
   width: 64px;
   height: 64px;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 1rem;
+  font-size: 2rem;
   color: white;
 }
 
-.title {
-  text-align: center;
+.logo h1 {
   font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 0.5rem;
+  color: var(--dark);
+  margin-bottom: 0.5rem;
 }
 
-.subtitle {
-  text-align: center;
-  color: #6b7280;
-  margin: 0 0 2rem;
-  font-size: 0.875rem;
+.logo p {
+  color: var(--gray);
+  margin: 0;
 }
 
-.form-container {
-  margin-bottom: 1rem;
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--border);
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: all 0.2s;
-  font-family: inherit;
 }
 
 .input:focus {
+  border-color: var(--primary);
   outline: none;
-  border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -350,127 +326,66 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.btn {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: none;
+.identifier-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--gray-50);
   border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
+  border: 1px solid var(--border);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
+.identifier-display span {
+  font-weight: 600;
+  color: var(--dark);
 }
 
 .btn-link {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--primary);
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
   transition: all 0.2s;
-}
-
-.btn-link:hover {
   text-decoration: underline;
 }
 
-.identifier-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.identifier-display span {
-  font-weight: 600;
-  color: #374151;
-}
-
-.divider {
-  text-align: center;
-  color: #9ca3af;
-  margin: 1.5rem 0;
-  position: relative;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: calc(50% - 2rem);
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.divider::before {
-  left: 0;
-}
-
-.divider::after {
-  right: 0;
+.btn-link:hover {
+  color: var(--primary-dark);
 }
 
 .otp-message {
   text-align: center;
-  color: #6b7280;
-  margin: 0 0 1.5rem;
-  font-size: 0.875rem;
-  padding: 0.75rem;
-  background: #f9fafb;
+  color: var(--gray);
+  background: var(--gray-50);
+  padding: 1rem;
   border-radius: 0.5rem;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .resend-btn {
-  display: block;
-  margin: 1rem auto 0;
-  width: auto;
+  align-self: center;
+  margin-top: 0.5rem;
 }
 
 .timer {
-  display: block;
   text-align: center;
-  color: #9ca3af;
+  color: var(--gray);
   font-size: 0.875rem;
   margin-top: 1rem;
 }
 
 .error-message {
-  background: #fee2e2;
-  color: #dc2626;
-  padding: 0.75rem 1rem;
+  background: var(--danger-light);
+  color: var(--danger);
+  padding: 1rem;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
   text-align: center;
+  font-size: 0.9rem;
+  margin-top: 1rem;
   animation: shake 0.3s;
 }
 
@@ -480,68 +395,15 @@ onUnmounted(() => {
   75% { transform: translateX(5px); }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .auth-container {
-    background: #1f2937;
-    color: #f3f4f6;
-  }
-
-  .title {
-    color: #f3f4f6;
-  }
-
-  .subtitle {
-    color: #9ca3af;
-  }
-
-  .input {
-    background: #111827;
-    border-color: #374151;
-    color: #f3f4f6;
-  }
-
-  .input:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
-  }
-
-  .btn-secondary {
-    background: #374151;
-    color: #f3f4f6;
-  }
-
-  .btn-secondary:hover {
-    background: #4b5563;
-  }
-
-  .identifier-display {
-    background: #374151;
-  }
-
-  .identifier-display span {
-    color: #f3f4f6;
-  }
-
-  .otp-message {
-    background: #374151;
-    color: #d1d5db;
-  }
-
-  .error-message {
-    background: #7f1d1d;
-    color: #fecaca;
-  }
-}
-
-/* Mobile responsiveness */
 @media (max-width: 480px) {
   .auth-container {
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
   }
 
-  .title {
-    font-size: 1.25rem;
+  .logo-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.75rem;
   }
 
   .otp-input {

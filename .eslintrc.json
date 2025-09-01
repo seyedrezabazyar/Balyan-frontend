@@ -17,6 +17,10 @@
         "normal": "never",
         "component": "always"
       }
+    }],
+    "vue/component-name-in-template-casing": ["error", "PascalCase"],
+    "vue/define-macros-order": ["error", {
+      "order": ["definePageMeta", "defineProps", "defineEmits"]
     }]
   }
 }

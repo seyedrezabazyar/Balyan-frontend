@@ -1,77 +1,43 @@
-// composables/useToast.ts
 interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  duration?: number;
+  id: string
+  message: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  duration: number
 }
 
 const toasts = ref<Toast[]>([])
 
 export const useToast = () => {
-  const addToast = (message: string, type: Toast['type'] = 'info', duration: number = 5000) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9)
-
-    const toast: Toast = {
-      id,
-      message,
-      type,
-      duration
-    }
+  const add = (message: string, type: Toast['type'] = 'info', duration = 5000) => {
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const toast: Toast = { id, message, type, duration }
 
     toasts.value.push(toast)
 
-    // Auto remove after duration
     if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id)
-      }, duration)
+      setTimeout(() => remove(id), duration)
     }
 
     return id
   }
 
-  const removeToast = (id: string) => {
-    const index = toasts.value.findIndex(toast => toast.id === id)
-    if (index > -1) {
-      toasts.value.splice(index, 1)
-    }
+  const remove = (id: string) => {
+    const index = toasts.value.findIndex(t => t.id === id)
+    if (index > -1) toasts.value.splice(index, 1)
   }
 
-  const clearAllToasts = () => {
+  const clear = () => {
     toasts.value = []
-  }
-
-  // Convenience methods
-  const showToast = (message: string, type: Toast['type'] = 'info') => {
-    return addToast(message, type)
-  }
-
-  const showSuccess = (message: string) => {
-    return addToast(message, 'success')
-  }
-
-  const showError = (message: string) => {
-    return addToast(message, 'error')
-  }
-
-  const showWarning = (message: string) => {
-    return addToast(message, 'warning')
-  }
-
-  const showInfo = (message: string) => {
-    return addToast(message, 'info')
   }
 
   return {
     toasts: readonly(toasts),
-    addToast,
-    removeToast,
-    clearAllToasts,
-    showToast,
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo
+    showToast: add,
+    showSuccess: (msg: string) => add(msg, 'success'),
+    showError: (msg: string) => add(msg, 'error'),
+    showWarning: (msg: string) => add(msg, 'warning'),
+    showInfo: (msg: string) => add(msg, 'info'),
+    removeToast: remove,
+    clearToasts: clear
   }
 }

@@ -1,4 +1,3 @@
-<!-- pages/access-denied.vue -->
 <template>
   <div class="access-denied-page">
     <div class="access-denied-content">
@@ -43,19 +42,17 @@
 </template>
 
 <script setup>
-definePageMeta({
-  layout: false
-})
+definePageMeta({ layout: false })
 
 const { showToast } = useToast()
+const { isLoggedIn } = useAuth()
 
 const contactSupport = () => {
   showToast('برای تماس با پشتیبانی از بخش تماس با ما استفاده کنید', 'info')
 }
 
-// Check if user is logged in, redirect if not
+// Check if user is logged in
 onMounted(() => {
-  const { isLoggedIn } = useAuth()
   if (!isLoggedIn.value) {
     navigateTo('/auth')
   }
@@ -76,8 +73,8 @@ onMounted(() => {
 .access-denied-content {
   background: white;
   padding: 3rem 2rem;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   text-align: center;
   max-width: 600px;
   width: 100%;
@@ -103,14 +100,14 @@ onMounted(() => {
 
 .access-denied-content h1 {
   font-size: 2.5rem;
-  color: #1f2937;
+  color: var(--dark);
   margin-bottom: 1rem;
   font-weight: 700;
 }
 
 .error-message {
   font-size: 1.25rem;
-  color: #6b7280;
+  color: var(--gray);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -123,9 +120,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: #f3f4f6;
+  background: var(--gray-50);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-align: right;
 }
 
@@ -136,13 +133,13 @@ onMounted(() => {
 
 .detail-content h3 {
   margin: 0 0 0.5rem 0;
-  color: #374151;
+  color: var(--dark);
   font-size: 1.1rem;
 }
 
 .detail-content p {
   margin: 0;
-  color: #6b7280;
+  color: var(--gray);
   font-size: 0.95rem;
 }
 
@@ -154,70 +151,34 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-  background: #f8f9fa;
-  color: #374151;
-  border: 2px solid #e5e7eb;
-}
-
-.btn-secondary:hover {
-  background: #e9ecef;
-  border-color: #d1d5db;
-}
-
 .help-section {
   padding: 1.5rem;
-  background: #f9fafb;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
 }
 
 .help-section h4 {
-  color: #374151;
+  color: var(--dark);
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
 }
 
 .help-section p {
-  color: #6b7280;
+  color: var(--gray);
   margin: 0 0 1rem 0;
   font-size: 0.95rem;
 }
 
 .contact-btn {
-  background: #f59e0b;
+  background: var(--warning);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   font-size: 0.95rem;
 }
 

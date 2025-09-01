@@ -5,24 +5,25 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host 127.0.0.1 --port 3000",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "clean": "rm -rf .nuxt dist .output node_modules/.cache",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,ts,vue,json,css,md}\"",
-    "format:check": "prettier --check \"**/*.{js,ts,vue,json,css,md}\""
+    "lint": "eslint . --ext .vue,.js,.ts",
+    "lint:fix": "eslint . --ext .vue,.js,.ts --fix",
+    "clean": "rm -rf .nuxt dist .output node_modules/.cache"
   },
   "dependencies": {
     "nuxt": "^3.13.0",
-    "vue": "^3.5.0",
-    "vue-router": "^4.4.0"
+    "vue": "^3.5.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
   }
 }
