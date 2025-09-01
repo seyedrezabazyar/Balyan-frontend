@@ -139,7 +139,7 @@
             <td>
               <div class="user-info">
                 <div class="user-avatar">
-                  <img v-if="user.avatar_url" :src="user.avatar_url" :alt="user.name" />
+                  <img v-if="user.avatar_url" :src="user.avatar_url" :alt="user.name" loading="lazy" />
                   <div v-else class="avatar-placeholder">
                     {{ user.name?.charAt(0) || '?' }}
                   </div>
@@ -400,7 +400,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { debounce } from 'lodash-es'
+import { debounce } from '~/utils/helpers'
 
 // Define middleware
 definePageMeta({

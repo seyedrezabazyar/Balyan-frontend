@@ -237,7 +237,8 @@ const requestOTP = async () => {
       
       // نمایش کد در حالت debug (فقط برای تست)
       if (result.debug_code) {
-        console.log('Debug OTP Code:', result.debug_code)
+        // only show in development
+        if (process.dev) console.warn('Debug OTP Code:', result.debug_code)
       }
     } else {
       error.value = result.message || 'خطا در ارسال کد'

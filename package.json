@@ -10,16 +10,23 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "clean": "rm -rf .nuxt dist .output node_modules/.cache"
+    "clean": "rm -rf .nuxt dist .output node_modules/.cache",
+    "lint": "eslint . --ext .ts,.js,.vue",
+    "lint:fix": "eslint . --ext .ts,.js,.vue --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
-    "nuxt": "^3.13.0",
-    "vue": "^3.5.0",
-    "vue-router": "^4.4.0"
+    "nuxt": "^3.13.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
-    "@types/lodash-es": "^4.17.12",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-nuxt": "^4.0.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "prettier": "^3.3.3",
     "typescript": "^5.5.0"
   }
 }

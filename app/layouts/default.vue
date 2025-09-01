@@ -25,7 +25,6 @@ const { initialize, initialized } = useAuth()
 // اطمینان از initialize شدن auth
 onMounted(async () => {
   if (!initialized.value) {
-    console.log('🔄 Layout - initializing auth...')
     await initialize()
   }
 })

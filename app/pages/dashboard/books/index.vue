@@ -95,8 +95,8 @@ const fetchBooks = async () => {
     meta.total = m.total || m.total_items || m.total_count || books.value.length
     meta.per_page = m.per_page || m.perPage || m.limit || 24
     
-    console.log('Books API Response:', res)
-    console.log('Extracted books:', books.value)
+    if (process.dev) console.warn('Books API Response (dev):', res)
+    if (process.dev) console.warn('Extracted books (dev):', books.value)
   } catch (e) {
     console.error('Error fetching books:', e)
     showError(`خطا در دریافت لیست کتاب‌ها: ${e.message || 'خطای ناشناخته'}`)

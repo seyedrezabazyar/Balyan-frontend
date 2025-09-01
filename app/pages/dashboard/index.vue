@@ -43,6 +43,14 @@
 </template>
 
 <script setup>
+import { defineAsyncComponent } from 'vue'
+// Lazy-load heavy dashboard components
+const WelcomeCard = defineAsyncComponent(() => import('~/components/dashboard/WelcomeCard.vue'))
+const StatsGrid = defineAsyncComponent(() => import('~/components/dashboard/StatsGrid.vue'))
+const QuickActions = defineAsyncComponent(() => import('~/components/dashboard/QuickActions.vue'))
+const RecentActivity = defineAsyncComponent(() => import('~/components/dashboard/RecentActivity.vue'))
+const UserInfoCard = defineAsyncComponent(() => import('~/components/dashboard/UserInfoCard.vue'))
+const ComingSoonModal = defineAsyncComponent(() => import('~/components/dashboard/ComingSoonModal.vue'))
 definePageMeta({
   middleware: 'auth',
   layout: 'default'
@@ -53,7 +61,6 @@ const showComingSoon = ref(false)
 
 const displayName = computed(() => {
   if (!user.value) return 'کاربر عزیز'
-  console.log('👤 Dashboard - Computing display name for user:', user.value)
   return user.value.name || user.value.email?.split('@')[0] || user.value.phone || 'کاربر عزیز'
 })
 
@@ -103,13 +110,9 @@ provide('showComingSoon', () => {
 })
 
 const retryLoad = async () => {
-  console.log('🔄 Dashboard - Retrying initialization...')
   try {
     await initialize()
-    if (!isLoggedIn.value) {
-      console.log('❌ Dashboard - Still not logged in, redirecting to auth')
-      await navigateTo('/auth')
-    }
+    if (!isLoggedIn.value) await navigateTo('/auth')
   } catch (error) {
     console.error('❌ Dashboard - Retry failed:', error)
   }
@@ -117,32 +120,15 @@ const retryLoad = async () => {
 
 // Watch for auth state changes
 watch(isLoggedIn, (newValue) => {
-  console.log('👀 Dashboard - Auth state changed:', newValue)
-  if (!newValue) {
-    console.log('❌ Dashboard - User logged out, redirecting to auth')
-    navigateTo('/auth')
-  }
+  if (!newValue) navigateTo('/auth')
 })
 
-watch(user, (newUser) => {
-  console.log('👤 Dashboard - User data changed:', newUser)
-}, { deep: true })
+watch(user, () => {}, { deep: true })
 
 onMounted(async () => {
-  console.log('🚀 Dashboard - Component mounted')
-  console.log('📊 Dashboard - Initial state:', {
-    initialized: initialized.value,
-    isLoggedIn: isLoggedIn.value,
-    hasUser: !!user.value
-  })
-
-  // اگر هنوز initialize نشده، منتظر می‌مانیم
   if (!initialized.value) {
-    console.log('⏳ Dashboard - Waiting for initialization...')
     await waitForInitialization()
   }
-
-  console.log('✅ Dashboard - Ready with user:', user.value?.name || user.value?.email)
 })
 </script>
 

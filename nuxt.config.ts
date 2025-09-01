@@ -26,7 +26,7 @@ export default defineNuxtConfig({
     }
   },
 
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
 
   runtimeConfig: {
     public: {
@@ -37,18 +37,23 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    devProxy: {
+    preset: process.env.VERCEL ? 'vercel' : undefined,
+    routeRules: {
+      '/**': { cors: true },
+      '/api/**': { cache: false }
+    },
+    devProxy: process.env.NODE_ENV !== 'production' ? {
       '/api/auth': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        // @ts-expect-error: rewrite is supported at runtime but not typed in Nuxt 3
+        // @ts-expect-error runtime support
         rewrite: (path) => path.replace(/^\/api/, ''),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
       } as any
-    }
+    } : undefined
   },
 
   devServer: {
@@ -65,5 +70,18 @@ export default defineNuxtConfig({
 
   imports: {
     dirs: ['composables/**', 'utils/**']
+  },
+
+  experimental: {
+    renderJsonPayloads: true
+  },
+
+  vite: {
+    build: {
+      cssMinify: true
+    },
+    optimizeDeps: {
+      include: []
+    }
   }
 })
