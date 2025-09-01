@@ -61,13 +61,17 @@ export const useAuth = () => {
   const hasRole = (roleName: string | string[]): boolean => {
     if (!user.value?.roles) return false
     
-    const userRoles = user.value.roles.map(r => r.name)
+    const normalize = (name: string) =>
+      (name || '').toLowerCase().replace(/_/g, '-')
+    
+    const userRoles = user.value.roles.map(r => normalize(r.name))
     
     if (Array.isArray(roleName)) {
-      return roleName.some(role => userRoles.includes(role))
+      const required = roleName.map(normalize)
+      return required.some(role => userRoles.includes(role))
     }
     
-    return userRoles.includes(roleName)
+    return userRoles.includes(normalize(roleName))
   }
   
   // Check if user has specific permission
@@ -92,7 +96,7 @@ export const useAuth = () => {
   
   // Check if user is admin
   const isAdmin = computed(() => {
-    return user.value?.is_admin || hasRole('admin')
+    return Boolean(user.value?.is_admin) || hasRole(['admin', 'super-admin', 'super_admin'])
   })
   
   // Get all user permissions
@@ -118,30 +122,38 @@ export const useAuth = () => {
   })
 
   // تابع API ساده‌تر
+  type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD'
+  interface ApiRequestOptions extends Omit<RequestInit, 'headers' | 'body' | 'method'> {
+    headers?: HeadersInit | Record<string, string>
+    body?: any
+    method?: HttpMethod
+  }
+
   const api = async <T = any>(
     endpoint: string,
-    options: RequestInit & { body?: any } = {}
+    options: ApiRequestOptions = {}
   ): Promise<T> => {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Accept': 'application/json',
-      ...(token.value && { Authorization: `Bearer ${token.value}` })
+      ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
     }
 
     // Only add Content-Type for requests with body
-    if (options.body && options.method !== 'GET') {
+    if (options.body && options.method && options.method !== 'GET') {
       headers['Content-Type'] = 'application/json'
     }
 
     const requestOptions: RequestInit = {
       ...options,
-      headers: { ...headers, ...options.headers }
+      method: (options.method as HttpMethod) || 'GET',
+      headers: { ...headers, ...(options.headers as Record<string, string>) }
     }
 
     // Handle body - only stringify if it's an object and not already a string
-    if (options.body && typeof options.body === 'object') {
+    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
       requestOptions.body = JSON.stringify(options.body)
     } else if (options.body) {
-      requestOptions.body = options.body
+      requestOptions.body = options.body as BodyInit
     }
 
     const response = await fetch(`${apiUrl}${endpoint}`, requestOptions)

@@ -1,12 +1,12 @@
 // Mock toggle user status API endpoint
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
+  const idParam = getRouterParam(event, 'id') || '0'
   
   return {
     success: true,
     message: 'وضعیت کاربر با موفقیت تغییر کرد',
     user: {
-      id: parseInt(id),
+      id: parseInt(idParam),
       status: 'active', // Mock toggle result
       locked_at: null
     }

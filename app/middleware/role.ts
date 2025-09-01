@@ -1,10 +1,13 @@
 // app/middleware/role.ts
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
   // Only run on client side
   if (process.server) return
 
-  const { user, isLoggedIn } = useAuth()
+  const { isLoggedIn, hasRole, waitForInitialization } = useAuth()
   const { showToast } = useToast()
+
+  // Ensure auth initialization completes before checks
+  await waitForInitialization()
 
   // Check if user is authenticated
   if (!isLoggedIn.value) {
@@ -18,11 +21,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   if (!requiredRole) return // No specific role required
 
   // Check if user has required role
-  const userRoles = user.value?.roles?.map(r => r.name) || []
-  
-  const hasRequiredRole = Array.isArray(requiredRole)
-    ? requiredRole.some(role => userRoles.includes(role))
-    : userRoles.includes(requiredRole)
+  const hasRequiredRole = hasRole(requiredRole as any)
 
   if (!hasRequiredRole) {
     showToast('شما دسترسی به این بخش را ندارید', 'error')
