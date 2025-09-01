@@ -247,4 +247,3 @@ pre {
   color: white;
 }
 </style>
-</template>
