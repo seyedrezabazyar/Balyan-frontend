@@ -1,4 +1,3 @@
-<!-- app/pages/dashboard/users/index.vue -->
 <template>
   <div class="users-container">
     <!-- Header -->
@@ -34,19 +33,24 @@
             v-model="searchQuery"
             type="text"
             placeholder="جستجو کاربران..."
-            @input="filterUsers"
+            @input="debouncedSearch"
           />
         </div>
 
         <div class="filter-controls">
-          <select v-model="statusFilter" @change="filterUsers" class="filter-select">
-            <option value="">همه وضعیت‌ها</option>
-            <option value="active">فعال</option>
-            <option value="inactive">غیرفعال</option>
-            <option value="locked">قفل شده</option>
+          <select v-model="filters.emailVerified" @change="applyFilters" class="filter-select">
+            <option value="">همه ایمیل‌ها</option>
+            <option value="true">تایید شده</option>
+            <option value="false">تایید نشده</option>
           </select>
 
-          <select v-model="methodFilter" @change="filterUsers" class="filter-select">
+          <select v-model="filters.phoneVerified" @change="applyFilters" class="filter-select">
+            <option value="">همه تلفن‌ها</option>
+            <option value="true">تایید شده</option>
+            <option value="false">تایید نشده</option>
+          </select>
+
+          <select v-model="filters.preferredMethod" @change="applyFilters" class="filter-select">
             <option value="">همه روش‌ها</option>
             <option value="password">رمز عبور</option>
             <option value="otp">OTP</option>
@@ -55,7 +59,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="stats-grid">
+      <div class="stats-grid" v-if="userStats">
         <div class="stat-card">
           <div class="stat-icon total">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,33 +71,20 @@
           </div>
           <div class="stat-content">
             <h3>کل کاربران</h3>
-            <p class="stat-value">{{ users.length }}</p>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon active">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3>کاربران فعال</h3>
-            <p class="stat-value">{{ activeUsersCount }}</p>
+            <p class="stat-value">{{ userStats.total_users.toLocaleString() }}</p>
           </div>
         </div>
 
         <div class="stat-card">
           <div class="stat-icon verified">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"></path>
-              <polyline points="9 12 11 14 16 9"></polyline>
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           </div>
           <div class="stat-content">
-            <h3>تایید شده</h3>
-            <p class="stat-value">{{ verifiedUsersCount }}</p>
+            <h3>ایمیل تایید شده</h3>
+            <p class="stat-value">{{ userStats.verified_emails.toLocaleString() }}</p>
           </div>
         </div>
 
@@ -104,8 +95,21 @@
             </svg>
           </div>
           <div class="stat-content">
-            <h3>کاربران OTP</h3>
-            <p class="stat-value">{{ otpUsersCount }}</p>
+            <h3>تلفن تایید شده</h3>
+            <p class="stat-value">{{ userStats.verified_phones.toLocaleString() }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon warning">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <h3>اکانت‌های قفل شده</h3>
+            <p class="stat-value">{{ userStats.locked_accounts.toLocaleString() }}</p>
           </div>
         </div>
       </div>
@@ -117,7 +121,7 @@
           <p>در حال بارگذاری...</p>
         </div>
 
-        <div v-else-if="filteredUsers.length === 0" class="empty-state">
+        <div v-else-if="users.length === 0" class="empty-state">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="8.5" cy="7" r="4"></circle>
@@ -131,16 +135,26 @@
         <table v-else class="users-table">
           <thead>
           <tr>
-            <th>کاربر</th>
+            <th @click="sortBy('name')" class="sortable">
+              کاربر
+              <span v-if="sortField === 'name'" class="sort-indicator">
+                {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
             <th>اطلاعات تماس</th>
             <th>وضعیت</th>
             <th>روش ورود</th>
-            <th>آخرین ورود</th>
+            <th @click="sortBy('last_login_at')" class="sortable">
+              آخرین ورود
+              <span v-if="sortField === 'last_login_at'" class="sort-indicator">
+                {{ sortOrder === 'asc' ? '↑' : '↓' }}
+              </span>
+            </th>
             <th>عملیات</th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="user in paginatedUsers" :key="user.id" class="user-row">
+          <tr v-for="user in users" :key="user.id" class="user-row">
             <td class="user-cell">
               <div class="user-info">
                 <div class="user-avatar">
@@ -149,6 +163,7 @@
                 <div class="user-details">
                   <span class="user-name">{{ user.name }}</span>
                   <span class="user-username">@{{ user.username || 'نامشخص' }}</span>
+                  <span v-if="user.is_admin" class="admin-badge">مدیر</span>
                 </div>
               </div>
             </td>
@@ -160,26 +175,46 @@
                     <polyline points="22 6 12 13 2 6"></polyline>
                   </svg>
                   <span>{{ user.email }}</span>
-                  <span v-if="user.email_verified_at" class="verified-badge">✓</span>
+                  <button
+                    v-if="user.email_verified_at"
+                    class="verified-badge"
+                    title="تایید شده"
+                  >✓</button>
+                  <button
+                    v-else
+                    @click="verifyEmail(user)"
+                    class="verify-btn"
+                    title="تایید کنید"
+                  >!</button>
                 </div>
                 <div v-if="user.phone" class="contact-item phone">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                   </svg>
                   <span>{{ user.phone }}</span>
-                  <span v-if="user.phone_verified_at" class="verified-badge">✓</span>
+                  <button
+                    v-if="user.phone_verified_at"
+                    class="verified-badge"
+                    title="تایید شده"
+                  >✓</button>
+                  <button
+                    v-else
+                    @click="verifyPhone(user)"
+                    class="verify-btn"
+                    title="تایید کنید"
+                  >!</button>
                 </div>
               </div>
             </td>
             <td class="status-cell">
-                <span :class="['status-badge', getUserStatus(user)]">
-                  {{ getUserStatusText(user) }}
-                </span>
+              <span :class="['status-badge', getUserStatus(user)]">
+                {{ getUserStatusText(user) }}
+              </span>
             </td>
             <td class="method-cell">
-                <span :class="['method-badge', user.preferred_method]">
-                  {{ user.preferred_method === 'otp' ? 'OTP' : 'رمز عبور' }}
-                </span>
+              <span :class="['method-badge', user.preferred_method]">
+                {{ user.preferred_method === 'otp' ? 'OTP' : 'رمز عبور' }}
+              </span>
             </td>
             <td class="date-cell">
               {{ formatDate(user.last_login_at) || 'هرگز' }}
@@ -202,6 +237,7 @@
                   @click="toggleUserStatus(user)"
                   :class="['action-btn', getUserStatus(user) === 'locked' ? 'unlock' : 'lock']"
                   :title="getUserStatus(user) === 'locked' ? 'رفع قفل' : 'قفل کردن'"
+                  :disabled="user.is_admin"
                 >
                   <svg v-if="getUserStatus(user) === 'locked'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
@@ -212,6 +248,18 @@
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
                 </button>
+                <button
+                  @click="resetPassword(user)"
+                  class="action-btn reset"
+                  title="بازنشانی رمز عبور"
+                  :disabled="user.is_admin"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3l18 18"></path>
+                    <path d="M21 9a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 5"></path>
+                    <path d="M21 5v4h-4"></path>
+                  </svg>
+                </button>
               </div>
             </td>
           </tr>
@@ -219,17 +267,17 @@
         </table>
 
         <!-- Pagination -->
-        <div v-if="totalPages > 1" class="pagination">
+        <div v-if="pagination.total > pagination.per_page" class="pagination">
           <button
-            @click="currentPage = 1"
-            :disabled="currentPage === 1"
+            @click="goToPage(1)"
+            :disabled="pagination.current_page === 1"
             class="page-btn"
           >
             اول
           </button>
           <button
-            @click="currentPage--"
-            :disabled="currentPage === 1"
+            @click="goToPage(pagination.current_page - 1)"
+            :disabled="pagination.current_page === 1"
             class="page-btn"
           >
             قبلی
@@ -239,23 +287,23 @@
             <span
               v-for="page in visiblePages"
               :key="page"
-              @click="currentPage = page"
-              :class="['page-number', { active: page === currentPage }]"
+              @click="goToPage(page)"
+              :class="['page-number', { active: page === pagination.current_page }]"
             >
               {{ page }}
             </span>
           </div>
 
           <button
-            @click="currentPage++"
-            :disabled="currentPage === totalPages"
+            @click="goToPage(pagination.current_page + 1)"
+            :disabled="pagination.current_page === pagination.last_page"
             class="page-btn"
           >
             بعدی
           </button>
           <button
-            @click="currentPage = totalPages"
-            :disabled="currentPage === totalPages"
+            @click="goToPage(pagination.last_page)"
+            :disabled="pagination.current_page === pagination.last_page"
             class="page-btn"
           >
             آخر
@@ -272,7 +320,7 @@
           <button @click="closeAddModal" class="close-btn">×</button>
         </div>
         <div class="modal-body">
-          <form @submit.prevent="addUser">
+          <form @submit.prevent="handleCreateUser">
             <div class="form-group">
               <label>نام و نام خانوادگی *</label>
               <input v-model="newUser.name" type="text" required />
@@ -300,8 +348,8 @@
               <button type="button" @click="closeAddModal" class="btn-secondary">
                 انصراف
               </button>
-              <button type="submit" class="btn-primary">
-                افزودن
+              <button type="submit" class="btn-primary" :disabled="isProcessing">
+                {{ isProcessing ? 'در حال انجام...' : 'افزودن' }}
               </button>
             </div>
           </form>
@@ -317,7 +365,7 @@
           <button @click="closeEditModal" class="close-btn">×</button>
         </div>
         <div class="modal-body">
-          <form @submit.prevent="updateUser">
+          <form @submit.prevent="handleUpdateUser">
             <div class="form-group">
               <label>نام و نام خانوادگی *</label>
               <input v-model="editingUser.name" type="text" required />
@@ -341,8 +389,8 @@
               <button type="button" @click="closeEditModal" class="btn-secondary">
                 انصراف
               </button>
-              <button type="submit" class="btn-primary">
-                ویرایش
+              <button type="submit" class="btn-primary" :disabled="isProcessing">
+                {{ isProcessing ? 'در حال انجام...' : 'ویرایش' }}
               </button>
             </div>
           </form>
@@ -350,7 +398,7 @@
       </div>
     </div>
 
-    <!-- User Details Modal -->
+    <!-- View User Modal -->
     <div v-if="showViewModal" class="modal-overlay" @click="closeViewModal">
       <div class="modal-content large" @click.stop>
         <div class="modal-header">
@@ -407,36 +455,90 @@
         </div>
       </div>
     </div>
+
+    <!-- Reset Password Modal -->
+    <div v-if="showResetPasswordModal" class="modal-overlay" @click="closeResetPasswordModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>بازنشانی رمز عبور</h3>
+          <button @click="closeResetPasswordModal" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="handleResetPassword">
+            <div class="form-group">
+              <label>رمز عبور جدید *</label>
+              <input v-model="resetPasswordForm.password" type="password" required minlength="8" />
+            </div>
+            <div class="form-group">
+              <label>تأیید رمز عبور *</label>
+              <input v-model="resetPasswordForm.confirmPassword" type="password" required minlength="8" />
+            </div>
+            <div class="form-actions">
+              <button type="button" @click="closeResetPasswordModal" class="btn-secondary">
+                انصراف
+              </button>
+              <button type="submit" class="btn-primary" :disabled="isProcessing || !isValidPassword">
+                {{ isProcessing ? 'در حال انجام...' : 'تغییر رمز عبور' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-definePageMeta({ middleware: 'auth' })
+import { debounce } from 'lodash-es'
 
-const { token } = useAuth()
-const showToast = inject('showToast', () => {})
-const config = useRuntimeConfig()
-const apiBase = '/api'
+definePageMeta({
+  middleware: 'admin',
+  layout: 'default'
+})
+
+const {
+  users,
+  loading,
+  stats,
+  fetchUsers,
+  fetchUserStats,
+  createUser,
+  updateUser,
+  toggleUserLock,
+  verifyUserEmail,
+  verifyUserPhone,
+  resetUserPassword
+} = useUsers()
 
 // State
-const users = ref([])
-const loading = ref(true)
-
-// Filters & search
 const searchQuery = ref('')
-const statusFilter = ref('')
-const methodFilter = ref('')
+const sortField = ref('created_at')
+const sortOrder = ref('desc')
+const isProcessing = ref(false)
 
-// Pagination
-const currentPage = ref(1)
-const pageSize = 10
+const filters = reactive({
+  emailVerified: '',
+  phoneVerified: '',
+  preferredMethod: ''
+})
 
-// Modals & forms
+const pagination = reactive({
+  current_page: 1,
+  last_page: 1,
+  per_page: 15,
+  total: 0
+})
+
+// Modals
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showViewModal = ref(false)
+const showResetPasswordModal = ref(false)
+
 const editingUser = ref({})
 const viewingUser = ref(null)
+const resetingUser = ref(null)
+
 const newUser = reactive({
   name: '',
   email: '',
@@ -445,7 +547,35 @@ const newUser = reactive({
   password: ''
 })
 
-// Utils
+const resetPasswordForm = reactive({
+  password: '',
+  confirmPassword: ''
+})
+
+// Computed
+const userStats = computed(() => stats.value)
+
+const visiblePages = computed(() => {
+  const total = pagination.last_page
+  const current = pagination.current_page
+  const delta = 2
+  const pages = []
+  const start = Math.max(1, current - delta)
+  const end = Math.min(total, current + delta)
+
+  for (let p = start; p <= end; p++) pages.push(p)
+  if (!pages.includes(1)) pages.unshift(1)
+  if (!pages.includes(total)) pages.push(total)
+
+  return Array.from(new Set(pages)).sort((a, b) => a - b)
+})
+
+const isValidPassword = computed(() => {
+  return resetPasswordForm.password === resetPasswordForm.confirmPassword &&
+    resetPasswordForm.password.length >= 8
+})
+
+// Methods
 const getInitials = (name) => {
   if (!name) return 'ک'
   return name
@@ -454,150 +584,120 @@ const getInitials = (name) => {
     .map(n => n[0])
     .join('')
     .substring(0, 2)
+    .toUpperCase()
 }
 
 const getUserStatus = (user) => {
-  // Treat locked/inactive the same visually; prefer 'locked' label if locked_at exists
-  if (user?.locked_at || user?.status === 'inactive' || user?.disabled) return 'locked'
+  if (user?.locked_until && new Date(user.locked_until) > new Date()) return 'locked'
   return 'active'
 }
 
 const getUserStatusText = (user) => {
-  const s = getUserStatus(user)
-  if (s === 'locked') return 'قفل شده'
-  if (s === 'inactive') return 'غیرفعال'
+  const status = getUserStatus(user)
+  if (status === 'locked') return 'قفل شده'
   return 'فعال'
 }
 
 const formatDate = (date) => {
   if (!date) return ''
   try {
-    return new Intl.DateTimeFormat('fa-IR').format(new Date(date))
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(date))
   } catch {
     return ''
   }
 }
 
-// Computed stats
-const activeUsersCount = computed(() => users.value.filter(u => getUserStatus(u) === 'active').length)
-const verifiedUsersCount = computed(() => users.value.filter(u => u.email_verified_at || u.phone_verified_at).length)
-const otpUsersCount = computed(() => users.value.filter(u => u.preferred_method === 'otp').length)
-
-// Filtering & pagination
-const filteredUsers = computed(() => {
-  let list = users.value
-
-  const q = searchQuery.value.trim().toLowerCase()
-  if (q) {
-    list = list.filter(u =>
-      (u.name && u.name.toLowerCase().includes(q)) ||
-      (u.email && u.email.toLowerCase().includes(q)) ||
-      (u.phone && u.phone.includes(q)) ||
-      (u.username && String(u.username).toLowerCase().includes(q))
-    )
+const sortBy = (field) => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortOrder.value = 'asc'
   }
+  loadUsers()
+}
 
-  if (statusFilter.value) {
-    if (statusFilter.value === 'active') {
-      list = list.filter(u => getUserStatus(u) === 'active')
-    } else if (statusFilter.value === 'inactive' || statusFilter.value === 'locked') {
-      list = list.filter(u => getUserStatus(u) !== 'active')
-    } else {
-      list = list.filter(u => getUserStatus(u) === statusFilter.value)
-    }
-  }
-
-  if (methodFilter.value) {
-    list = list.filter(u => u.preferred_method === methodFilter.value)
-  }
-
-  return list
-})
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pageSize)))
-const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredUsers.value.slice(start, start + pageSize)
-})
-
-const visiblePages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const delta = 2
-  const pages = []
-  const start = Math.max(1, current - delta)
-  const end = Math.min(total, current + delta)
-  for (let p = start; p <= end; p++) pages.push(p)
-  if (!pages.includes(1)) pages.unshift(1)
-  if (!pages.includes(total)) pages.push(total)
-  return Array.from(new Set(pages)).sort((a, b) => a - b)
-})
-
-const filterUsers = () => {
-  currentPage.value = 1
+const goToPage = (page) => {
+  pagination.current_page = page
+  loadUsers()
 }
 
 // API calls
-const fetchUsers = async () => {
-  try {
-    loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
-      headers: {
-        'Accept': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      }
-    })
+const loadUsers = async () => {
+  const params = {
+    search: searchQuery.value || undefined,
+    email_verified: filters.emailVerified === '' ? undefined : filters.emailVerified === 'true',
+    phone_verified: filters.phoneVerified === '' ? undefined : filters.phoneVerified === 'true',
+    sort_by: sortField.value,
+    sort_order: sortOrder.value,
+    per_page: pagination.per_page,
+    page: pagination.current_page
+  }
 
-    if (response.ok) {
-      const data = await response.json()
-      users.value = data.users || data.data || []
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در بارگذاری کاربران', 'error')
-    }
-  } catch (e) {
-    console.error('Error fetching users:', e)
-    showToast('خطا در ارتباط با سرور', 'error')
-  } finally {
-    loading.value = false
+  // Remove undefined values
+  Object.keys(params).forEach(key => {
+    if (params[key] === undefined) delete params[key]
+  })
+
+  const response = await fetchUsers(params)
+  if (response && response.meta) {
+    Object.assign(pagination, response.meta)
   }
 }
 
-const addUser = async () => {
-  if (!newUser.name.trim()) {
-    showToast('نام کاربر الزامی است', 'error')
+const debouncedSearch = debounce(() => {
+  pagination.current_page = 1
+  loadUsers()
+}, 500)
+
+const applyFilters = () => {
+  pagination.current_page = 1
+  loadUsers()
+}
+
+// CRUD Operations
+const handleCreateUser = async () => {
+  if (!newUser.name.trim()) return
+
+  if (newUser.preferred_method === 'password' && !newUser.password) {
     return
   }
 
-  try {
-    loading.value = true
-    const response = await fetch(`${apiBase}/auth/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      },
-      body: JSON.stringify({
-        name: newUser.name,
-        email: newUser.email || null,
-        phone: newUser.phone || null,
-        preferred_method: newUser.preferred_method,
-        password: newUser.preferred_method === 'password' ? newUser.password : null
-      })
-    })
+  if (!newUser.email && !newUser.phone) {
+    return
+  }
 
-    if (response.ok) {
-      showToast('کاربر با موفقیت افزوده شد', 'success')
-      closeAddModal()
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در افزودن کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
-  } finally {
-    loading.value = false
+  isProcessing.value = true
+  const success = await createUser(newUser)
+  isProcessing.value = false
+
+  if (success) {
+    closeAddModal()
+    await loadUsers()
+  }
+}
+
+const handleUpdateUser = async () => {
+  if (!editingUser.value.name?.trim()) return
+
+  isProcessing.value = true
+  const success = await updateUser(editingUser.value.id, {
+    name: editingUser.value.name,
+    email: editingUser.value.email || undefined,
+    phone: editingUser.value.phone || undefined,
+    preferred_method: editingUser.value.preferred_method
+  })
+  isProcessing.value = false
+
+  if (success) {
+    closeEditModal()
+    await loadUsers()
   }
 }
 
@@ -606,67 +706,57 @@ const editUser = (user) => {
   showEditModal.value = true
 }
 
-const updateUser = async () => {
-  try {
-    loading.value = true
-    const response = await fetch(`${apiBase}/auth/users/${editingUser.value.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      },
-      body: JSON.stringify({
-        name: editingUser.value.name,
-        email: editingUser.value.email || null,
-        phone: editingUser.value.phone || null,
-        preferred_method: editingUser.value.preferred_method
-      })
-    })
-
-    if (response.ok) {
-      showToast('کاربر با موفقیت ویرایش شد', 'success')
-      closeEditModal()
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در ویرایش کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
 const viewUser = (user) => {
   viewingUser.value = user
   showViewModal.value = true
 }
 
 const toggleUserStatus = async (user) => {
-  const wasLocked = getUserStatus(user) !== 'active'
+  if (user.is_admin) return
 
-  try {
-    const response = await fetch(`${apiBase}/auth/users/${user.id}/toggle-status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
-      }
-    })
-
-    if (response.ok) {
-      showToast(`کاربر ${wasLocked ? 'فعال' : 'غیرفعال'} شد`, 'success')
-      await fetchUsers()
-    } else {
-      const error = await response.json().catch(() => ({}))
-      showToast(error.message || 'خطا در تغییر وضعیت کاربر', 'error')
-    }
-  } catch {
-    showToast('خطا در ارتباط با سرور', 'error')
+  const success = await toggleUserLock(user.id)
+  if (success) {
+    await loadUsers()
   }
 }
 
+const verifyEmail = async (user) => {
+  const success = await verifyUserEmail(user.id)
+  if (success) {
+    await loadUsers()
+  }
+}
+
+const verifyPhone = async (user) => {
+  const success = await verifyUserPhone(user.id)
+  if (success) {
+    await loadUsers()
+  }
+}
+
+const resetPassword = (user) => {
+  if (user.is_admin) return
+
+  resetingUser.value = user
+  resetPasswordForm.password = ''
+  resetPasswordForm.confirmPassword = ''
+  showResetPasswordModal.value = true
+}
+
+const handleResetPassword = async () => {
+  if (!isValidPassword.value || !resetingUser.value) return
+
+  isProcessing.value = true
+  const success = await resetUserPassword(resetingUser.value.id, resetPasswordForm.password)
+  isProcessing.value = false
+
+  if (success) {
+    closeResetPasswordModal()
+    await loadUsers()
+  }
+}
+
+// Modal handlers
 const closeAddModal = () => {
   showAddModal.value = false
   Object.assign(newUser, { name: '', email: '', phone: '', preferred_method: 'password', password: '' })
@@ -682,11 +772,93 @@ const closeViewModal = () => {
   viewingUser.value = null
 }
 
-onMounted(() => {
-  fetchUsers()
+const closeResetPasswordModal = () => {
+  showResetPasswordModal.value = false
+  resetingUser.value = null
+  resetPasswordForm.password = ''
+  resetPasswordForm.confirmPassword = ''
+}
+
+// Lifecycle
+onMounted(async () => {
+  await Promise.all([
+    loadUsers(),
+    fetchUserStats()
+  ])
 })
 </script>
 
 <style scoped>
 @import '@/assets/css/users-dashboard.css';
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.sortable:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.sort-indicator {
+  position: absolute;
+  right: 5px;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+.admin-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  display: inline-block;
+}
+
+.verify-btn {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.verify-btn:hover {
+  background: #d97706;
+  transform: scale(1.1);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.reset {
+  background: #6366f1;
+  color: white;
+}
+
+.action-btn.reset:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.stat-card .stat-icon.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.warning .stat-value {
+  color: #f59e0b;
+}
 </style>
