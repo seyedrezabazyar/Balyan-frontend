@@ -82,10 +82,10 @@
 const { user, isLoggedIn, restoreAuth } = useAuth()
 
 const displayName = computed(() => {
-  if (!user || !user.value) return 'کاربر مهمان'
-  if (user.value?.name) return user.value.name
-  if (user.value?.email) return user.value.email.split('@')[0]
-  if (user.value?.phone) return user.value.phone
+  if (!user) return 'کاربر مهمان'
+  if (user?.name) return user.name
+  if (user?.email) return user.email.split('@')[0]
+  if (user?.phone) return user.phone
   return 'کاربر مهمان'
 })
 

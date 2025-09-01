@@ -4,39 +4,39 @@ export const usePermissions = () => {
   const { user, isAdmin, hasPermission } = useAuth();
 
   const canViewUsers = computed(() => {
-    return isAdmin.value || hasPermission('users.view');
+    return isAdmin?.value || hasPermission('users.view');
   });
 
   const canCreateUsers = computed(() => {
-    return isAdmin.value || hasPermission('users.create');
+    return isAdmin?.value || hasPermission('users.create');
   });
 
   const canEditUsers = computed(() => {
-    return isAdmin.value || hasPermission('users.edit');
+    return isAdmin?.value || hasPermission('users.edit');
   });
 
   const canDeleteUsers = computed(() => {
-    return isAdmin.value || hasPermission('users.delete');
+    return isAdmin?.value || hasPermission('users.delete');
   });
 
   const canManageRoles = computed(() => {
-    return isAdmin.value || hasPermission('roles.manage');
+    return isAdmin?.value || hasPermission('roles.manage');
   });
 
   const canViewRoles = computed(() => {
-    return isAdmin.value || hasPermission('roles.view');
+    return isAdmin?.value || hasPermission('roles.view');
   });
 
   const canManagePermissions = computed(() => {
-    return isAdmin.value || hasPermission('permissions.manage');
+    return isAdmin?.value || hasPermission('permissions.manage');
   });
 
   const canViewPermissions = computed(() => {
-    return isAdmin.value || hasPermission('permissions.view');
+    return isAdmin?.value || hasPermission('permissions.view');
   });
 
   const canManageBooks = computed(() => {
-    return isAdmin.value || hasPermission(['books.create', 'books.edit', 'books.delete']);
+    return isAdmin?.value || hasPermission(['books.create', 'books.edit', 'books.delete']);
   });
 
   const canViewBooks = computed(() => {
@@ -44,7 +44,7 @@ export const usePermissions = () => {
   });
 
   const canManageCategories = computed(() => {
-    return isAdmin.value || hasPermission(['categories.create', 'categories.edit', 'categories.delete']);
+    return isAdmin?.value || hasPermission(['categories.create', 'categories.edit', 'categories.delete']);
   });
 
   const canViewCategories = computed(() => {
@@ -52,7 +52,7 @@ export const usePermissions = () => {
   });
 
   const canManageMedia = computed(() => {
-    return isAdmin.value || hasPermission(['media.upload', 'media.delete']);
+    return isAdmin?.value || hasPermission(['media.upload', 'media.delete']);
   });
 
   const canViewMedia = computed(() => {
@@ -60,15 +60,15 @@ export const usePermissions = () => {
   });
 
   const canManageComments = computed(() => {
-    return isAdmin.value || hasPermission(['comments.edit', 'comments.delete']);
+    return isAdmin?.value || hasPermission(['comments.edit', 'comments.delete']);
   });
 
   const canViewReports = computed(() => {
-    return isAdmin.value || hasPermission('reports.view');
+    return isAdmin?.value || hasPermission('reports.view');
   });
 
   const canManageSettings = computed(() => {
-    return isAdmin.value || hasPermission('settings.manage');
+    return isAdmin?.value || hasPermission('settings.manage');
   });
 
   const checkAccess = (options: {
@@ -80,7 +80,7 @@ export const usePermissions = () => {
   };
 
   const hasAdminPrivileges = computed(() => {
-    return isAdmin.value;
+    return isAdmin?.value;
   });
 
   return {

@@ -85,7 +85,7 @@ const { formatters } = useUtils()
 
 // Computed
 const displayName = computed(() => {
-  if (!user.value) return 'کاربر عزیز'
+  if (!user?.value) return 'کاربر عزیز'
   return user.value.name || user.value.email?.split('@')[0] || user.value.phone || 'کاربر عزیز'
 })
 
@@ -141,7 +141,7 @@ const quickActions = computed(() => {
     }
   ]
 
-  if (user.value?.is_admin) {
+  if (user?.value?.is_admin) {
     baseActions.unshift(
       {
         title: 'مدیریت کاربران',
