@@ -41,19 +41,13 @@ export default defineNuxtConfig({
       '/api/auth': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
+        // @ts-expect-error: rewrite is supported at runtime but not typed in Nuxt 3
         rewrite: (path) => path.replace(/^\/api/, ''),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }
-      }
-    },
-    cors: true,
-    corsOptions: {
-      origin: '*',
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+      } as any
     }
   },
 

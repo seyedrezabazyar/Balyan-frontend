@@ -7,8 +7,12 @@ interface ApiResponse<T = any> {
   errors?: Record<string, string[]>
 }
 
-interface ApiOptions extends RequestInit {
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD'
+
+interface ApiOptions extends Omit<RequestInit, 'headers' | 'body' | 'method'> {
+  headers?: HeadersInit | Record<string, string>
   body?: any
+  method?: HttpMethod
   requireAuth?: boolean
 }
 
@@ -21,14 +25,22 @@ export const useApi = () => {
   // Token management
   const getAccessToken = () => {
     if (process.client) {
-      return localStorage.getItem('access_token')
+      return (
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('auth_token') ||
+        null
+      )
     }
     return null
   }
 
   const getRefreshToken = () => {
     if (process.client) {
-      return localStorage.getItem('refresh_token')
+      return (
+        localStorage.getItem('refresh_token') ||
+        localStorage.getItem('auth_refresh_token') ||
+        null
+      )
     }
     return null
   }
@@ -36,8 +48,10 @@ export const useApi = () => {
   const setTokens = (accessToken: string, refreshToken?: string) => {
     if (process.client) {
       localStorage.setItem('access_token', accessToken)
+      localStorage.setItem('auth_token', accessToken)
       if (refreshToken) {
         localStorage.setItem('refresh_token', refreshToken)
+        localStorage.setItem('auth_refresh_token', refreshToken)
       }
     }
   }
@@ -45,7 +59,9 @@ export const useApi = () => {
   const clearTokens = () => {
     if (process.client) {
       localStorage.removeItem('access_token')
+      localStorage.removeItem('auth_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('auth_refresh_token')
     }
   }
 
@@ -89,17 +105,17 @@ export const useApi = () => {
     } = options
 
     // Prepare headers
-    const requestHeaders: HeadersInit = {
+    const requestHeaders: Record<string, string> = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      ...headers
+      ...(headers as Record<string, string>)
     }
 
     // Add auth token if required
     if (requireAuth) {
       const token = getAccessToken()
       if (token) {
-        requestHeaders['Authorization'] = `Bearer ${token}`
+        requestHeaders.Authorization = `Bearer ${token}`
       }
     }
 
@@ -120,7 +136,7 @@ export const useApi = () => {
     try {
       const response = await $fetch<ApiResponse<T>>(url, {
         ...fetchOptions,
-        method: fetchOptions.method || 'GET',
+        method: (fetchOptions.method as HttpMethod) || 'GET',
         headers: requestHeaders,
         body: requestBody
       })
@@ -133,12 +149,12 @@ export const useApi = () => {
         
         if (newToken) {
           // Retry with new token
-          requestHeaders['Authorization'] = `Bearer ${newToken}`
+          requestHeaders.Authorization = `Bearer ${newToken}`
           
           try {
             const retryResponse = await $fetch<ApiResponse<T>>(url, {
               ...fetchOptions,
-              method: fetchOptions.method || 'GET',
+              method: (fetchOptions.method as HttpMethod) || 'GET',
               headers: requestHeaders,
               body: requestBody
             })

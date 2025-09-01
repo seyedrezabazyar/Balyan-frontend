@@ -1,11 +1,11 @@
 // Mock update user API endpoint
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
+  const idParam = getRouterParam(event, 'id') || '0'
   const body = await readBody(event)
   
   // Mock updated user
   const updatedUser = {
-    id: parseInt(id),
+    id: parseInt(idParam),
     name: body.name,
     email: body.email || null,
     phone: body.phone || null,

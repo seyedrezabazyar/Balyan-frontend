@@ -95,19 +95,19 @@
       </div>
 
       <div class="filter-controls">
-        <select v-model="filters.email_verified" @change="fetchUsers" class="filter-select">
+        <select v-model="filters.email_verified" @change="() => fetchUsers()" class="filter-select">
           <option value="">همه ایمیل‌ها</option>
           <option value="true">ایمیل تایید شده</option>
           <option value="false">ایمیل تایید نشده</option>
         </select>
 
-        <select v-model="filters.phone_verified" @change="fetchUsers" class="filter-select">
+        <select v-model="filters.phone_verified" @change="() => fetchUsers()" class="filter-select">
           <option value="">همه تلفن‌ها</option>
           <option value="true">تلفن تایید شده</option>
           <option value="false">تلفن تایید نشده</option>
         </select>
 
-        <select v-model="filters.role" @change="fetchUsers" class="filter-select">
+        <select v-model="filters.role" @change="() => fetchUsers()" class="filter-select">
           <option value="">همه نقش‌ها</option>
           <option v-for="role in roles" :key="role.id" :value="role.id">
             {{ role.display_name }}
