@@ -1,82 +1,223 @@
 // app/composables/useApi.ts
+interface ApiResponse<T = any> {
+  success: boolean
+  message?: string
+  data?: T
+  meta?: any
+  errors?: Record<string, string[]>
+}
+
+interface ApiOptions extends RequestInit {
+  body?: any
+  requireAuth?: boolean
+}
+
 export const useApi = () => {
-  const { token } = useAuth()
+  const config = useRuntimeConfig()
+  const apiUrl = config.public.apiBase
+  const router = useRouter()
   const { showToast } = useToast()
-  
-  const apiCall = async (url: string, options: RequestInit = {}) => {
-    // Ensure we have a token
-    if (!token.value && !url.includes('/auth/login') && !url.includes('/auth/check-user')) {
-      showToast('لطفا ابتدا وارد شوید', 'error')
-      await navigateTo('/auth')
-      return null
+
+  // Token management
+  const getAccessToken = () => {
+    if (process.client) {
+      return localStorage.getItem('access_token')
     }
-    
-    // Set default headers
-    const headers: HeadersInit = {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
+    return null
+  }
+
+  const getRefreshToken = () => {
+    if (process.client) {
+      return localStorage.getItem('refresh_token')
     }
-    
-    // Add authorization header if token exists
-    if (token.value) {
-      headers['Authorization'] = `Bearer ${token.value}`
-    }
-    
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-        credentials: 'include'
-      })
-      
-      if (!response.ok) {
-        // Handle specific error codes
-        if (response.status === 401) {
-          showToast('نشست شما منقضی شده است', 'error')
-          const { clearAuth } = useAuth()
-          clearAuth()
-          await navigateTo('/auth')
-          return null
-        }
-        
-        if (response.status === 403) {
-          showToast('شما دسترسی به این بخش را ندارید', 'error')
-          return null
-        }
-        
-        if (response.status === 404) {
-          showToast('صفحه مورد نظر یافت نشد', 'error')
-          return null
-        }
-        
-        // Try to get error message from response
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `خطا: ${response.status}`)
+    return null
+  }
+
+  const setTokens = (accessToken: string, refreshToken?: string) => {
+    if (process.client) {
+      localStorage.setItem('access_token', accessToken)
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken)
       }
-      
-      return await response.json()
-    } catch (error: any) {
-      console.error('API call error:', error)
-      showToast(error.message || 'خطا در ارتباط با سرور', 'error')
-      return null
     }
   }
-  
+
+  const clearTokens = () => {
+    if (process.client) {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+    }
+  }
+
+  // Refresh token
+  const refreshAccessToken = async (): Promise<string | null> => {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) return null
+
+    try {
+      const response = await $fetch<ApiResponse>(`${apiUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${refreshToken}`,
+          'Accept': 'application/json'
+        }
+      })
+
+      if (response.success && response.data?.tokens) {
+        const { access_token, refresh_token } = response.data.tokens
+        setTokens(access_token, refresh_token)
+        return access_token
+      }
+    } catch (error) {
+      console.error('Failed to refresh token:', error)
+      clearTokens()
+    }
+
+    return null
+  }
+
+  // Main API function
+  const api = async <T = any>(
+    endpoint: string,
+    options: ApiOptions = {}
+  ): Promise<ApiResponse<T>> => {
+    const { 
+      body, 
+      requireAuth = true,
+      headers = {},
+      ...fetchOptions 
+    } = options
+
+    // Prepare headers
+    const requestHeaders: HeadersInit = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...headers
+    }
+
+    // Add auth token if required
+    if (requireAuth) {
+      const token = getAccessToken()
+      if (token) {
+        requestHeaders['Authorization'] = `Bearer ${token}`
+      }
+    }
+
+    // Prepare body
+    let requestBody = undefined
+    if (body) {
+      if (body instanceof FormData) {
+        requestBody = body
+        delete requestHeaders['Content-Type'] // Let browser set it for FormData
+      } else {
+        requestBody = JSON.stringify(body)
+      }
+    }
+
+    // Full URL
+    const url = endpoint.startsWith('http') ? endpoint : `${apiUrl}${endpoint}`
+
+    try {
+      const response = await $fetch<ApiResponse<T>>(url, {
+        ...fetchOptions,
+        method: fetchOptions.method || 'GET',
+        headers: requestHeaders,
+        body: requestBody
+      })
+
+      return response
+    } catch (error: any) {
+      // Handle 401 Unauthorized
+      if (error.statusCode === 401 && requireAuth) {
+        const newToken = await refreshAccessToken()
+        
+        if (newToken) {
+          // Retry with new token
+          requestHeaders['Authorization'] = `Bearer ${newToken}`
+          
+          try {
+            const retryResponse = await $fetch<ApiResponse<T>>(url, {
+              ...fetchOptions,
+              method: fetchOptions.method || 'GET',
+              headers: requestHeaders,
+              body: requestBody
+            })
+            
+            return retryResponse
+          } catch (retryError: any) {
+            handleApiError(retryError)
+            throw retryError
+          }
+        } else {
+          // Refresh failed, redirect to login
+          clearTokens()
+          await router.push('/auth')
+          showToast('نشست شما منقضی شده است. لطفا دوباره وارد شوید', 'error')
+        }
+      }
+
+      handleApiError(error)
+      throw error
+    }
+  }
+
+  // Error handler
+  const handleApiError = (error: any) => {
+    console.error('API Error:', error)
+
+    if (error.statusCode === 403) {
+      showToast('شما دسترسی به این بخش را ندارید', 'error')
+    } else if (error.statusCode === 404) {
+      showToast('صفحه مورد نظر یافت نشد', 'error')
+    } else if (error.statusCode === 422) {
+      const errors = error.data?.errors
+      if (errors) {
+        const firstError = Object.values(errors)[0]
+        if (Array.isArray(firstError) && firstError.length > 0) {
+          showToast(firstError[0], 'error')
+        }
+      } else {
+        showToast('خطا در اعتبارسنجی داده‌ها', 'error')
+      }
+    } else if (error.statusCode === 500) {
+      showToast('خطای سرور. لطفا بعدا تلاش کنید', 'error')
+    } else if (error.statusCode === 429) {
+      showToast('تعداد درخواست‌ها بیش از حد مجاز است. لطفا کمی صبر کنید', 'error')
+    }
+  }
+
+  // Convenience methods
+  const get = <T = any>(endpoint: string, options?: ApiOptions) => {
+    return api<T>(endpoint, { ...options, method: 'GET' })
+  }
+
+  const post = <T = any>(endpoint: string, body?: any, options?: ApiOptions) => {
+    return api<T>(endpoint, { ...options, method: 'POST', body })
+  }
+
+  const put = <T = any>(endpoint: string, body?: any, options?: ApiOptions) => {
+    return api<T>(endpoint, { ...options, method: 'PUT', body })
+  }
+
+  const patch = <T = any>(endpoint: string, body?: any, options?: ApiOptions) => {
+    return api<T>(endpoint, { ...options, method: 'PATCH', body })
+  }
+
+  const del = <T = any>(endpoint: string, options?: ApiOptions) => {
+    return api<T>(endpoint, { ...options, method: 'DELETE' })
+  }
+
   return {
-    get: (url: string, options?: RequestInit) => 
-      apiCall(url, { ...options, method: 'GET' }),
-    
-    post: (url: string, body?: any, options?: RequestInit) => 
-      apiCall(url, { ...options, method: 'POST', body: JSON.stringify(body) }),
-    
-    put: (url: string, body?: any, options?: RequestInit) => 
-      apiCall(url, { ...options, method: 'PUT', body: JSON.stringify(body) }),
-    
-    delete: (url: string, options?: RequestInit) => 
-      apiCall(url, { ...options, method: 'DELETE' }),
-    
-    patch: (url: string, body?: any, options?: RequestInit) => 
-      apiCall(url, { ...options, method: 'PATCH', body: JSON.stringify(body) })
+    api,
+    get,
+    post,
+    put,
+    patch,
+    delete: del,
+    getAccessToken,
+    getRefreshToken,
+    setTokens,
+    clearTokens,
+    refreshAccessToken
   }
 }

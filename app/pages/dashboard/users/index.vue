@@ -4,861 +4,1534 @@
     <header class="users-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="users-title">مدیریت کاربران</h1>
-          <p class="users-subtitle">مدیریت کاربران سیستم و مجوزهای آنها</p>
+          <h1 class="users-title">
+            <Icon name="heroicons:users-solid" class="title-icon" />
+            مدیریت کاربران
+          </h1>
+          <p class="users-subtitle">مدیریت کاربران سیستم، نقش‌ها و سطح دسترسی‌ها</p>
         </div>
         <div class="header-actions">
-          <button @click="showAddModal = true" class="add-user-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-            افزودن کاربر
+          <button @click="showAddUserModal = true" class="btn-primary">
+            <Icon name="heroicons:plus" />
+            افزودن کاربر جدید
           </button>
         </div>
       </div>
     </header>
 
-    <main class="users-main">
-      <!-- Filters -->
-      <div class="filters-section">
-        <div class="search-box">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="جستجو کاربران..."
-            @input="debouncedSearch"
-          />
+    <!-- Statistics Cards -->
+    <div class="stats-grid" v-if="statistics">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <Icon name="heroicons:users" />
         </div>
-
-        <div class="filter-controls">
-          <select v-model="filters.emailVerified" @change="applyFilters" class="filter-select">
-            <option value="">همه ایمیل‌ها</option>
-            <option value="true">تایید شده</option>
-            <option value="false">تایید نشده</option>
-          </select>
-
-          <select v-model="filters.phoneVerified" @change="applyFilters" class="filter-select">
-            <option value="">همه تلفن‌ها</option>
-            <option value="true">تایید شده</option>
-            <option value="false">تایید نشده</option>
-          </select>
-
-          <select v-model="filters.preferredMethod" @change="applyFilters" class="filter-select">
-            <option value="">همه روش‌ها</option>
-            <option value="password">رمز عبور</option>
-            <option value="otp">OTP</option>
-          </select>
+        <div class="stat-content">
+          <h3>کل کاربران</h3>
+          <p class="stat-value">{{ statistics.total_users?.toLocaleString('fa-IR') || 0 }}</p>
         </div>
       </div>
 
-      <!-- Stats Cards -->
-      <div class="stats-grid" v-if="userStats">
-        <div class="stat-card">
-          <div class="stat-icon total">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3>کل کاربران</h3>
-            <p class="stat-value">{{ userStats.total_users.toLocaleString() }}</p>
-          </div>
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <Icon name="heroicons:envelope-check" />
         </div>
-
-        <div class="stat-card">
-          <div class="stat-icon verified">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3>ایمیل تایید شده</h3>
-            <p class="stat-value">{{ userStats.verified_emails.toLocaleString() }}</p>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon otp">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3>تلفن تایید شده</h3>
-            <p class="stat-value">{{ userStats.verified_phones.toLocaleString() }}</p>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon warning">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"></path>
-              <path d="M9 12l2 2 4-4"></path>
-            </svg>
-          </div>
-          <div class="stat-content">
-            <h3>اکانت‌های قفل شده</h3>
-            <p class="stat-value">{{ userStats.locked_accounts.toLocaleString() }}</p>
-          </div>
+        <div class="stat-content">
+          <h3>ایمیل تایید شده</h3>
+          <p class="stat-value">{{ statistics.verified_emails?.toLocaleString('fa-IR') || 0 }}</p>
         </div>
       </div>
 
-      <!-- Users Table -->
-      <div class="table-container">
-        <div v-if="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>در حال بارگذاری...</p>
+      <div class="stat-card">
+        <div class="stat-icon purple">
+          <Icon name="heroicons:device-phone-mobile" />
         </div>
-
-        <div v-else-if="users.length === 0" class="empty-state">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="8.5" cy="7" r="4"></circle>
-            <line x1="20" y1="8" x2="20" y2="14"></line>
-            <line x1="23" y1="11" x2="17" y2="11"></line>
-          </svg>
-          <h3>کاربری یافت نشد</h3>
-          <p>{{ searchQuery ? 'نتیجه‌ای برای جستجوی شما یافت نشد' : 'هنوز کاربری وجود ندارد' }}</p>
+        <div class="stat-content">
+          <h3>تلفن تایید شده</h3>
+          <p class="stat-value">{{ statistics.verified_phones?.toLocaleString('fa-IR') || 0 }}</p>
         </div>
+      </div>
 
-        <table v-else class="users-table">
-          <thead>
+      <div class="stat-card">
+        <div class="stat-icon orange">
+          <Icon name="heroicons:key" />
+        </div>
+        <div class="stat-content">
+          <h3>دارای رمز عبور</h3>
+          <p class="stat-value">{{ statistics.users_with_password?.toLocaleString('fa-IR') || 0 }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon teal">
+          <Icon name="heroicons:user-plus" />
+        </div>
+        <div class="stat-content">
+          <h3>ثبت‌نام اخیر</h3>
+          <p class="stat-value">{{ statistics.recent_registrations?.toLocaleString('fa-IR') || 0 }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon red">
+          <Icon name="heroicons:lock-closed" />
+        </div>
+        <div class="stat-content">
+          <h3>حساب قفل شده</h3>
+          <p class="stat-value">{{ statistics.locked_accounts?.toLocaleString('fa-IR') || 0 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="search-box">
+        <Icon name="heroicons:magnifying-glass" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="جستجو در نام، ایمیل یا شماره تلفن..."
+          @input="debouncedSearch"
+        />
+      </div>
+
+      <div class="filter-controls">
+        <select v-model="filters.email_verified" @change="fetchUsers" class="filter-select">
+          <option value="">همه ایمیل‌ها</option>
+          <option value="true">ایمیل تایید شده</option>
+          <option value="false">ایمیل تایید نشده</option>
+        </select>
+
+        <select v-model="filters.phone_verified" @change="fetchUsers" class="filter-select">
+          <option value="">همه تلفن‌ها</option>
+          <option value="true">تلفن تایید شده</option>
+          <option value="false">تلفن تایید نشده</option>
+        </select>
+
+        <select v-model="filters.role" @change="fetchUsers" class="filter-select">
+          <option value="">همه نقش‌ها</option>
+          <option v-for="role in roles" :key="role.id" :value="role.id">
+            {{ role.display_name }}
+          </option>
+        </select>
+
+        <button @click="resetFilters" class="btn-secondary">
+          <Icon name="heroicons:arrow-path" />
+          پاک کردن فیلترها
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table class="users-table" v-if="users.length > 0">
+        <thead>
           <tr>
-            <th @click="sortBy('name')" class="sortable">
-              کاربر
-              <span v-if="sortField === 'name'" class="sort-indicator">
-                {{ sortOrder === 'asc' ? '↑' : '↓' }}
-              </span>
-            </th>
+            <th>کاربر</th>
             <th>اطلاعات تماس</th>
+            <th>نقش‌ها</th>
             <th>وضعیت</th>
-            <th>روش ورود</th>
-            <th @click="sortBy('last_login_at')" class="sortable">
-              آخرین ورود
-              <span v-if="sortField === 'last_login_at'" class="sort-indicator">
-                {{ sortOrder === 'asc' ? '↑' : '↓' }}
-              </span>
-            </th>
+            <th>تاریخ عضویت</th>
             <th>عملیات</th>
           </tr>
-          </thead>
-          <tbody>
-          <tr v-for="user in users" :key="user.id" class="user-row">
-            <td class="user-cell">
+        </thead>
+        <tbody>
+          <tr v-for="user in users" :key="user.id">
+            <td>
               <div class="user-info">
                 <div class="user-avatar">
-                  {{ getInitials(user.name) }}
+                  <img v-if="user.avatar_url" :src="user.avatar_url" :alt="user.name" />
+                  <div v-else class="avatar-placeholder">
+                    {{ user.name?.charAt(0) || '?' }}
+                  </div>
                 </div>
-                <div class="user-details">
-                  <span class="user-name">{{ user.name }}</span>
-                  <span class="user-username">@{{ user.username || 'نامشخص' }}</span>
-                  <span v-if="user.is_admin" class="admin-badge">مدیر</span>
+                <div>
+                  <p class="user-name">{{ user.name }}</p>
+                  <p class="user-id">ID: {{ user.id }}</p>
                 </div>
               </div>
             </td>
-            <td class="contact-cell">
+            <td>
               <div class="contact-info">
-                <div v-if="user.email" class="contact-item email">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22 6 12 13 2 6"></polyline>
-                  </svg>
+                <div v-if="user.email" class="contact-item">
+                  <Icon name="heroicons:envelope" />
                   <span>{{ user.email }}</span>
-                  <button
-                    v-if="user.email_verified_at"
-                    class="verified-badge"
-                    title="تایید شده"
-                  >✓</button>
-                  <button
-                    v-else
-                    @click="verifyEmail(user)"
-                    class="verify-btn"
-                    title="تایید کنید"
-                  >!</button>
+                  <span v-if="user.email_verified_at" class="verified-badge">
+                    <Icon name="heroicons:check-circle" />
+                  </span>
                 </div>
-                <div v-if="user.phone" class="contact-item phone">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
+                <div v-if="user.phone" class="contact-item">
+                  <Icon name="heroicons:phone" />
                   <span>{{ user.phone }}</span>
-                  <button
-                    v-if="user.phone_verified_at"
-                    class="verified-badge"
-                    title="تایید شده"
-                  >✓</button>
-                  <button
-                    v-else
-                    @click="verifyPhone(user)"
-                    class="verify-btn"
-                    title="تایید کنید"
-                  >!</button>
+                  <span v-if="user.phone_verified_at" class="verified-badge">
+                    <Icon name="heroicons:check-circle" />
+                  </span>
                 </div>
               </div>
             </td>
-            <td class="status-cell">
-              <span :class="['status-badge', getUserStatus(user)]">
-                {{ getUserStatusText(user) }}
-              </span>
+            <td>
+              <div class="roles-list">
+                <span
+                  v-for="role in user.roles"
+                  :key="role.id"
+                  class="role-badge"
+                  :class="`role-${role.name}`"
+                >
+                  {{ role.display_name }}
+                </span>
+                <span v-if="!user.roles?.length" class="no-role">بدون نقش</span>
+              </div>
             </td>
-            <td class="method-cell">
-              <span :class="['method-badge', user.preferred_method]">
-                {{ user.preferred_method === 'otp' ? 'OTP' : 'رمز عبور' }}
-              </span>
+            <td>
+              <div class="status-info">
+                <span v-if="user.locked_until" class="status-badge locked">
+                  <Icon name="heroicons:lock-closed" />
+                  قفل شده
+                </span>
+                <span v-else class="status-badge active">
+                  <Icon name="heroicons:check-circle" />
+                  فعال
+                </span>
+              </div>
             </td>
-            <td class="date-cell">
-              {{ formatDate(user.last_login_at) || 'هرگز' }}
+            <td>
+              <div class="date-info">
+                {{ formatDate(user.created_at) }}
+              </div>
             </td>
-            <td class="actions-cell">
-              <div class="action-buttons">
+            <td>
+              <div class="actions">
                 <button @click="editUser(user)" class="action-btn edit" title="ویرایش">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
+                  <Icon name="heroicons:pencil" />
                 </button>
-                <button @click="viewUser(user)" class="action-btn view" title="مشاهده">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
+                <button @click="manageRoles(user)" class="action-btn roles" title="مدیریت نقش‌ها">
+                  <Icon name="heroicons:shield-check" />
                 </button>
-                <button
-                  @click="toggleUserStatus(user)"
-                  :class="['action-btn', getUserStatus(user) === 'locked' ? 'unlock' : 'lock']"
-                  :title="getUserStatus(user) === 'locked' ? 'رفع قفل' : 'قفل کردن'"
-                  :disabled="user.is_admin"
+                <button 
+                  @click="toggleLock(user)" 
+                  class="action-btn"
+                  :class="user.locked_until ? 'unlock' : 'lock'"
+                  :title="user.locked_until ? 'باز کردن قفل' : 'قفل کردن'"
                 >
-                  <svg v-if="getUserStatus(user) === 'locked'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-                  </svg>
-                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
+                  <Icon :name="user.locked_until ? 'heroicons:lock-open' : 'heroicons:lock-closed'" />
                 </button>
-                <button
-                  @click="resetPassword(user)"
-                  class="action-btn reset"
-                  title="بازنشانی رمز عبور"
-                  :disabled="user.is_admin"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 3l18 18"></path>
-                    <path d="M21 9a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 5"></path>
-                    <path d="M21 5v4h-4"></path>
-                  </svg>
+                <button @click="deleteUser(user)" class="action-btn delete" title="حذف">
+                  <Icon name="heroicons:trash" />
                 </button>
               </div>
             </td>
           </tr>
-          </tbody>
-        </table>
+        </tbody>
+      </table>
 
-        <!-- Pagination -->
-        <div v-if="pagination.total > pagination.per_page" class="pagination">
-          <button
-            @click="goToPage(1)"
-            :disabled="pagination.current_page === 1"
-            class="page-btn"
-          >
-            اول
-          </button>
-          <button
-            @click="goToPage(pagination.current_page - 1)"
-            :disabled="pagination.current_page === 1"
-            class="page-btn"
-          >
-            قبلی
-          </button>
-
-          <div class="page-numbers">
-            <span
-              v-for="page in visiblePages"
-              :key="page"
-              @click="goToPage(page)"
-              :class="['page-number', { active: page === pagination.current_page }]"
-            >
-              {{ page }}
-            </span>
-          </div>
-
-          <button
-            @click="goToPage(pagination.current_page + 1)"
-            :disabled="pagination.current_page === pagination.last_page"
-            class="page-btn"
-          >
-            بعدی
-          </button>
-          <button
-            @click="goToPage(pagination.last_page)"
-            :disabled="pagination.current_page === pagination.last_page"
-            class="page-btn"
-          >
-            آخر
-          </button>
-        </div>
+      <!-- Empty State -->
+      <div v-else-if="!loading" class="empty-state">
+        <Icon name="heroicons:users" class="empty-icon" />
+        <h3>کاربری یافت نشد</h3>
+        <p>هیچ کاربری با فیلترهای انتخاب شده یافت نشد</p>
       </div>
-    </main>
 
-    <!-- Add User Modal -->
-    <div v-if="showAddModal" class="modal-overlay" @click="closeAddModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>افزودن کاربر جدید</h3>
-          <button @click="closeAddModal" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="handleCreateUser">
-            <div class="form-group">
-              <label>نام و نام خانوادگی *</label>
-              <input v-model="newUser.name" type="text" required />
-            </div>
-            <div class="form-group">
-              <label>ایمیل</label>
-              <input v-model="newUser.email" type="email" />
-            </div>
-            <div class="form-group">
-              <label>شماره تلفن</label>
-              <input v-model="newUser.phone" type="text" />
-            </div>
-            <div class="form-group">
-              <label>روش احراز هویت</label>
-              <select v-model="newUser.preferred_method">
-                <option value="password">رمز عبور</option>
-                <option value="otp">OTP</option>
-              </select>
-            </div>
-            <div v-if="newUser.preferred_method === 'password'" class="form-group">
-              <label>رمز عبور *</label>
-              <input v-model="newUser.password" type="password" required />
-            </div>
-            <div class="form-actions">
-              <button type="button" @click="closeAddModal" class="btn-secondary">
-                انصراف
-              </button>
-              <button type="submit" class="btn-primary" :disabled="isProcessing">
-                {{ isProcessing ? 'در حال انجام...' : 'افزودن' }}
-              </button>
-            </div>
-          </form>
-        </div>
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>در حال بارگذاری...</p>
       </div>
     </div>
 
-    <!-- Edit User Modal -->
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>ویرایش کاربر</h3>
-          <button @click="closeEditModal" class="close-btn">×</button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="handleUpdateUser">
-            <div class="form-group">
-              <label>نام و نام خانوادگی *</label>
-              <input v-model="editingUser.name" type="text" required />
-            </div>
-            <div class="form-group">
-              <label>ایمیل</label>
-              <input v-model="editingUser.email" type="email" />
-            </div>
-            <div class="form-group">
-              <label>شماره تلفن</label>
-              <input v-model="editingUser.phone" type="text" />
-            </div>
-            <div class="form-group">
-              <label>روش احراز هویت</label>
-              <select v-model="editingUser.preferred_method">
-                <option value="password">رمز عبور</option>
-                <option value="otp">OTP</option>
-              </select>
-            </div>
-            <div class="form-actions">
-              <button type="button" @click="closeEditModal" class="btn-secondary">
-                انصراف
-              </button>
-              <button type="submit" class="btn-primary" :disabled="isProcessing">
-                {{ isProcessing ? 'در حال انجام...' : 'ویرایش' }}
-              </button>
-            </div>
-          </form>
-        </div>
+    <!-- Pagination -->
+    <div v-if="pagination && pagination.last_page > 1" class="pagination">
+      <button 
+        @click="changePage(pagination.current_page - 1)"
+        :disabled="pagination.current_page === 1"
+        class="pagination-btn"
+      >
+        <Icon name="heroicons:chevron-right" />
+      </button>
+      
+      <div class="pagination-numbers">
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          @click="changePage(page)"
+          :class="['pagination-number', { active: page === pagination.current_page }]"
+        >
+          {{ page }}
+        </button>
       </div>
+
+      <button 
+        @click="changePage(pagination.current_page + 1)"
+        :disabled="pagination.current_page === pagination.last_page"
+        class="pagination-btn"
+      >
+        <Icon name="heroicons:chevron-left" />
+      </button>
     </div>
 
-    <!-- View User Modal -->
-    <div v-if="showViewModal" class="modal-overlay" @click="closeViewModal">
-      <div class="modal-content large" @click.stop>
+    <!-- Role Management Modal -->
+    <div v-if="showRoleModal" class="modal-overlay" @click.self="closeRoleModal">
+      <div class="modal-content">
         <div class="modal-header">
-          <h3>جزئیات کاربر</h3>
-          <button @click="closeViewModal" class="close-btn">×</button>
+          <h2>مدیریت نقش‌های {{ selectedUser?.name }}</h2>
+          <button @click="closeRoleModal" class="close-btn">
+            <Icon name="heroicons:x-mark" />
+          </button>
         </div>
+        
         <div class="modal-body">
-          <div v-if="viewingUser" class="user-details-grid">
-            <div class="detail-item">
-              <label>نام:</label>
-              <span>{{ viewingUser.name }}</span>
-            </div>
-            <div class="detail-item">
-              <label>نام کاربری:</label>
-              <span>{{ viewingUser.username || 'تعریف نشده' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>ایمیل:</label>
-              <span>{{ viewingUser.email || 'تعریف نشده' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>تلفن:</label>
-              <span>{{ viewingUser.phone || 'تعریف نشده' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>روش احراز هویت:</label>
-              <span>{{ viewingUser.preferred_method === 'otp' ? 'OTP' : 'رمز عبور' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>وضعیت ایمیل:</label>
-              <span :class="viewingUser.email_verified_at ? 'verified' : 'unverified'">
-                {{ viewingUser.email_verified_at ? 'تایید شده' : 'تایید نشده' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label>وضعیت تلفن:</label>
-              <span :class="viewingUser.phone_verified_at ? 'verified' : 'unverified'">
-                {{ viewingUser.phone_verified_at ? 'تایید شده' : 'تایید نشده' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label>تاریخ عضویت:</label>
-              <span>{{ formatDate(viewingUser.created_at) }}</span>
-            </div>
-            <div class="detail-item">
-              <label>آخرین ورود:</label>
-              <span>{{ formatDate(viewingUser.last_login_at) || 'هرگز' }}</span>
-            </div>
-            <div class="detail-item">
-              <label>تعداد تلاش‌های ناموفق:</label>
-              <span>{{ viewingUser.failed_attempts || 0 }}</span>
+          <div class="roles-grid">
+            <div v-for="role in roles" :key="role.id" class="role-item">
+              <label class="role-checkbox">
+                <input
+                  type="checkbox"
+                  :checked="userHasRole(role)"
+                  @change="toggleRole(role)"
+                />
+                <div class="role-info">
+                  <h4>{{ role.display_name }}</h4>
+                  <p>{{ role.description }}</p>
+                  <div v-if="role.permissions?.length" class="permissions-preview">
+                    <span v-for="perm in role.permissions.slice(0, 3)" :key="perm.id" class="permission-tag">
+                      {{ perm.display_name }}
+                    </span>
+                    <span v-if="role.permissions.length > 3" class="more-permissions">
+                      +{{ role.permissions.length - 3 }} دسترسی دیگر
+                    </span>
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
         </div>
+
+        <div class="modal-footer">
+          <button @click="saveRoles" class="btn-primary">
+            <Icon name="heroicons:check" />
+            ذخیره تغییرات
+          </button>
+          <button @click="closeRoleModal" class="btn-secondary">
+            انصراف
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Reset Password Modal -->
-    <div v-if="showResetPasswordModal" class="modal-overlay" @click="closeResetPasswordModal">
-      <div class="modal-content" @click.stop>
+    <!-- Add/Edit User Modal -->
+    <div v-if="showAddUserModal || showEditModal" class="modal-overlay" @click.self="closeUserModal">
+      <div class="modal-content">
         <div class="modal-header">
-          <h3>بازنشانی رمز عبور</h3>
-          <button @click="closeResetPasswordModal" class="close-btn">×</button>
+          <h2>{{ showEditModal ? 'ویرایش کاربر' : 'افزودن کاربر جدید' }}</h2>
+          <button @click="closeUserModal" class="close-btn">
+            <Icon name="heroicons:x-mark" />
+          </button>
         </div>
+        
         <div class="modal-body">
-          <form @submit.prevent="handleResetPassword">
+          <form @submit.prevent="saveUser" class="user-form">
             <div class="form-group">
-              <label>رمز عبور جدید *</label>
-              <input v-model="resetPasswordForm.password" type="password" required minlength="8" />
+              <label for="name">نام و نام خانوادگی</label>
+              <input
+                v-model="userForm.name"
+                type="text"
+                id="name"
+                required
+                placeholder="نام کامل کاربر"
+              />
             </div>
+
             <div class="form-group">
-              <label>تأیید رمز عبور *</label>
-              <input v-model="resetPasswordForm.confirmPassword" type="password" required minlength="8" />
+              <label for="email">ایمیل</label>
+              <input
+                v-model="userForm.email"
+                type="email"
+                id="email"
+                placeholder="email@example.com"
+              />
             </div>
-            <div class="form-actions">
-              <button type="button" @click="closeResetPasswordModal" class="btn-secondary">
-                انصراف
-              </button>
-              <button type="submit" class="btn-primary" :disabled="isProcessing || !isValidPassword">
-                {{ isProcessing ? 'در حال انجام...' : 'تغییر رمز عبور' }}
-              </button>
+
+            <div class="form-group">
+              <label for="phone">شماره تلفن</label>
+              <input
+                v-model="userForm.phone"
+                type="tel"
+                id="phone"
+                placeholder="09123456789"
+              />
+            </div>
+
+            <div class="form-group" v-if="!showEditModal">
+              <label for="password">رمز عبور</label>
+              <input
+                v-model="userForm.password"
+                type="password"
+                id="password"
+                placeholder="رمز عبور (اختیاری)"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>نقش‌های کاربر</label>
+              <div class="roles-select">
+                <label v-for="role in roles" :key="role.id" class="role-option">
+                  <input
+                    type="checkbox"
+                    :value="role.id"
+                    v-model="userForm.roles"
+                  />
+                  <span>{{ role.display_name }}</span>
+                </label>
+              </div>
             </div>
           </form>
+        </div>
+
+        <div class="modal-footer">
+          <button @click="saveUser" class="btn-primary">
+            <Icon name="heroicons:check" />
+            {{ showEditModal ? 'ذخیره تغییرات' : 'ایجاد کاربر' }}
+          </button>
+          <button @click="closeUserModal" class="btn-secondary">
+            انصراف
+          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { debounce } from 'lodash-es'
 
+// Define middleware
 definePageMeta({
-  middleware: 'admin',
-  layout: 'default'
+  middleware: ['auth', 'admin'],
+  layout: 'dashboard'
 })
 
-const {
-  users,
-  loading,
-  stats,
-  fetchUsers,
-  fetchUserStats,
-  createUser,
-  updateUser,
-  toggleUserLock,
-  verifyUserEmail,
-  verifyUserPhone,
-  resetUserPassword
-} = useUsers()
+// Types
+interface User {
+  id: number
+  name: string
+  email?: string
+  phone?: string
+  email_verified_at?: string
+  phone_verified_at?: string
+  roles?: Role[]
+  locked_until?: string
+  created_at: string
+  avatar_url?: string
+}
+
+interface Role {
+  id: number
+  name: string
+  display_name: string
+  description?: string
+  permissions?: Permission[]
+  users_count?: number
+}
+
+interface Permission {
+  id: number
+  name: string
+  display_name: string
+}
+
+interface Statistics {
+  total_users: number
+  verified_emails: number
+  verified_phones: number
+  users_with_password: number
+  recent_registrations: number
+  locked_accounts: number
+}
+
+interface Pagination {
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+}
+
+// Composables
+const { api } = useApi()
+const { showToast } = useToast()
 
 // State
+const users = ref<User[]>([])
+const roles = ref<Role[]>([])
+const statistics = ref<Statistics | null>(null)
+const pagination = ref<Pagination | null>(null)
+const loading = ref(false)
 const searchQuery = ref('')
-const sortField = ref('created_at')
-const sortOrder = ref('desc')
-const isProcessing = ref(false)
-
-const filters = reactive({
-  emailVerified: '',
-  phoneVerified: '',
-  preferredMethod: ''
-})
-
-const pagination = reactive({
-  current_page: 1,
-  last_page: 1,
-  per_page: 15,
-  total: 0
+const filters = ref({
+  email_verified: '',
+  phone_verified: '',
+  role: ''
 })
 
 // Modals
-const showAddModal = ref(false)
+const showRoleModal = ref(false)
+const showAddUserModal = ref(false)
 const showEditModal = ref(false)
-const showViewModal = ref(false)
-const showResetPasswordModal = ref(false)
+const selectedUser = ref<User | null>(null)
+const selectedUserRoles = ref<number[]>([])
 
-const editingUser = ref({})
-const viewingUser = ref(null)
-const resetingUser = ref(null)
-
-const newUser = reactive({
+// User Form
+const userForm = ref({
   name: '',
   email: '',
   phone: '',
-  preferred_method: 'password',
-  password: ''
-})
-
-const resetPasswordForm = reactive({
   password: '',
-  confirmPassword: ''
+  roles: [] as number[]
 })
 
 // Computed
-const userStats = computed(() => stats.value)
-
 const visiblePages = computed(() => {
-  const total = pagination.last_page
-  const current = pagination.current_page
-  const delta = 2
+  if (!pagination.value) return []
+  const current = pagination.value.current_page
+  const last = pagination.value.last_page
   const pages = []
-  const start = Math.max(1, current - delta)
-  const end = Math.min(total, current + delta)
-
-  for (let p = start; p <= end; p++) pages.push(p)
-  if (!pages.includes(1)) pages.unshift(1)
-  if (!pages.includes(total)) pages.push(total)
-
-  return Array.from(new Set(pages)).sort((a, b) => a - b)
-})
-
-const isValidPassword = computed(() => {
-  return resetPasswordForm.password === resetPasswordForm.confirmPassword &&
-    resetPasswordForm.password.length >= 8
+  
+  for (let i = Math.max(1, current - 2); i <= Math.min(last, current + 2); i++) {
+    pages.push(i)
+  }
+  
+  return pages
 })
 
 // Methods
-const getInitials = (name) => {
-  if (!name) return 'ک'
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map(n => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase()
-}
-
-const getUserStatus = (user) => {
-  if (user?.locked_until && new Date(user.locked_until) > new Date()) return 'locked'
-  return 'active'
-}
-
-const getUserStatusText = (user) => {
-  const status = getUserStatus(user)
-  if (status === 'locked') return 'قفل شده'
-  return 'فعال'
-}
-
-const formatDate = (date) => {
-  if (!date) return ''
+const fetchUsers = async (page = 1) => {
+  loading.value = true
   try {
-    return new Intl.DateTimeFormat('fa-IR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(date))
-  } catch {
-    return ''
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: '20',
+      ...(searchQuery.value && { search: searchQuery.value }),
+      ...(filters.value.email_verified && { email_verified: filters.value.email_verified }),
+      ...(filters.value.phone_verified && { phone_verified: filters.value.phone_verified }),
+      ...(filters.value.role && { role: filters.value.role })
+    })
+
+    const response = await api(`/api/auth/users?${params}`)
+    
+    if (response.success) {
+      users.value = response.data || []
+      pagination.value = response.meta || null
+    }
+  } catch (error) {
+    showToast('خطا در دریافت لیست کاربران', 'error')
+    console.error('Error fetching users:', error)
+  } finally {
+    loading.value = false
   }
 }
 
-const sortBy = (field) => {
-  if (sortField.value === field) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortField.value = field
-    sortOrder.value = 'asc'
+const fetchStatistics = async () => {
+  try {
+    const response = await api('/api/auth/users/statistics')
+    if (response.success) {
+      statistics.value = response.data
+    }
+  } catch (error) {
+    console.error('Error fetching statistics:', error)
   }
-  loadUsers()
 }
 
-const goToPage = (page) => {
-  pagination.current_page = page
-  loadUsers()
-}
-
-// API calls
-const loadUsers = async () => {
-  const params = {
-    search: searchQuery.value || undefined,
-    email_verified: filters.emailVerified === '' ? undefined : filters.emailVerified === 'true',
-    phone_verified: filters.phoneVerified === '' ? undefined : filters.phoneVerified === 'true',
-    sort_by: sortField.value,
-    sort_order: sortOrder.value,
-    per_page: pagination.per_page,
-    page: pagination.current_page
-  }
-
-  // Remove undefined values
-  Object.keys(params).forEach(key => {
-    if (params[key] === undefined) delete params[key]
-  })
-
-  const response = await fetchUsers(params)
-  if (response && response.meta) {
-    Object.assign(pagination, response.meta)
+const fetchRoles = async () => {
+  try {
+    const response = await api('/api/auth/roles?with_permissions=true')
+    if (response.success) {
+      roles.value = response.data || []
+    }
+  } catch (error) {
+    console.error('Error fetching roles:', error)
   }
 }
 
 const debouncedSearch = debounce(() => {
-  pagination.current_page = 1
-  loadUsers()
+  fetchUsers()
 }, 500)
 
-const applyFilters = () => {
-  pagination.current_page = 1
-  loadUsers()
+const resetFilters = () => {
+  searchQuery.value = ''
+  filters.value = {
+    email_verified: '',
+    phone_verified: '',
+    role: ''
+  }
+  fetchUsers()
 }
 
-// CRUD Operations
-const handleCreateUser = async () => {
-  if (!newUser.name.trim()) return
-
-  if (newUser.preferred_method === 'password' && !newUser.password) {
-    return
-  }
-
-  if (!newUser.email && !newUser.phone) {
-    return
-  }
-
-  isProcessing.value = true
-  const success = await createUser(newUser)
-  isProcessing.value = false
-
-  if (success) {
-    closeAddModal()
-    await loadUsers()
+const changePage = (page: number) => {
+  if (page >= 1 && pagination.value && page <= pagination.value.last_page) {
+    fetchUsers(page)
   }
 }
 
-const handleUpdateUser = async () => {
-  if (!editingUser.value.name?.trim()) return
-
-  isProcessing.value = true
-  const success = await updateUser(editingUser.value.id, {
-    name: editingUser.value.name,
-    email: editingUser.value.email || undefined,
-    phone: editingUser.value.phone || undefined,
-    preferred_method: editingUser.value.preferred_method
-  })
-  isProcessing.value = false
-
-  if (success) {
-    closeEditModal()
-    await loadUsers()
+const editUser = (user: User) => {
+  selectedUser.value = user
+  userForm.value = {
+    name: user.name,
+    email: user.email || '',
+    phone: user.phone || '',
+    password: '',
+    roles: user.roles?.map(r => r.id) || []
   }
-}
-
-const editUser = (user) => {
-  editingUser.value = { ...user }
   showEditModal.value = true
 }
 
-const viewUser = (user) => {
-  viewingUser.value = user
-  showViewModal.value = true
+const manageRoles = (user: User) => {
+  selectedUser.value = user
+  selectedUserRoles.value = user.roles?.map(r => r.id) || []
+  showRoleModal.value = true
 }
 
-const toggleUserStatus = async (user) => {
-  if (user.is_admin) return
+const userHasRole = (role: Role) => {
+  return selectedUserRoles.value.includes(role.id)
+}
 
-  const success = await toggleUserLock(user.id)
-  if (success) {
-    await loadUsers()
+const toggleRole = (role: Role) => {
+  const index = selectedUserRoles.value.indexOf(role.id)
+  if (index > -1) {
+    selectedUserRoles.value.splice(index, 1)
+  } else {
+    selectedUserRoles.value.push(role.id)
   }
 }
 
-const verifyEmail = async (user) => {
-  const success = await verifyUserEmail(user.id)
-  if (success) {
-    await loadUsers()
+const saveRoles = async () => {
+  if (!selectedUser.value) return
+
+  try {
+    // Get current roles
+    const currentRoles = selectedUser.value.roles?.map(r => r.id) || []
+    
+    // Find roles to add and remove
+    const rolesToAdd = selectedUserRoles.value.filter(id => !currentRoles.includes(id))
+    const rolesToRemove = currentRoles.filter(id => !selectedUserRoles.value.includes(id))
+
+    // Remove roles
+    for (const roleId of rolesToRemove) {
+      await api(`/api/auth/roles/user/${selectedUser.value.id}/remove`, {
+        method: 'POST',
+        body: { role_id: roleId }
+      })
+    }
+
+    // Add roles
+    for (const roleId of rolesToAdd) {
+      await api(`/api/auth/roles/user/${selectedUser.value.id}/assign`, {
+        method: 'POST',
+        body: { role_id: roleId }
+      })
+    }
+
+    showToast('نقش‌های کاربر با موفقیت به‌روزرسانی شد', 'success')
+    closeRoleModal()
+    fetchUsers()
+  } catch (error) {
+    showToast('خطا در به‌روزرسانی نقش‌ها', 'error')
+    console.error('Error updating roles:', error)
   }
 }
 
-const verifyPhone = async (user) => {
-  const success = await verifyUserPhone(user.id)
-  if (success) {
-    await loadUsers()
+const toggleLock = async (user: User) => {
+  try {
+    const response = await api(`/api/auth/users/${user.id}/toggle-lock`, {
+      method: 'POST'
+    })
+    
+    if (response.success) {
+      showToast(
+        user.locked_until ? 'حساب کاربر باز شد' : 'حساب کاربر قفل شد',
+        'success'
+      )
+      fetchUsers()
+    }
+  } catch (error) {
+    showToast('خطا در تغییر وضعیت قفل', 'error')
+    console.error('Error toggling lock:', error)
   }
 }
 
-const resetPassword = (user) => {
-  if (user.is_admin) return
+const deleteUser = async (user: User) => {
+  if (!confirm(`آیا از حذف کاربر ${user.name} اطمینان دارید؟`)) return
 
-  resetingUser.value = user
-  resetPasswordForm.password = ''
-  resetPasswordForm.confirmPassword = ''
-  showResetPasswordModal.value = true
-}
-
-const handleResetPassword = async () => {
-  if (!isValidPassword.value || !resetingUser.value) return
-
-  isProcessing.value = true
-  const success = await resetUserPassword(resetingUser.value.id, resetPasswordForm.password)
-  isProcessing.value = false
-
-  if (success) {
-    closeResetPasswordModal()
-    await loadUsers()
+  try {
+    const response = await api(`/api/auth/users/${user.id}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.success) {
+      showToast('کاربر با موفقیت حذف شد', 'success')
+      fetchUsers()
+    }
+  } catch (error) {
+    showToast('خطا در حذف کاربر', 'error')
+    console.error('Error deleting user:', error)
   }
 }
 
-// Modal handlers
-const closeAddModal = () => {
-  showAddModal.value = false
-  Object.assign(newUser, { name: '', email: '', phone: '', preferred_method: 'password', password: '' })
+const saveUser = async () => {
+  try {
+    const endpoint = showEditModal.value 
+      ? `/api/auth/users/${selectedUser.value?.id}`
+      : '/api/auth/users'
+    
+    const method = showEditModal.value ? 'PUT' : 'POST'
+    
+    const response = await api(endpoint, {
+      method,
+      body: userForm.value
+    })
+    
+    if (response.success) {
+      showToast(
+        showEditModal.value ? 'کاربر با موفقیت ویرایش شد' : 'کاربر جدید ایجاد شد',
+        'success'
+      )
+      closeUserModal()
+      fetchUsers()
+    }
+  } catch (error) {
+    showToast('خطا در ذخیره اطلاعات کاربر', 'error')
+    console.error('Error saving user:', error)
+  }
 }
 
-const closeEditModal = () => {
+const closeRoleModal = () => {
+  showRoleModal.value = false
+  selectedUser.value = null
+  selectedUserRoles.value = []
+}
+
+const closeUserModal = () => {
+  showAddUserModal.value = false
   showEditModal.value = false
-  editingUser.value = {}
+  selectedUser.value = null
+  userForm.value = {
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    roles: []
+  }
 }
 
-const closeViewModal = () => {
-  showViewModal.value = false
-  viewingUser.value = null
-}
-
-const closeResetPasswordModal = () => {
-  showResetPasswordModal.value = false
-  resetingUser.value = null
-  resetPasswordForm.password = ''
-  resetPasswordForm.confirmPassword = ''
+const formatDate = (date: string) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('fa-IR')
 }
 
 // Lifecycle
-onMounted(async () => {
-  await Promise.all([
-    loadUsers(),
-    fetchUserStats()
-  ])
+onMounted(() => {
+  fetchUsers()
+  fetchStatistics()
+  fetchRoles()
 })
 </script>
 
 <style scoped>
-@import '@/assets/css/users-dashboard.css';
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  position: relative;
+.users-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.sortable:hover {
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.sort-indicator {
-  position: absolute;
-  right: 5px;
-  font-size: 0.8rem;
-  color: var(--primary);
-}
-
-.admin-badge {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+/* Header */
+.users-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
   color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-top: 0.25rem;
-  display: inline-block;
 }
 
-.verify-btn {
-  background: #f59e0b;
-  color: white;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.users-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.title-icon {
+  font-size: 2rem;
+}
+
+.users-subtitle {
+  margin: 0.5rem 0 0;
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: white;
+  color: #667eea;
   border: none;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Statistics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
+  display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  font-size: 1.5rem;
 }
 
-.verify-btn:hover {
+.stat-icon.blue {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.stat-icon.green {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.stat-icon.purple {
+  background: #ede9fe;
+  color: #8b5cf6;
+}
+
+.stat-icon.orange {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+.stat-icon.teal {
+  background: #ccfbf1;
+  color: #14b8a6;
+}
+
+.stat-icon.red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.stat-content h3 {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0.25rem 0 0;
+}
+
+/* Filters Section */
+.filters-section {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 300px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+}
+
+.search-box svg {
+  color: #6b7280;
+  width: 20px;
+  height: 20px;
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.filter-select:hover,
+.filter-select:focus {
+  border-color: #667eea;
+  outline: none;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+/* Table Container */
+.table-container {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table thead {
+  background: #f9fafb;
+}
+
+.users-table th {
+  padding: 1rem;
+  text-align: right;
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.users-table tbody tr {
+  border-top: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.users-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.users-table td {
+  padding: 1rem;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.user-id {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0;
+}
+
+/* Contact Info */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.contact-item svg {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}
+
+.verified-badge {
+  color: #10b981;
+}
+
+/* Roles */
+.roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.role-badge.role-admin {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.role-badge.role-editor {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.role-badge.role-moderator {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.role-badge.role-author {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.role-badge.role-user {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.no-role {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Status */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.status-badge.active {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.status-badge.locked {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Date Info */
+.date-info {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.375rem;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn.edit {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.action-btn.edit:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.action-btn.roles {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.action-btn.roles:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+.action-btn.lock {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.action-btn.lock:hover {
   background: #d97706;
-  transform: scale(1.1);
+  color: white;
 }
 
-.action-btn:disabled {
+.action-btn.unlock {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.action-btn.unlock:hover {
+  background: #10b981;
+  color: white;
+}
+
+.action-btn.delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.action-btn.delete:hover {
+  background: #dc2626;
+  color: white;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #e5e7eb;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  color: #4b5563;
+  margin: 0 0 0.5rem;
+}
+
+.empty-state p {
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Loading State */
+.loading-state {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  color: #6b7280;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.action-btn.reset {
-  background: #6366f1;
+.pagination-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pagination-number {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.pagination-number:hover {
+  background: #f3f4f6;
+}
+
+.pagination-number.active {
+  background: #667eea;
   color: white;
+  border-color: #667eea;
 }
 
-.action-btn.reset:hover:not(:disabled) {
-  background: #4f46e5;
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
 }
 
-.stat-card .stat-icon.warning {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
+.modal-content {
+  background: white;
+  border-radius: 1rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.warning .stat-value {
-  color: #f59e0b;
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1f2937;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: #e5e7eb;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Roles Grid in Modal */
+.roles-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.role-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.role-item:hover {
+  border-color: #667eea;
+}
+
+.role-checkbox {
+  display: flex;
+  padding: 1rem;
+  cursor: pointer;
+  gap: 1rem;
+}
+
+.role-checkbox input[type="checkbox"] {
+  margin-top: 0.25rem;
+}
+
+.role-info h4 {
+  margin: 0 0 0.25rem;
+  color: #1f2937;
+}
+
+.role-info p {
+  margin: 0 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.permissions-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.permission-tag {
+  padding: 0.125rem 0.5rem;
+  background: #f3f4f6;
+  color: #4b5563;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.more-permissions {
+  padding: 0.125rem 0.5rem;
+  color: #667eea;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* User Form */
+.user-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.roles-select {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.role-option:hover {
+  background: #f9fafb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filters-section {
+    flex-direction: column;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  .filter-controls {
+    width: 100%;
+  }
+  
+  .users-table {
+    font-size: 0.875rem;
+  }
+  
+  .users-table th,
+  .users-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
 }
 </style>
