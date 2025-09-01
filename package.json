@@ -1,21 +1,31 @@
 {
-  "name": "nuxt-app",
-  "type": "module",
+  "name": "management-system",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host 127.0.0.1 --port 3000",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint . --ext .vue,.js,.ts",
+    "lint:fix": "eslint . --ext .vue,.js,.ts --fix",
+    "clean": "rm -rf .nuxt dist .output node_modules/.cache"
   },
   "dependencies": {
-    "@nuxt/ui": "^3.3.2",
-    "nuxt": "^4.0.3",
-    "vue": "^3.5.20",
-    "vue-router": "^4.5.1"
+    "@pinia/nuxt": "^0.11.2",
+    "nuxt": "^3.13.0",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.0"
   },
   "devDependencies": {
-    "vite-tsconfig-paths": "^5.1.4"
+    "@nuxt/devtools": "latest",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
   }
 }

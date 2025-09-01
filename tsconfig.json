@@ -1,10 +1,27 @@
 {
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"],
-      "@/*": ["./*"]
+      "~/*": ["./app/*"],
+      "@/*": ["./app/*"]
     }
-  }
+  },
+  "include": [
+    "app/**/*",
+    "types/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".nuxt",
+    "dist",
+    ".output"
+  ]
 }

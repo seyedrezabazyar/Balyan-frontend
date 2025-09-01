@@ -1,75 +1,106 @@
-# Nuxt Minimal Starter
+# سیستم مدیریت پیشرفته
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+یک سیستم مدیریت مدرن و کارآمد ساخته شده با Nuxt 4 و Vue 3
 
-## Setup
+## ویژگی‌ها
 
-Make sure to install dependencies:
+- 🚀 **Performance بالا** - استفاده از Lazy Loading و بهینه‌سازی‌های پیشرفته
+- 🔐 **احراز هویت امن** - سیستم ورود با OTP و رمز عبور
+- 👥 **مدیریت کاربران** - مدیریت کامل کاربران، نقش‌ها و دسترسی‌ها
+- 📚 **مدیریت محتوا** - سیستم مدیریت کتاب‌ها و دسته‌بندی‌ها
+- 🖼️ **گالری تصاویر** - مدیریت و نمایش تصاویر
+- 📊 **داشبورد آماری** - نمایش آمار و اطلاعات سیستم
+- 📱 **Responsive Design** - سازگار با تمام دستگاه‌ها
 
+## نصب و راه‌اندازی
+
+### پیش‌نیازها
+
+- Node.js 18 یا بالاتر
+- npm یا yarn
+
+### مراحل نصب
+
+1. کلون کردن پروژه:
 ```bash
-# npm
+git clone [repository-url]
+cd management-system
+```
+
+2. نصب وابستگی‌ها:
+```bash
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
+3. تنظیم متغیرهای محیطی:
 ```bash
-# npm
+cp .env.example .env
+```
+
+4. اجرای پروژه در حالت توسعه:
+```bash
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+پروژه در آدرس `http://127.0.0.1:3000` قابل دسترسی خواهد بود.
 
-Build the application for production:
+## دستورات مفید
 
 ```bash
-# npm
+# Build برای Production
 npm run build
 
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
+# اجرای Production Build
 npm run preview
 
-# pnpm
-pnpm preview
+# بررسی Type
+npm run typecheck
 
-# yarn
-yarn preview
+# Linting
+npm run lint
+npm run lint:fix
 
-# bun
-bun run preview
+# Formatting
+npm run format
+npm run format:check
+
+# پاکسازی Cache
+npm run clean
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## ساختار پروژه
+
+```
+app/
+├── assets/          # فایل‌های استاتیک و CSS
+├── components/      # کامپوننت‌های Vue
+│   └── dashboard/   # کامپوننت‌های داشبورد
+├── composables/     # Composables (useAuth, useApi, etc.)
+├── layouts/         # Layout های صفحات
+├── middleware/      # Route Middleware
+├── pages/           # صفحات اپلیکیشن
+│   └── dashboard/   # صفحات داشبورد
+├── plugins/         # Nuxt Plugins
+├── types/           # TypeScript Type Definitions
+└── utils/           # Utility Functions
+```
+
+## تکنولوژی‌های استفاده شده
+
+- **Nuxt 4** - Framework اصلی
+- **Vue 3** - Composition API
+- **TypeScript** - Type Safety
+- **CSS3** - استایل‌دهی مدرن
+
+## بهینه‌سازی‌های انجام شده
+
+- ✅ حذف فایل‌ها و کدهای اضافی
+- ✅ Lazy Loading برای کامپوننت‌ها
+- ✅ Type Definitions مرکزی
+- ✅ بهینه‌سازی Bundle Size
+- ✅ استانداردسازی نام‌گذاری فایل‌ها
+- ✅ ESLint و Prettier Configuration
+
+## لایسنس
+
+Private - All Rights Reserved
