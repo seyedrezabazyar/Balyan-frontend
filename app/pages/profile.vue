@@ -191,7 +191,6 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const api = useApi(authStore.token)
 
 const user = ref(null)
 const loading = ref(false)
@@ -214,13 +213,22 @@ const passwordForm = ref({
 })
 
 onMounted(async () => {
+  // اطمینان از وجود توکن
+  if (!authStore.token) {
+    await navigateTo('/auth')
+    return
+  }
   await loadUserData()
 })
 
 async function loadUserData() {
   try {
+    // ایجاد api با توکن فعلی
+    const api = useApi(authStore.token)
     const response = await api.get('/auth/user')
-    user.value = response.user
+    
+    // بررسی ساختار response
+    user.value = response.user || response
 
     // پر کردن فرم با اطلاعات کاربر
     form.value = {
@@ -231,7 +239,15 @@ async function loadUserData() {
       preferred_method: user.value.preferred_method || 'otp'
     }
   } catch (error) {
-    showMessage('خطا در دریافت اطلاعات', 'error')
+    console.error('خطا در دریافت اطلاعات کاربر:', error)
+    
+    // اگر خطای 401 بود، به صفحه ورود برویم
+    if (error?.status === 401 || error?.statusCode === 401) {
+      authStore.clearAuth()
+      await navigateTo('/auth')
+    } else {
+      showMessage('خطا در دریافت اطلاعات', 'error')
+    }
   }
 }
 
@@ -240,16 +256,28 @@ async function updateProfile() {
   message.value = ''
 
   try {
+    // ایجاد api با توکن فعلی
+    const api = useApi(authStore.token)
     const response = await api.post('/auth/profile/update', {
       name: form.value.name,
-      phone: form.value.phone || null
+      email: form.value.email || null,
+      phone: form.value.phone || null,
+      preferred_method: form.value.preferred_method
     })
 
-    user.value = response.user
-    authStore.user = response.user
+    user.value = response.user || response
+    authStore.user = response.user || response
     showMessage('اطلاعات با موفقیت ذخیره شد', 'success')
   } catch (error) {
-    showMessage(error.data?.message || 'خطا در ذخیره اطلاعات', 'error')
+    console.error('خطا در به‌روزرسانی پروفایل:', error)
+    
+    // اگر خطای 401 بود، به صفحه ورود برویم
+    if (error?.status === 401 || error?.statusCode === 401) {
+      authStore.clearAuth()
+      await navigateTo('/auth')
+    } else {
+      showMessage(error?.data?.message || error?.message || 'خطا در ذخیره اطلاعات', 'error')
+    }
   } finally {
     loading.value = false
   }
@@ -262,13 +290,23 @@ async function handlePassword() {
   const endpoint = user.value?.password ? '/auth/password/update' : '/auth/password/set'
 
   try {
+    // ایجاد api با توکن فعلی
+    const api = useApi(authStore.token)
     await api.post(endpoint, passwordForm.value)
     showMessage('رمز عبور با موفقیت ذخیره شد', 'success')
     showPasswordForm.value = false
     resetPasswordForm()
     await loadUserData()
   } catch (error) {
-    showMessage(error.data?.message || 'خطا در ذخیره رمز عبور', 'error')
+    console.error('خطا در تغییر رمز عبور:', error)
+    
+    // اگر خطای 401 بود، به صفحه ورود برویم
+    if (error?.status === 401 || error?.statusCode === 401) {
+      authStore.clearAuth()
+      await navigateTo('/auth')
+    } else {
+      showMessage(error?.data?.message || error?.message || 'خطا در ذخیره رمز عبور', 'error')
+    }
   } finally {
     loading.value = false
   }

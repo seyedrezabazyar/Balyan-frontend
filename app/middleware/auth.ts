@@ -6,15 +6,26 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // بارگذاری اطلاعات از localStorage
   authStore.initAuth()
 
-  if (!authStore.isAuthenticated) {
+  // بررسی وجود توکن
+  if (!authStore.token || !authStore.isAuthenticated) {
+    console.log('No token or not authenticated, redirecting to auth')
     return navigateTo('/auth')
   }
 
   // اگر user هنوز null است، fetchUser اجرا شود و تا اتمام صبر شود
   if (!authStore.user) {
     try {
+      console.log('Fetching user data...')
       await authStore.fetchUser()
-    } catch {
+      
+      // اگر بعد از fetch هنوز user نداریم
+      if (!authStore.user) {
+        console.log('Failed to fetch user, clearing auth')
+        authStore.clearAuth()
+        return navigateTo('/auth')
+      }
+    } catch (error) {
+      console.error('Error in auth middleware:', error)
       authStore.clearAuth()
       return navigateTo('/auth')
     }
