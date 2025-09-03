@@ -32,7 +32,7 @@ export const useCartStore = defineStore('cart', {
     async fetchCart() {
       const api = useApi()
       try {
-        const response = await api.get('/api/v1/cart')
+        const response = await api.get('/v1/cart')
         this.items = response.items || []
         this.total = response.total || 0
         this.coupon = response.coupon
@@ -45,7 +45,7 @@ export const useCartStore = defineStore('cart', {
     async addToCart(bookId: number, quantity: number = 1) {
       const api = useApi()
       try {
-        const response = await api.post('/api/v1/cart/add', {
+        const response = await api.post('/v1/cart/add', {
           book_id: bookId,
           quantity
         })
@@ -59,7 +59,7 @@ export const useCartStore = defineStore('cart', {
     async removeFromCart(itemId: number) {
       const api = useApi()
       try {
-        await api.delete(`/api/v1/cart/remove/${itemId}`)
+        await api.delete(`/v1/cart/remove/${itemId}`)
         await this.fetchCart()
       } catch (error) {
         throw error
@@ -69,7 +69,7 @@ export const useCartStore = defineStore('cart', {
     async clearCart() {
       const api = useApi()
       try {
-        await api.delete('/api/v1/cart/clear')
+        await api.delete('/v1/cart/clear')
         this.items = []
         this.total = 0
         this.coupon = null
