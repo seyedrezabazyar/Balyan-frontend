@@ -55,7 +55,7 @@ const userInfo = computed(() => JSON.stringify(authStore.currentUser, null, 2) |
 
 const performAdminAction = async () => {
   try {
-    await api.delete('/api/dashboard/cache')
+    await api.delete('/dashboard/cache')
     alert('عملیات ادمین با موفقیت انجام شد!')
   } catch (error) {
     console.error('خطا در عملیات ادمین:', error)
