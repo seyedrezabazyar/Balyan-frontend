@@ -1,14 +1,14 @@
-export const useApi = () => {
-  const config = useRuntimeConfig()
-  const authStore = useAuthStore()
+// ~/composables/useApi.ts
+import { useRuntimeConfig } from '#app'
 
-  const createHeaders = () => {
-    return {
-      'Authorization': authStore.token ? `Bearer ${authStore.token}` : '',
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    }
-  }
+export const useApi = (token: string | null = null) => {
+  const config = useRuntimeConfig()
+
+  const createHeaders = () => ({
+    'Authorization': token ? `Bearer ${token}` : '',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  })
 
   return {
     get: (url: string, options = {}) => {

@@ -30,48 +30,36 @@ export const useCartStore = defineStore('cart', {
 
   actions: {
     async fetchCart() {
-      const { $api } = useNuxtApp()
+      const api = useApi()
       try {
-        const response = await $api.get('/api/v1/cart')
-        this.items = response.data.items
-        this.total = response.data.total
-        this.coupon = response.data.coupon
-        return response.data
+        const response = await api.get('/api/v1/cart')
+        this.items = response.items || []
+        this.total = response.total || 0
+        this.coupon = response.coupon
+        return response
       } catch (error) {
         console.error('Error fetching cart:', error)
       }
     },
 
     async addToCart(bookId: number, quantity: number = 1) {
-      const { $api } = useNuxtApp()
+      const api = useApi()
       try {
-        const response = await $api.post('/api/v1/cart/add', {
+        const response = await api.post('/api/v1/cart/add', {
           book_id: bookId,
           quantity
         })
         await this.fetchCart()
-        return response.data
+        return response
       } catch (error) {
         throw error
       }
     },
 
     async removeFromCart(itemId: number) {
-      const { $api } = useNuxtApp()
+      const api = useApi()
       try {
-        await $api.delete(`/api/v1/cart/remove/${itemId}`)
-        await this.fetchCart()
-      } catch (error) {
-        throw error
-      }
-    },
-
-    async updateQuantity(itemId: number, quantity: number) {
-      const { $api } = useNuxtApp()
-      try {
-        await $api.put(`/api/v1/cart/update/${itemId}`, {
-          quantity
-        })
+        await api.delete(`/api/v1/cart/remove/${itemId}`)
         await this.fetchCart()
       } catch (error) {
         throw error
@@ -79,26 +67,12 @@ export const useCartStore = defineStore('cart', {
     },
 
     async clearCart() {
-      const { $api } = useNuxtApp()
+      const api = useApi()
       try {
-        await $api.delete('/api/v1/cart/clear')
+        await api.delete('/api/v1/cart/clear')
         this.items = []
         this.total = 0
         this.coupon = null
-      } catch (error) {
-        throw error
-      }
-    },
-
-    async applyCoupon(code: string) {
-      const { $api } = useNuxtApp()
-      try {
-        const response = await $api.post('/api/v1/cart/coupon/apply', {
-          code
-        })
-        this.coupon = response.data.coupon
-        await this.fetchCart()
-        return response.data
       } catch (error) {
         throw error
       }

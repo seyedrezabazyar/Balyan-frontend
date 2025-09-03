@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
+import { useApi } from '~/composables/useApi'
 
 interface User {
   id: number
-  name: string
+  name?: string
   email?: string
   phone?: string
   permissions?: string[]
   roles?: string[]
+  is_admin?: boolean
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -19,94 +21,36 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     currentUser: (state) => state.user,
-    isLoggedIn: (state) => state.isAuthenticated
+    isLoggedIn: (state) => state.isAuthenticated,
+    isAdmin: (state) => !!state.user?.is_admin // درست و reactive
   },
 
   actions: {
-    async checkUser(identifier: string) {
-      const api = useApi()
-      try {
-        const response = await api.post('/auth/check-user', { identifier })
-        return response
-      } catch (error) {
-        throw error
-      }
-    },
-
-    async loginWithPassword(identifier: string, password: string) {
-      const api = useApi()
-      try {
-        const response = await api.post('/auth/login-password', {
-          identifier,
-          password
-        })
-
-        this.setAuth(response)
-        return response
-      } catch (error) {
-        throw error
-      }
-    },
-
-    async sendOtp(identifier: string) {
-      const api = useApi()
-      try {
-        const response = await api.post('/auth/send-otp', { identifier })
-        return response
-      } catch (error) {
-        throw error
-      }
-    },
-
-    async verifyOtp(identifier: string, otp: string) {
-      const api = useApi()
-      try {
-        const response = await api.post('/auth/verify-otp', {
-          identifier,
-          otp
-        })
-
-        this.setAuth(response)
-        return response
-      } catch (error) {
-        throw error
-      }
-    },
-
     setAuth(data: any) {
       this.token = data.access_token
       this.refreshToken = data.refresh_token
       this.user = data.user
       this.isAuthenticated = true
 
-      if (import.meta.client) {
+      if (process.client) {
         localStorage.setItem('token', data.access_token)
-        localStorage.setItem('refreshToken', data.refresh_token)
+        if (data.refresh_token) localStorage.setItem('refreshToken', data.refresh_token)
         localStorage.setItem('user', JSON.stringify(data.user))
       }
     },
 
     async fetchUser() {
-      const api = useApi()
+      if (!this.token) return null
+      const api = useApi(this.token)
       try {
         const response = await api.get('/auth/user')
-        this.user = response.user
-        return response.user
+        this.user = response.user || response
+        this.isAuthenticated = true
+        return this.user
       } catch (error) {
-        this.logout()
-        throw error
-      }
-    },
-
-    async logout() {
-      const api = useApi()
-      try {
-        await api.post('/auth/logout')
-      } catch (error) {
-        console.error('Logout error:', error)
-      } finally {
+        console.error('Error fetching user:', error)
         this.clearAuth()
-        await navigateTo('/login')
+        return null
       }
     },
 
@@ -116,7 +60,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.isAuthenticated = false
 
-      if (import.meta.client) {
+      if (process.client) {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
@@ -124,16 +68,19 @@ export const useAuthStore = defineStore('auth', {
     },
 
     initAuth() {
-      if (import.meta.client) {
+      if (process.client) {
         const token = localStorage.getItem('token')
-        const refreshToken = localStorage.getItem('refreshToken')
         const user = localStorage.getItem('user')
 
         if (token && user) {
           this.token = token
-          this.refreshToken = refreshToken
-          this.user = JSON.parse(user)
-          this.isAuthenticated = true
+          this.refreshToken = localStorage.getItem('refreshToken')
+          try {
+            this.user = JSON.parse(user)
+            this.isAuthenticated = true
+          } catch {
+            this.clearAuth()
+          }
         }
       }
     }
