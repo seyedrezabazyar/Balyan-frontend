@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // Use Nitro dev proxy by default to avoid CORS during development
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/auth'
     }
   },
 
@@ -19,8 +19,16 @@ export default defineNuxtConfig({
 
   nitro: {
     devProxy: {
-      '/api': {
-        target: 'http://localhost:8000/api',
+      '/auth': {
+        target: 'http://127.0.0.1:8000/auth',
+        changeOrigin: true
+      },
+      '/provinces': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
+      },
+      '/cities': {
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true
       }
     }

@@ -90,7 +90,7 @@ const logout = async () => {
   try {
     if (authStore.token) {
       // تلاش برای خروج از سرور
-      await api.post('/auth/logout')
+      await api.post('/logout')
     }
   } catch (err) {
     console.warn('خطا در خروج از سرور:', err) // فقط لاگ کن، کاربر همچنان خارج شود
