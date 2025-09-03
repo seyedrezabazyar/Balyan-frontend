@@ -179,7 +179,7 @@ const checkUser = async () => {
   error.value = ''
   loading.value = true
   try {
-    const response = await api.post('/auth/check-user', { identifier: identifier.value })
+    const response = await api.post('/check-user', { identifier: identifier.value })
     userExists.value = response.exists
     hasPassword.value = response.has_password
     step.value = 2
@@ -197,7 +197,7 @@ const loginWithPassword = async () => {
   error.value = ''
   loading.value = true
   try {
-    const response = await api.post('/auth/login-password', {
+    const response = await api.post('/login-password', {
       identifier: identifier.value,
       password: password.value
     })
@@ -214,7 +214,7 @@ const requestOtp = async () => {
   error.value = ''
   loading.value = true
   try {
-    await api.post('/auth/send-otp', { identifier: identifier.value })
+    await api.post('/send-otp', { identifier: identifier.value })
     otpSent.value = true
     startResendTimer()
   } catch (err) {
@@ -228,7 +228,7 @@ const verifyOtp = async () => {
   error.value = ''
   loading.value = true
   try {
-    const response = await api.post('/auth/verify-otp', {
+    const response = await api.post('/verify-otp', {
       identifier: identifier.value,
       otp: otp.value
     })

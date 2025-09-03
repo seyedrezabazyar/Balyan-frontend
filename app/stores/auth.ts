@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) return null
       const api = useApi(this.token)
       try {
-        const response = await api.get('/auth/user')
+        const response = await api.get('/user')
         this.user = response.user || response
         this.isAuthenticated = true
         return this.user
