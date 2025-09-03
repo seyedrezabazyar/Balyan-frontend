@@ -10,21 +10,12 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // Use Nitro dev proxy by default to avoid CORS during development
+      // Use internal API routes
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api'
     }
   },
 
   ssr: false,
-
-  nitro: {
-    devProxy: {
-      '/api': {
-        target: 'http://localhost:8000/api',
-        changeOrigin: true
-      }
-    }
-  },
 
   pinia: {
     storesDirs: ['./stores/**']
