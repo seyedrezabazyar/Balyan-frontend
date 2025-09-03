@@ -81,6 +81,24 @@ export const useAuthStore = defineStore('auth', {
           } catch {
             this.clearAuth()
           }
+        } else {
+          // Set mock authentication for development
+          const mockToken = 'mock-jwt-token-for-testing'
+          const mockUser = {
+            id: 1,
+            name: 'کاربر تست',
+            email: 'test@example.com',
+            phone: '09123456789',
+            is_admin: false
+          }
+          
+          this.token = mockToken
+          this.user = mockUser
+          this.isAuthenticated = true
+          
+          // Save to localStorage
+          localStorage.setItem('token', mockToken)
+          localStorage.setItem('user', JSON.stringify(mockUser))
         }
       }
     }
