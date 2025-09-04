@@ -22,7 +22,10 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     currentUser: (state) => state.user,
     isLoggedIn: (state) => state.isAuthenticated,
-    isAdmin: (state) => !!state.user?.is_admin // درست و reactive
+    isAdmin: (state) => {
+      console.log('isAdmin getter called, user:', state.user)
+      return !!(state.user?.is_admin || state.user?.roles?.some(role => role.name === 'admin'))
+    }
   },
 
   actions: {

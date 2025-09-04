@@ -29,6 +29,11 @@ export const useApi = (token: string | null = null) => {
         baseURL: config.public.apiBase,
         method: 'GET',
         headers: createHeaders(false),
+        onResponseError({ request, response, options }) {
+          console.error('API Error:', response.status, response.statusText)
+          console.error('Request URL:', request)
+          console.error('Response:', response._data)
+        },
         ...options
       })
     },
@@ -39,6 +44,11 @@ export const useApi = (token: string | null = null) => {
         method: 'POST',
         body,
         headers: createHeaders(true),
+        onResponseError({ request, response, options }) {
+          console.error('API Error:', response.status, response.statusText)
+          console.error('Request URL:', request)
+          console.error('Response:', response._data)
+        },
         ...options
       })
     },
@@ -49,6 +59,11 @@ export const useApi = (token: string | null = null) => {
         method: 'PUT',
         body,
         headers: createHeaders(true),
+        onResponseError({ request, response, options }) {
+          console.error('API Error:', response.status, response.statusText)
+          console.error('Request URL:', request)
+          console.error('Response:', response._data)
+        },
         ...options
       })
     },
@@ -59,6 +74,11 @@ export const useApi = (token: string | null = null) => {
         method: 'PATCH',
         body,
         headers: createHeaders(true),
+        onResponseError({ request, response, options }) {
+          console.error('API Error:', response.status, response.statusText)
+          console.error('Request URL:', request)
+          console.error('Response:', response._data)
+        },
         ...options
       })
     },
@@ -68,6 +88,11 @@ export const useApi = (token: string | null = null) => {
         baseURL: config.public.apiBase,
         method: 'DELETE',
         headers: createHeaders(false),
+        onResponseError({ request, response, options }) {
+          console.error('API Error:', response.status, response.statusText)
+          console.error('Request URL:', request)
+          console.error('Response:', response._data)
+        },
         ...options
       })
     }

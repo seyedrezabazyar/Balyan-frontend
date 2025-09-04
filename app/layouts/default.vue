@@ -1,3 +1,4 @@
+<!-- app/layouts/default.vue -->
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
@@ -5,10 +6,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <!-- Logo and Welcome -->
         <div class="flex items-center gap-4">
-          <h1 class="text-2xl font-bold text-gray-800">
-            به کتابخانه دیجیتال خوش آمدید
-          </h1>
-          <p class="text-sm text-gray-600">
+          <NuxtLink to="/" class="text-2xl font-bold text-gray-800">
+            کتابخانه دیجیتال
+          </NuxtLink>
+          <p class="text-sm text-gray-600 hidden md:block">
             هزاران کتاب الکترونیکی در دسترس شما
           </p>
         </div>
@@ -44,11 +45,27 @@
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                 پروفایل
               </NuxtLink>
-              <NuxtLink to="/my-books"
-                        @click="showUserMenu = false"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                کتاب‌های من
-              </NuxtLink>
+
+              <!-- Admin Menu -->
+              <div v-if="authStore.isAdmin">
+                <hr class="my-1">
+                <NuxtLink to="/admin"
+                          @click="showUserMenu = false"
+                          class="block px-4 py-2 text-sm text-purple-600 hover:bg-gray-100">
+                  پنل مدیریت
+                </NuxtLink>
+                <NuxtLink to="/admin/users"
+                          @click="showUserMenu = false"
+                          class="block px-4 py-2 text-sm text-purple-600 hover:bg-gray-100">
+                  مدیریت کاربران
+                </NuxtLink>
+                <NuxtLink to="/admin/roles"
+                          @click="showUserMenu = false"
+                          class="block px-4 py-2 text-sm text-purple-600 hover:bg-gray-100">
+                  مدیریت نقش‌ها
+                </NuxtLink>
+              </div>
+
               <hr class="my-1">
               <button @click="logout"
                       class="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
@@ -83,23 +100,19 @@ const authStore = useAuthStore()
 const router = useRouter()
 const showUserMenu = ref(false)
 
-// مهم: پاس دادن توکن به useApi
 const api = useApi(authStore.token)
 
 const logout = async () => {
   try {
     if (authStore.token) {
-      // تلاش برای خروج از سرور
       await api.post('/auth/logout')
     }
   } catch (err) {
-    console.warn('خطا در خروج از سرور:', err) // فقط لاگ کن، کاربر همچنان خارج شود
+    console.warn('خطا در خروج از سرور:', err)
   } finally {
-    // پاک کردن auth در هر صورت
     authStore.clearAuth()
     showUserMenu.value = false
     await router.push('/auth')
   }
 }
-
 </script>
