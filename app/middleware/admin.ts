@@ -4,7 +4,7 @@ import { useAuthStore } from '~/stores/auth'
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const authStore = useAuthStore()
 
-  console.log('Admin middleware called')
+  console.log('Admin middleware called for route:', to.path)
   console.log('Initial auth state:', {
     isAuthenticated: authStore.isAuthenticated,
     hasToken: !!authStore.token,
@@ -13,15 +13,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   })
 
   // بارگذاری اطلاعات از localStorage
-  authStore.initAuth()
+  if (!authStore.isAuthenticated || !authStore.token) {
+    console.log('Auth not initialized, calling initAuth...')
+    authStore.initAuth()
+  }
 
   console.log('After initAuth:', {
     isAuthenticated: authStore.isAuthenticated,
     hasToken: !!authStore.token,
+    tokenLength: authStore.token?.length,
     hasUser: !!authStore.user
   })
 
-  if (!authStore.isAuthenticated) {
+  if (!authStore.isAuthenticated || !authStore.token) {
     console.log('User not authenticated, redirecting to /auth')
     return navigateTo('/auth')
   }
@@ -44,7 +48,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // بررسی دسترسی ادمین
   if (!authStore.isAdmin) {
-    console.error('User is not admin')
+    console.error('User is not admin. User data:', {
+      is_admin: authStore.user?.is_admin,
+      roles: authStore.user?.roles
+    })
     throw createError({
       statusCode: 403,
       statusMessage: 'شما دسترسی به این بخش را ندارید'

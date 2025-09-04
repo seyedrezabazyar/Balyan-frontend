@@ -12,6 +12,7 @@
         <h2 class="text-lg font-semibold text-yellow-800 mb-3">اطلاعات Debug</h2>
         <div class="space-y-2 text-sm">
           <p><strong>Token:</strong> {{ authStore.token ? 'موجود' : 'ندارد' }}</p>
+          <p><strong>Token Length:</strong> {{ authStore.token?.length || 0 }}</p>
           <p><strong>User:</strong> {{ authStore.user?.name || 'نامشخص' }}</p>
           <p><strong>Is Admin:</strong> {{ authStore.isAdmin ? 'بله' : 'خیر' }}</p>
           <p><strong>API Base:</strong> {{ apiBase }}</p>
@@ -128,7 +129,6 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
-const api = useApi(authStore.token)
 const { testApiConnection, testAuthEndpoint, testAdminEndpoint } = useApiTest()
 
 const stats = ref({})
@@ -140,9 +140,26 @@ const addError = (error) => {
   errors.value.push(new Date().toLocaleTimeString() + ': ' + error)
 }
 
+// این تابع API را با token فعلی از store ایجاد می‌کند
+const createApi = () => {
+  if (!authStore.token) {
+    console.error('No token available')
+    return null
+  }
+  return useApi(authStore.token)
+}
+
 const loadStats = async () => {
   try {
     console.log('Loading stats...')
+    console.log('Current token:', authStore.token ? 'exists' : 'missing')
+
+    const api = createApi()
+    if (!api) {
+      addError('Token موجود نیست')
+      return
+    }
+
     const response = await api.get('/auth/users/statistics')
     stats.value = response.data || response
     console.log('Stats loaded:', stats.value)
@@ -155,6 +172,8 @@ const loadStats = async () => {
 const runDebugTests = async () => {
   errors.value = []
   console.log('=== شروع تست‌های Debug ===')
+  console.log('Auth store token:', authStore.token)
+  console.log('Auth store user:', authStore.user)
 
   // Test 1: API Connection
   const connectionOk = await testApiConnection()
@@ -167,10 +186,11 @@ const runDebugTests = async () => {
 
   // Test 2: Authentication
   if (!authStore.token) {
-    addError('Token موجود نیست')
+    addError('Token موجود نیست در store')
     return
   }
 
+  console.log('Calling testAuthEndpoint with token:', authStore.token)
   const authResult = await testAuthEndpoint(authStore.token)
   if (!authResult) {
     addError('Authentication ناموفق')
@@ -190,6 +210,13 @@ const runDebugTests = async () => {
 
 const testDirectAPI = async () => {
   try {
+    console.log('Testing direct API with token:', authStore.token)
+
+    if (!authStore.token) {
+      addError('Token موجود نیست')
+      return
+    }
+
     const response = await $fetch('/auth/users/statistics', {
       baseURL: 'http://localhost:8000/api',
       headers: {
@@ -219,9 +246,25 @@ onMounted(async () => {
   console.log('Admin panel mounted')
   console.log('Auth store state:', {
     token: !!authStore.token,
+    tokenLength: authStore.token?.length,
     user: authStore.user,
     isAdmin: authStore.isAdmin
   })
+
+  // اطمینان از اینکه token و user بارگذاری شده‌اند
+  if (!authStore.token || !authStore.user) {
+    console.log('Token or user missing, initializing auth...')
+    authStore.initAuth()
+
+    if (!authStore.user && authStore.token) {
+      try {
+        await authStore.fetchUser()
+      } catch (error) {
+        console.error('Failed to fetch user:', error)
+        addError('خطا در دریافت اطلاعات کاربر')
+      }
+    }
+  }
 
   await loadStats()
 })

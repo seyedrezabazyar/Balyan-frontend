@@ -9,7 +9,14 @@ import { useAuthStore } from '~/stores/auth'
 
 // Initialize stores on app mount
 onMounted(() => {
+  console.log('App.vue mounted, initializing auth...')
   const authStore = useAuthStore()
   authStore.initAuth()
+
+  console.log('Auth initialized:', {
+    hasToken: !!authStore.token,
+    hasUser: !!authStore.user,
+    isAuthenticated: authStore.isAuthenticated
+  })
 })
 </script>

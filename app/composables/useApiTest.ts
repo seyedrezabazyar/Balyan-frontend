@@ -23,10 +23,15 @@ export const useApiTest = () => {
     }
   }
 
-  const testAuthEndpoint = async (token: string) => {
+  const testAuthEndpoint = async (token: string | null) => {
     try {
       console.log('Testing auth endpoint...')
-      console.log('Token:', token)
+      console.log('Token received:', token ? `${token.substring(0, 20)}...` : 'null/undefined')
+
+      if (!token) {
+        console.error('No token provided to testAuthEndpoint')
+        return null
+      }
 
       const response = await fetch('http://localhost:8000/api/auth/user', {
         headers: {
@@ -54,9 +59,15 @@ export const useApiTest = () => {
     }
   }
 
-  const testAdminEndpoint = async (token: string) => {
+  const testAdminEndpoint = async (token: string | null) => {
     try {
       console.log('Testing admin endpoint...')
+      console.log('Token received:', token ? `${token.substring(0, 20)}...` : 'null/undefined')
+
+      if (!token) {
+        console.error('No token provided to testAdminEndpoint')
+        return null
+      }
 
       const response = await fetch('http://localhost:8000/api/auth/users/statistics', {
         headers: {
@@ -75,6 +86,7 @@ export const useApiTest = () => {
       } else {
         const errorData = await response.text()
         console.error('Admin test error:', errorData)
+        console.error('Admin test status:', response.status)
         return null
       }
     } catch (error) {
