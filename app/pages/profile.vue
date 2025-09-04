@@ -977,8 +977,9 @@ const verifyCode = async () => {
   }
 }
 
-const confirmUsernameChange = () => {
+const confirmUsernameChange = async () => {
   showUsernameWarning.value = false
+  await updateProfile()
 }
 
 const cancelUsernameChange = () => {
