@@ -1,0 +1,433 @@
+/* app/assets/css/profile.css */
+
+/* انیمیشن‌های سفارشی */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* کلاس‌های انیمیشن */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.6s ease-out;
+}
+
+.animate-bounce-gentle {
+  animation: bounce 2s infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse 2s infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* استایل‌های سفارشی برای فرم‌ها */
+.form-group {
+  @apply space-y-2 mb-4;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
+}
+
+.form-input:focus {
+  @apply shadow-md;
+}
+
+.form-input:disabled {
+  @apply bg-gray-100 cursor-not-allowed opacity-75;
+}
+
+.form-input.error {
+  @apply border-red-300 focus:border-red-500 focus:ring-red-500;
+}
+
+.form-input.success {
+  @apply border-green-300 focus:border-green-500 focus:ring-green-500;
+}
+
+.form-textarea {
+  @apply form-input resize-none;
+  min-height: 100px;
+}
+
+.form-select {
+  @apply form-input appearance-none bg-white;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  background-size: 16px;
+  padding-left: 40px;
+}
+
+/* دکمه‌های سفارشی */
+.btn {
+  @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+}
+
+.btn-primary {
+  @apply btn bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply btn bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500;
+}
+
+.btn-success {
+  @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-warning {
+  @apply btn bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-500;
+}
+
+.btn-danger {
+  @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  @apply transform scale-105 shadow-lg;
+}
+
+.btn:active:not(:disabled) {
+  @apply transform scale-95;
+}
+
+/* کارت‌های پروفایل */
+.profile-card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.profile-card:hover {
+  @apply shadow-lg;
+  transform: translateY(-2px);
+}
+
+.profile-card-header {
+  @apply p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50;
+}
+
+.profile-card-body {
+  @apply p-6;
+}
+
+.profile-card-title {
+  @apply text-xl font-semibold text-gray-900 flex items-center gap-2;
+}
+
+/* نشانگرهای وضعیت */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-verified {
+  @apply status-badge bg-green-100 text-green-800;
+}
+
+.status-unverified {
+  @apply status-badge bg-yellow-100 text-yellow-800;
+}
+
+.status-locked {
+  @apply status-badge bg-red-100 text-red-800;
+}
+
+.status-admin {
+  @apply status-badge bg-purple-100 text-purple-800;
+}
+
+/* فیلدهای خاص */
+.field-group {
+  @apply space-y-4;
+}
+
+.field-row {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.field-full {
+  @apply md:col-span-2;
+}
+
+/* نوار پیشرفت */
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2 overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out;
+}
+
+/* Modal بهبود یافته */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  @apply bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden;
+  animation: fadeIn 0.3s ease-out, slideIn 0.3s ease-out;
+}
+
+.modal-header {
+  @apply p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200;
+}
+
+.modal-body {
+  @apply p-6;
+}
+
+.modal-footer {
+  @apply p-6 bg-gray-50 border-t border-gray-200 flex gap-3;
+}
+
+/* آیکون‌های انیمیشن‌دار */
+.icon-bounce {
+  animation: bounce-gentle 2s infinite;
+}
+
+.icon-pulse {
+  animation: pulse 2s infinite;
+}
+
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* گرادیینت‌های زیبا */
+.gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-orange {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* شبکه ریسپانسیو */
+@media (max-width: 768px) {
+  .profile-card {
+    @apply mx-2;
+  }
+
+  .field-row {
+    @apply grid-cols-1;
+  }
+
+  .btn {
+    @apply w-full;
+  }
+
+  .modal-content {
+    @apply mx-4;
+  }
+}
+
+/* حالت تاریک (اختیاری) */
+@media (prefers-color-scheme: dark) {
+  .profile-card {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .profile-card-header {
+    @apply bg-gradient-to-r from-gray-800 to-gray-900 border-gray-700;
+  }
+
+  .profile-card-title {
+    @apply text-white;
+  }
+
+  .form-input {
+    @apply bg-gray-700 border-gray-600 text-white;
+  }
+
+  .form-label {
+    @apply text-gray-300;
+  }
+
+  .modal-content {
+    @apply bg-gray-800;
+  }
+
+  .modal-header {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .modal-footer {
+    @apply bg-gray-900 border-gray-700;
+  }
+}
+
+/* اسکرول بار سفارشی */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* افکت‌های ویژه */
+.glass-effect {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.shadow-elegant {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.border-gradient {
+  background: linear-gradient(white, white) padding-box,
+  linear-gradient(135deg, #667eea, #764ba2) border-box;
+  border: 2px solid transparent;
+}
+
+/* تایپوگرافی بهبود یافته */
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading states */
+.skeleton {
+  @apply animate-shimmer bg-gray-200 rounded;
+}
+
+.skeleton-text {
+  @apply skeleton h-4 mb-2;
+}
+
+.skeleton-avatar {
+  @apply skeleton w-16 h-16 rounded-full;
+}
+
+.skeleton-button {
+  @apply skeleton h-10 w-24;
+}
+
+/* Utility classes */
+.text-ellipsis {
+  @apply truncate;
+}
+
+.center-absolute {
+  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+.full-center {
+  @apply flex items-center justify-center;
+}
+
+/* فوکوس بهبود یافته برای دسترسی */
+.focus-outline {
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+/* Smooth transitions برای همه عناصر */
+* {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* نهایی - ایجاد تجربه کاربری روان */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
