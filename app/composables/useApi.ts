@@ -11,7 +11,6 @@ export const useApi = (token: string | null = null) => {
       console.log('No token provided to normalizeAuthorization')
       return undefined
     }
-    // Preserve if already includes a scheme, otherwise default to Bearer
     const hasScheme = /^(Bearer|Token)\s+/.test(rawToken)
     const result = hasScheme ? rawToken : `Bearer ${rawToken}`
     console.log('Authorization header:', result.substring(0, 30) + '...')
@@ -20,12 +19,13 @@ export const useApi = (token: string | null = null) => {
 
   const createHeaders = (hasBody: boolean) => {
     const headers: Record<string, string> = {
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
     }
 
     const authHeader = normalizeAuthorization(token)
     if (authHeader) headers['Authorization'] = authHeader
-    if (hasBody) headers['Content-Type'] = 'application/json'
+    if (hasBody) headers['Content-Type'] = 'application/json; charset=utf-8'
 
     console.log('Created headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : 'not set' })
     return headers
@@ -44,7 +44,13 @@ export const useApi = (token: string | null = null) => {
             headers: options.headers
           })
         },
-        onResponseError({ request, response, options }) {
+        onRequestError({ request, error }) {
+          console.error('Request Error:', {
+            url: request,
+            error: error.message
+          })
+        },
+        onResponseError({ request, response }) {
           console.error('API GET Error:', {
             status: response.status,
             statusText: response.statusText,
@@ -58,19 +64,41 @@ export const useApi = (token: string | null = null) => {
 
     post: (url: string, body = {}, options = {}) => {
       console.log('Making POST request to:', url, 'with body:', body)
+
+      // اطمینان از صحت encoding داده‌ها
+      let processedBody
+      try {
+        if (typeof body === 'object' && body !== null) {
+          // تمیز کردن و اعتبارسنجی داده‌ها
+          processedBody = JSON.parse(JSON.stringify(body))
+        } else {
+          processedBody = body
+        }
+      } catch (error) {
+        console.error('Error processing body:', error)
+        processedBody = body
+      }
+
       return $fetch(url, {
         baseURL: config.public.apiBase,
         method: 'POST',
-        body,
+        body: processedBody,
         headers: createHeaders(true),
         onRequest({ request, options }) {
           console.log('POST Request details:', {
             url: request,
             headers: options.headers,
-            body: options.body
+            bodyType: typeof options.body,
+            bodyKeys: options.body && typeof options.body === 'object' ? Object.keys(options.body) : 'not object'
           })
         },
-        onResponseError({ request, response, options }) {
+        onRequestError({ request, error }) {
+          console.error('POST Request Error:', {
+            url: request,
+            error: error.message
+          })
+        },
+        onResponseError({ request, response }) {
           console.error('API POST Error:', {
             status: response.status,
             statusText: response.statusText,
@@ -89,7 +117,7 @@ export const useApi = (token: string | null = null) => {
         method: 'PUT',
         body,
         headers: createHeaders(true),
-        onResponseError({ request, response, options }) {
+        onResponseError({ request, response }) {
           console.error('API PUT Error:', response.status, response.statusText)
           console.error('Request URL:', request)
           console.error('Response:', response._data)
@@ -105,7 +133,7 @@ export const useApi = (token: string | null = null) => {
         method: 'PATCH',
         body,
         headers: createHeaders(true),
-        onResponseError({ request, response, options }) {
+        onResponseError({ request, response }) {
           console.error('API PATCH Error:', response.status, response.statusText)
           console.error('Request URL:', request)
           console.error('Response:', response._data)
@@ -120,7 +148,7 @@ export const useApi = (token: string | null = null) => {
         baseURL: config.public.apiBase,
         method: 'DELETE',
         headers: createHeaders(false),
-        onResponseError({ request, response, options }) {
+        onResponseError({ request, response }) {
           console.error('API DELETE Error:', response.status, response.statusText)
           console.error('Request URL:', request)
           console.error('Response:', response._data)

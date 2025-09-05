@@ -9,12 +9,11 @@ export default defineNuxtConfig({
 
   css: [
     '~/assets/css/main.css',
-    '~/assets/css/profile.css'  // اضافه کردن CSS پروفایل
+    '~/assets/css/profile.css'
   ],
 
   runtimeConfig: {
     public: {
-      // Use Nitro dev proxy by default to avoid CORS during development
       apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api',
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'کتابخانه دیجیتال',
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '1.0.0'
@@ -28,6 +27,10 @@ export default defineNuxtConfig({
       '/api': {
         target: 'http://localhost:8000/api',
         changeOrigin: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8'
+        },
         cookieDomainRewrite: {
           '*': ''
         }
@@ -45,12 +48,10 @@ export default defineNuxtConfig({
     viewer: true
   },
 
-  // بهبود Performance
   experimental: {
     payloadExtraction: false
   },
 
-  // تنظیمات SEO
   app: {
     head: {
       title: 'کتابخانه دیجیتال',
@@ -67,12 +68,10 @@ export default defineNuxtConfig({
     }
   },
 
-  // تنظیمات Build
   build: {
     transpile: ['@headlessui/vue']
   },
 
-  // تنظیمات Router
   router: {
     options: {
       scrollBehaviorType: 'smooth'
