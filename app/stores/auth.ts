@@ -41,20 +41,45 @@ export const useAuthStore = defineStore('auth', {
     setAuth(data: any) {
       console.log('Setting auth data:', data)
 
+      // Normalize response: handle strings with non-JSON prefixes and wrapped payloads
+      let payload: any = data
+      if (typeof payload === 'string') {
+        try {
+          const sanitized = payload.replace(/^\uFEFF/, '').trim()
+          const firstBrace = sanitized.indexOf('{')
+          const firstBracket = sanitized.indexOf('[')
+          const start = firstBrace === -1
+            ? firstBracket
+            : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
+          if (start !== -1) {
+            payload = JSON.parse(sanitized.slice(start))
+          } else {
+            console.warn('Auth response string did not contain JSON; defaulting to empty object')
+            payload = {}
+          }
+        } catch (e) {
+          console.error('Failed to parse auth response JSON:', e)
+          payload = {}
+        }
+      } else if (payload && typeof payload === 'object' && 'data' in payload && (payload as any).data && typeof (payload as any).data === 'object') {
+        payload = (payload as any).data
+      }
+
       // Handle different response structures
-      this.token = data.tokens?.access_token || data.access_token
-      this.refreshToken = data.tokens?.refresh_token || data.refresh_token
-      this.user = data.user
-      this.isAuthenticated = true
+      this.token = payload?.tokens?.access_token || payload?.access_token || payload?.token || null
+      this.refreshToken = payload?.tokens?.refresh_token || payload?.refresh_token || null
+      this.user = (payload && typeof payload === 'object') ? (payload.user ?? null) : null
+      this.isAuthenticated = !!this.token
 
       console.log('Token set:', this.token ? 'exists' : 'missing')
       console.log('User set:', this.user)
 
       if (process.client) {
-        localStorage.setItem('token', this.token)
+        if (this.token) localStorage.setItem('token', this.token)
         if (this.refreshToken) localStorage.setItem('refreshToken', this.refreshToken)
+        // Persist user as JSON even if null to avoid "undefined" string in storage
         localStorage.setItem('user', JSON.stringify(this.user))
-        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('isAuthenticated', this.isAuthenticated ? 'true' : 'false')
         console.log('Data saved to localStorage')
       }
     },
@@ -69,10 +94,27 @@ export const useAuthStore = defineStore('auth', {
       const api = useApi(this.token)
 
       try {
-        const response = await api.get('/auth/user')
-        console.log('fetchUser response:', response)
+        let response: any = await api.get('/auth/user')
+        console.log('fetchUser raw response:', response)
 
-        this.user = response.user || response
+        // Normalize potential string response with preface text
+        if (typeof response === 'string') {
+          try {
+            const sanitized = response.replace(/^\uFEFF/, '').trim()
+            const firstBrace = sanitized.indexOf('{')
+            const firstBracket = sanitized.indexOf('[')
+            const start = firstBrace === -1
+              ? firstBracket
+              : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
+            if (start !== -1) {
+              response = JSON.parse(sanitized.slice(start))
+            }
+          } catch (e) {
+            console.error('Failed to parse user response JSON:', e)
+          }
+        }
+
+        this.user = (response && typeof response === 'object') ? (response.user || response) : null
         this.isAuthenticated = true
 
         // Update localStorage
@@ -110,21 +152,25 @@ export const useAuthStore = defineStore('auth', {
         console.log('Initializing auth from localStorage')
 
         const token = localStorage.getItem('token')
-        const user = localStorage.getItem('user')
+        const userStr = localStorage.getItem('user')
         const isAuthenticated = localStorage.getItem('isAuthenticated')
 
         console.log('Found in localStorage:', {
           hasToken: !!token,
-          hasUser: !!user,
+          hasUser: !!userStr,
           isAuthenticated
         })
 
-        if (token && user && isAuthenticated === 'true') {
+        if (token && isAuthenticated === 'true') {
           this.token = token
           this.refreshToken = localStorage.getItem('refreshToken')
 
           try {
-            this.user = JSON.parse(user)
+            let parsedUser: any = null
+            if (userStr && userStr !== 'undefined') {
+              parsedUser = JSON.parse(userStr)
+            }
+            this.user = parsedUser
             this.isAuthenticated = true
             console.log('Auth initialized successfully:', {
               tokenLength: this.token.length,
@@ -132,8 +178,9 @@ export const useAuthStore = defineStore('auth', {
               isAdmin: this.isAdmin
             })
           } catch (error) {
-            console.error('Error parsing user data from localStorage:', error)
-            this.clearAuth()
+            console.warn('Error parsing user data from localStorage, defaulting to null user:', error)
+            this.user = null
+            this.isAuthenticated = true
           }
         } else {
           console.log('Auth data not found or incomplete in localStorage')
