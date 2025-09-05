@@ -234,6 +234,69 @@ const sanitizeInput = (input) => {
   return input.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
 }
 
+// Normalize various possible backend shapes for check-user endpoint
+const normalizeCheckUserResponse = (raw) => {
+  const toBoolean = (value) => {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value === 1
+    if (typeof value === 'string') {
+      const s = value.trim().toLowerCase()
+      if (['true', '1', 'yes', 'y'].includes(s)) return true
+      if (['false', '0', 'no', 'n'].includes(s)) return false
+    }
+    return !!value
+  }
+
+  let payload = raw
+
+  // Handle string responses that may include BOM/prefix text
+  if (typeof payload === 'string') {
+    try {
+      const sanitized = payload.replace(/^\uFEFF/, '').trim()
+      const firstBrace = sanitized.indexOf('{')
+      const firstBracket = sanitized.indexOf('[')
+      const start = firstBrace === -1
+        ? firstBracket
+        : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
+      if (start !== -1) {
+        payload = JSON.parse(sanitized.slice(start))
+      } else {
+        payload = {}
+      }
+    } catch (e) {
+      console.warn('Could not parse string response for check-user:', e)
+      payload = {}
+    }
+  }
+
+  // Unwrap nested data payloads
+  if (payload && typeof payload === 'object' && 'data' in payload && payload.data && typeof payload.data === 'object') {
+    payload = payload.data
+  }
+
+  const status = typeof payload?.status === 'string' ? payload.status.toLowerCase() : ''
+
+  const exists = (
+    toBoolean(payload?.user_exists) ||
+    toBoolean(payload?.exists) ||
+    toBoolean(payload?.is_existing) ||
+    (typeof payload?.is_new !== 'undefined' ? !toBoolean(payload.is_new) : false) ||
+    toBoolean(payload?.found) ||
+    !!payload?.user ||
+    (status.includes('existing'))
+  )
+
+  const passwordSet = (
+    toBoolean(payload?.has_password) ||
+    toBoolean(payload?.requires_password) ||
+    toBoolean(payload?.user?.has_password) ||
+    toBoolean(payload?.user?.password) ||
+    /with_password|password/.test(status)
+  )
+
+  return { exists, passwordSet, payload }
+}
+
 const checkUser = async () => {
   error.value = ''
   loading.value = true
@@ -253,14 +316,15 @@ const checkUser = async () => {
 
     console.log('Check user response:', response)
 
-    // Handle different response structures
-    userExists.value = response.user_exists || response.exists || response.status === 'existing_user_with_password' || response.status === 'existing_user_otp_only'
-    hasPassword.value = response.has_password || response.requires_password || response.status === 'existing_user_with_password'
+    // Normalize and handle different response structures
+    const { exists, passwordSet, payload } = normalizeCheckUserResponse(response)
+    userExists.value = !!exists
+    hasPassword.value = !!passwordSet
 
     console.log('Parsed response:', {
       userExists: userExists.value,
       hasPassword: hasPassword.value,
-      responseStatus: response.status
+      responseStatus: (payload && payload.status) || response?.status
     })
 
     step.value = 2
