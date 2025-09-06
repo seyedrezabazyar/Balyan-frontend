@@ -252,15 +252,44 @@ const checkUser = async () => {
     })
 
     console.log('Check user response:', response)
+    console.log('Response type:', typeof response)
+    console.log('Response keys:', Object.keys(response || {}))
 
-    // Handle different response structures
-    userExists.value = response.user_exists || response.exists || response.status === 'existing_user_with_password' || response.status === 'existing_user_otp_only'
-    hasPassword.value = response.has_password || response.requires_password || response.status === 'existing_user_with_password'
+    // اگر response یک string است، آن را parse کن
+    let parsedResponse = response
+    if (typeof response === 'string') {
+      try {
+        parsedResponse = JSON.parse(response)
+      } catch (e) {
+        console.error('Failed to parse response:', e)
+        parsedResponse = response
+      }
+    }
+
+    // بررسی ساختارهای مختلف response
+    const data = parsedResponse?.data || parsedResponse
+
+    // تشخیص وجود کاربر با روش‌های مختلف
+    const userExistsCheck =
+      data?.user_exists === true ||
+      data?.exists === true ||
+      data?.status === 'existing_user_with_password' ||
+      data?.status === 'existing_user_otp_only'
+
+    // تشخیص وجود رمز عبور
+    const hasPasswordCheck =
+      data?.has_password === true ||
+      data?.requires_password === true ||
+      data?.status === 'existing_user_with_password'
+
+    userExists.value = userExistsCheck
+    hasPassword.value = hasPasswordCheck
 
     console.log('Parsed response:', {
       userExists: userExists.value,
       hasPassword: hasPassword.value,
-      responseStatus: response.status
+      responseStatus: data?.status,
+      rawData: data
     })
 
     step.value = 2
@@ -272,6 +301,9 @@ const checkUser = async () => {
 
   } catch (err) {
     console.error('Check user error:', err)
+    console.error('Error response:', err?.response)
+    console.error('Error data:', err?.data)
+
     error.value = err.data?.message || err.message || 'خطایی رخ داده است'
   } finally {
     loading.value = false
