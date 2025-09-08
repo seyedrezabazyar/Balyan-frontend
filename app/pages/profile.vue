@@ -137,7 +137,8 @@
                     </div>
                   </div>
                   <p v-if="usernameError" class="text-xs text-red-600 mt-1">{{ usernameError }}</p>
-                  <p v-else class="text-xs text-gray-500">
+                  <p v-else-if="usernameCooldownMessage" class="text-xs text-gray-500 mt-1">{{ usernameCooldownMessage }}</p>
+                  <p v-else class="text-xs text-gray-500 mt-1">
                     نام کاربری فقط هر ۳۶۵ روز یکبار قابل تغییر است.
                   </p>
                 </div>
@@ -755,6 +756,30 @@ const isUsernameChangeable = computed(() => {
   const oneYearAgo = new Date()
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
   return lastChanged < oneYearAgo
+})
+
+const usernameCooldownMessage = computed(() => {
+  if (isUsernameChangeable.value || !user.value?.username_last_changed) {
+    return ''
+  }
+
+  const lastChanged = new Date(user.value.username_last_changed)
+  const nextChangeDate = new Date(lastChanged)
+  nextChangeDate.setFullYear(nextChangeDate.getFullYear() + 1)
+
+  const today = new Date()
+  // Set hours to 0 to compare dates only
+  today.setHours(0, 0, 0, 0)
+  nextChangeDate.setHours(0, 0, 0, 0)
+
+  const timeDiff = nextChangeDate.getTime() - today.getTime()
+  const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+
+  if (daysRemaining > 0) {
+    return `${daysRemaining} روز تا تغییر بعدی باقی مانده است.`
+  }
+
+  return ''
 })
 
 const hasPassword = computed(() => {
