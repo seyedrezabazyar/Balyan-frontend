@@ -137,7 +137,9 @@
                     </div>
                   </div>
                   <p v-if="usernameError" class="text-xs text-red-600 mt-1">{{ usernameError }}</p>
-                  <p v-else-if="usernameCooldownMessage" class="text-xs text-gray-500 mt-1">{{ usernameCooldownMessage }}</p>
+                  <p v-else-if="user && user.days_until_username_change > 0" class="text-xs text-red-600 mt-1">
+                    شما فقط هر ۳۶۵ روز یک بار می‌توانید نام کاربری خود را تغییر دهید. {{ user.days_until_username_change }} روز تا تغییر بعدی باقی مانده است.
+                  </p>
                   <p v-else class="text-xs text-gray-500 mt-1">
                     نام کاربری فقط هر ۳۶۵ روز یکبار قابل تغییر است.
                   </p>
@@ -552,10 +554,10 @@
               </p>
             </div>
 
-            <div v-if="user?.username_last_changed">
+            <div v-if="user?.username_last_changed_at">
               <span class="text-sm text-gray-600">آخرین تغییر نام کاربری:</span>
               <p class="text-sm font-medium text-gray-900">
-                {{ formatDate(user.username_last_changed) }}
+                {{ formatDate(user.username_last_changed_at) }}
               </p>
             </div>
 
@@ -748,38 +750,17 @@ const passwordForm = ref({
 
 // Computed properties
 const isUsernameChangeable = computed(() => {
-  // اگر خطای سمت سرور وجود داشته باشد، قابلیت تغییر وجود ندارد
-  if (usernameError.value) return false
-
-  if (!user.value?.username_last_changed) return true
-  const lastChanged = new Date(user.value.username_last_changed)
-  const oneYearAgo = new Date()
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
-  return lastChanged < oneYearAgo
-})
-
-const usernameCooldownMessage = computed(() => {
-  if (isUsernameChangeable.value || !user.value?.username_last_changed) {
-    return ''
+  // 1. If a server error is active, field is not changeable.
+  if (usernameError.value) {
+    return false
   }
-
-  const lastChanged = new Date(user.value.username_last_changed)
-  const nextChangeDate = new Date(lastChanged)
-  nextChangeDate.setFullYear(nextChangeDate.getFullYear() + 1)
-
-  const today = new Date()
-  // Set hours to 0 to compare dates only
-  today.setHours(0, 0, 0, 0)
-  nextChangeDate.setHours(0, 0, 0, 0)
-
-  const timeDiff = nextChangeDate.getTime() - today.getTime()
-  const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
-
-  if (daysRemaining > 0) {
-    return `${daysRemaining} روز تا تغییر بعدی باقی مانده است.`
+  // 2. If user data is not loaded yet, default to not changeable to prevent premature editing.
+  if (!user.value) {
+    return false
   }
-
-  return ''
+  // 3. The backend now provides the source of truth.
+  // The field is changeable if the days remaining is 0, null, or undefined.
+  return !(user.value.days_until_username_change > 0)
 })
 
 const hasPassword = computed(() => {
