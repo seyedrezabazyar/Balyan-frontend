@@ -95,9 +95,9 @@ export const useProfile = () => {
    */
   const sendEmailVerification = async (email: string) => {
     try {
-      console.log('Sending email verification to:', email)
-      const response = await api.post('/auth/email/send-verification', { email })
-      console.log('Email verification sent:', response)
+      console.log('Sending OTP to email:', email)
+      const response = await api.post('/auth/send-otp', { identifier: email })
+      console.log('Email OTP sent:', response)
       return response
     } catch (error) {
       console.error('Error sending email verification:', error)
@@ -110,8 +110,8 @@ export const useProfile = () => {
    */
   const verifyEmail = async (email: string, code: string) => {
     try {
-      console.log('Verifying email:', email, 'with code:', code)
-      const response = await api.post('/auth/email/verify', { email, code })
+      console.log('Verifying email OTP:', email, 'with code:', code)
+      const response = await api.post('/auth/verify-otp', { identifier: email, otp: code })
       console.log('Email verification response:', response)
       return response
     } catch (error) {
@@ -125,9 +125,9 @@ export const useProfile = () => {
    */
   const sendPhoneVerification = async (phone: string) => {
     try {
-      console.log('Sending phone verification to:', phone)
-      const response = await api.post('/auth/phone/send-verification', { phone })
-      console.log('Phone verification sent:', response)
+      console.log('Sending OTP to phone:', phone)
+      const response = await api.post('/auth/send-otp', { identifier: phone })
+      console.log('Phone OTP sent:', response)
       return response
     } catch (error) {
       console.error('Error sending phone verification:', error)
@@ -140,8 +140,8 @@ export const useProfile = () => {
    */
   const verifyPhone = async (phone: string, code: string) => {
     try {
-      console.log('Verifying phone:', phone, 'with code:', code)
-      const response = await api.post('/auth/phone/verify', { phone, code })
+      console.log('Verifying phone OTP:', phone, 'with code:', code)
+      const response = await api.post('/auth/verify-otp', { identifier: phone, otp: code })
       console.log('Phone verification response:', response)
       return response
     } catch (error) {
