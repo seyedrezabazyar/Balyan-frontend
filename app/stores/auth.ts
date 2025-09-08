@@ -89,6 +89,14 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    setUser(newUser: User | null) {
+      this.user = newUser
+      if (process.client) {
+        localStorage.setItem('user', JSON.stringify(this.user))
+        console.log('User data updated in store and localStorage via setUser')
+      }
+    },
+
     async fetchUser() {
       if (!this.token) {
         console.error('No token available for fetchUser')
