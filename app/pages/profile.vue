@@ -108,7 +108,7 @@
                 <div class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
                     نام کاربری
-                    <svg v-if="!canChangeUsername" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg v-if="!isUsernameChangeable" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                     </svg>
                   </label>
@@ -116,15 +116,17 @@
                     <input
                       v-model="form.username"
                       type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors"
                       :class="{
-                        'bg-gray-100 cursor-not-allowed': !canChangeUsername,
-                        'pr-10': form.username !== user?.username && canChangeUsername
+                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500': !usernameError,
+                        'bg-gray-100 cursor-not-allowed': !isUsernameChangeable,
+                        'border-red-500 focus:border-red-500 focus:ring-red-500': usernameError,
+                        'pr-10': form.username !== user?.username && isUsernameChangeable
                       }"
-                      :disabled="!canChangeUsername"
+                      :disabled="!isUsernameChangeable"
                       placeholder="نام کاربری منحصر به فرد"
                     />
-                    <div v-if="form.username !== user?.username && canChangeUsername"
+                    <div v-if="form.username !== user?.username && isUsernameChangeable"
                          class="absolute left-3 top-1/2 transform -translate-y-1/2">
                       <button type="button" @click="showUsernameWarning = true"
                               class="text-amber-500 hover:text-amber-600">
@@ -134,8 +136,9 @@
                       </button>
                     </div>
                   </div>
-                  <p class="text-xs text-gray-500">
-                    {{ canChangeUsername ? 'نام کاربری فقط یک بار در سال قابل تغییر است' : 'امسال نام کاربری خود را تغییر داده‌اید' }}
+                  <p v-if="usernameError" class="text-xs text-red-600 mt-1">{{ usernameError }}</p>
+                  <p v-else class="text-xs text-gray-500">
+                    نام کاربری فقط هر ۳۶۵ روز یکبار قابل تغییر است.
                   </p>
                 </div>
               </div>
@@ -704,6 +707,7 @@ const user = ref(null)
 const loading = ref(false)
 const message = ref('')
 const messageType = ref('success')
+const usernameError = ref('')
 const showPasswordForm = ref(false)
 const showUsernameWarning = ref(false)
 const showVerificationModal = ref(false)
@@ -742,7 +746,10 @@ const passwordForm = ref({
 })
 
 // Computed properties
-const canChangeUsername = computed(() => {
+const isUsernameChangeable = computed(() => {
+  // اگر خطای سمت سرور وجود داشته باشد، قابلیت تغییر وجود ندارد
+  if (usernameError.value) return false
+
   if (!user.value?.username_last_changed) return true
   const lastChanged = new Date(user.value.username_last_changed)
   const oneYearAgo = new Date()
@@ -752,13 +759,12 @@ const canChangeUsername = computed(() => {
 
 const hasPassword = computed(() => {
   if (!user.value) return false
-  return !!(
-    user.value.password ||
-    user.value.has_password ||
-    user.value.password_hash ||
-    user.value.password_set ||
-    (typeof user.value.password === 'string' && user.value.password.length > 0)
-  )
+  // Prioritize the more explicit 'has_password' field if it exists.
+  if (typeof user.value.has_password === 'boolean') {
+    return user.value.has_password
+  }
+  // Fallback to the 'password' field.
+  return !!user.value.password
 })
 
 const messageClass = computed(() => {
@@ -845,6 +851,7 @@ const onProvinceChange = async () => {
 const updateProfile = async () => {
   loading.value = true
   clearMessage()
+  usernameError.value = ''
 
   try {
     console.log('Sending update data:', form.value)
@@ -882,7 +889,11 @@ const updateProfile = async () => {
     showMessage('اطلاعات با موفقیت ذخیره شد', 'success')
   } catch (error) {
     console.error('Error updating profile:', error)
-    showMessage(error.data?.message || 'خطا در ذخیره اطلاعات', 'error')
+    if (error.statusCode === 422 && error.data?.errors?.username) {
+      usernameError.value = error.data.errors.username[0]
+    } else {
+      showMessage(error.data?.message || 'خطا در ذخیره اطلاعات', 'error')
+    }
   } finally {
     loading.value = false
   }
@@ -1036,7 +1047,7 @@ const formatDate = (dateString) => {
 
 // Watchers
 watch(() => form.value.username, (newUsername) => {
-  if (newUsername !== user.value?.username && !canChangeUsername.value) {
+  if (newUsername !== user.value?.username && !isUsernameChangeable.value) {
     form.value.username = user.value?.username || ''
   }
 })
