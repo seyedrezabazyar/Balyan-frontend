@@ -905,8 +905,9 @@ const updateProfile = async () => {
 
     console.log('Update response:', response)
 
-    user.value = response.user || response
-    authStore.user = user.value
+    const updatedUser = response.user || response
+    user.value = updatedUser
+    authStore.setUser(updatedUser)
 
     // Update original form data
     originalForm.value = { ...form.value }
