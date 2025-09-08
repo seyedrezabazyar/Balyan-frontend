@@ -16,7 +16,12 @@ interface User {
   created_at?: string
   preferred_method?: string
   locked_until?: string
-  password?: boolean
+  password?: boolean // This might be a simplified check from older API versions
+  has_password?: boolean // More explicit check
+  username_last_changed?: string | null
+  province_id?: number | null
+  city_id?: number | null
+  address?: string | null
 }
 
 export const useAuthStore = defineStore('auth', {
