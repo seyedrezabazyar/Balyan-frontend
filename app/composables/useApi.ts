@@ -93,6 +93,7 @@ export const useApi = (token: string | null = null) => {
         baseURL: config.public.apiBase,
         method: 'GET',
         headers: createHeaders(false),
+        credentials: 'include',
         onRequest({ request, options }) {
           console.log('Request details:', {
             url: request,
@@ -147,6 +148,7 @@ export const useApi = (token: string | null = null) => {
         method: 'POST',
         body: processedBody,
         headers: createHeaders(true),
+        credentials: 'include',
         onRequest({ request, options }) {
           console.log('POST Request details:', {
             url: request,
@@ -190,6 +192,7 @@ export const useApi = (token: string | null = null) => {
         method: 'PUT',
         body,
         headers: createHeaders(true),
+        credentials: 'include',
         onResponseError({ request, response }) {
           console.error('API PUT Error:', response.status, response.statusText)
           console.error('Request URL:', request)
@@ -208,6 +211,7 @@ export const useApi = (token: string | null = null) => {
         method: 'PATCH',
         body,
         headers: createHeaders(true),
+        credentials: 'include',
         onResponseError({ request, response }) {
           console.error('API PATCH Error:', response.status, response.statusText)
           console.error('Request URL:', request)
@@ -225,6 +229,7 @@ export const useApi = (token: string | null = null) => {
         baseURL: config.public.apiBase,
         method: 'DELETE',
         headers: createHeaders(false),
+        credentials: 'include',
         onResponseError({ request, response }) {
           console.error('API DELETE Error:', response.status, response.statusText)
           console.error('Request URL:', request)

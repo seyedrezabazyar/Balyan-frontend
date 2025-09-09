@@ -34,6 +34,10 @@ export default defineNuxtConfig({
         cookieDomainRewrite: {
           '*': ''
         }
+      },
+      '/sanctum': {
+        target: 'http://localhost:8000/sanctum',
+        changeOrigin: true,
       }
     }
   },
