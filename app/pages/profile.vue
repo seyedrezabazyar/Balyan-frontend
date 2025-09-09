@@ -184,6 +184,7 @@
                         :disabled="!!user?.phone_verified_at"
                         placeholder="09123456789"
                         maxlength="11"
+                        @input="form.phone = formatters.normalizePhone($event.target.value)"
                       />
                       <div v-if="user?.phone_verified_at" class="absolute left-3 top-1/2 transform -translate-y-1/2">
                         <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -663,6 +664,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useProfile } from '~/composables/useProfile'
+import { useFormatters } from '~/composables/useFormatters'
 
 definePageMeta({
   middleware: 'auth',
@@ -672,6 +674,7 @@ definePageMeta({
 // Store
 const authStore = useAuthStore()
 const profileComposable = useProfile()
+const formatters = useFormatters()
 
 // Reactive state
 const user = ref(null)
