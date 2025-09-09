@@ -398,15 +398,33 @@
               </div>
 
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">رمز عبور جدید *</label>
-                <input
-                  v-model="passwordForm.password"
-                  type="password"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="رمز عبور جدید"
-                  minlength="8"
-                  required
-                />
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium text-gray-700">رمز عبور جدید *</label>
+                  <button
+                    type="button"
+                    @click="generatePassword"
+                    class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    ایجاد رمز
+                  </button>
+                </div>
+                <div class="relative">
+                  <input
+                    v-model="passwordForm.password"
+                    type="text"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    :class="{ 'pr-10': passwordForm.password }"
+                    placeholder="رمز عبور جدید"
+                    minlength="8"
+                    required
+                  />
+                  <div v-if="passwordForm.password" class="absolute left-3 top-1/2 -translate-y-1/2">
+                    <button type="button" @click="copyToClipboard(passwordForm.password)" class="text-gray-400 hover:text-gray-600">
+                      <svg v-if="!passwordCopied" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                      <svg v-else class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                  </div>
+                </div>
                 <div class="text-xs text-gray-500 space-y-1">
                   <p>رمز عبور باید حداقل 8 کاراکتر باشد</p>
                   <p>ترکیبی از حروف کوچک، بزرگ و اعداد توصیه می‌شود</p>
@@ -711,6 +729,7 @@ const showDebug = ref(false)
 const emailVerificationSending = ref(false)
 const smsVerificationSending = ref(false)
 const loadingCities = ref(false)
+const passwordCopied = ref(false)
 
 // Data
 const provinces = ref([])
@@ -1049,6 +1068,45 @@ const closeVerificationModal = () => {
 
 const resetForm = () => {
   form.value = { ...originalForm.value }
+}
+
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    passwordCopied.value = true;
+    setTimeout(() => {
+      passwordCopied.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+    showMessage('خطا در کپی کردن رمز عبور', 'error')
+  }
+};
+
+const generatePassword = () => {
+  const length = 14
+  const lower = 'abcdefghijklmnopqrstuvwxyz'
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const numbers = '0123456789'
+  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+
+  const allChars = lower + upper + numbers + symbols
+
+  let password = ''
+  password += lower[Math.floor(Math.random() * lower.length)]
+  password += upper[Math.floor(Math.random() * upper.length)]
+  password += numbers[Math.floor(Math.random() * numbers.length)]
+  password += symbols[Math.floor(Math.random() * symbols.length)]
+
+  for (let i = 4; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)]
+  }
+
+  // Shuffle the password to avoid predictable characters at the start
+  const shuffledPassword = password.split('').sort(() => 0.5 - Math.random()).join('')
+
+  passwordForm.value.password = shuffledPassword
+  passwordForm.value.password_confirmation = shuffledPassword
 }
 
 const refreshUserData = async () => {
