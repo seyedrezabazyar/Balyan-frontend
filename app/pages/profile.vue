@@ -924,19 +924,27 @@ const handlePassword = async () => {
   clearMessage()
 
   try {
+    let response;
     if (hasPassword.value) {
-      await profileComposable.updatePassword(passwordForm.value)
+      response = await profileComposable.updatePassword(passwordForm.value)
     } else {
-      await profileComposable.setPassword({
+      response = await profileComposable.setPassword({
         password: passwordForm.value.password,
         password_confirmation: passwordForm.value.password_confirmation
       })
     }
 
+    if (response) {
+      const updatedUser = response.user || response;
+      if (updatedUser && typeof updatedUser === 'object') {
+        user.value = updatedUser;
+        authStore.setUser(updatedUser);
+      }
+    }
+
     showMessage('رمز عبور با موفقیت ذخیره شد', 'success')
     showPasswordForm.value = false
     resetPasswordForm()
-    await loadUserData()
   } catch (error) {
     console.error('Error handling password:', error)
     const errorMap = {
