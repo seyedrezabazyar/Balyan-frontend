@@ -110,16 +110,12 @@ async function fetchUsers() {
   error.value = null;
 
   try {
-    // We use useFetch to call our local mock API
-    const { data: response, error: fetchError } = await useFetch('/api/admin/users');
+    // Using $fetch as recommended for client-side calls after mount.
+    const response = await $fetch('/api/adminUsers');
 
-    if (fetchError.value) {
-      throw fetchError.value;
-    }
-
-    if (response.value && response.value.data) {
+    if (response && response.data) {
       // Assign roles to users based on the allRoles list
-      const usersData = response.value.data.map(user => ({
+      const usersData = response.data.map(user => ({
         ...user,
         roles: user.roles.map(role => allRoles.value.find(r => r.id === role.id)).filter(Boolean)
       }));

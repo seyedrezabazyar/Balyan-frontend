@@ -1,4 +1,4 @@
-// server/api/admin/users.ts
+// server/api/adminUsers.ts
 // This is a mock API endpoint to simulate fetching users for the admin panel.
 // The real backend endpoint is not yet available.
 
@@ -64,9 +64,7 @@ export default defineEventHandler(async (event) => {
     },
   ];
 
-  // You can add query parameter handling here for pagination, filtering, etc.
-  // For now, we return the full list.
-
+  // This structure matches what the frontend component expects from the API response.
   return {
     data: mockUsers,
     meta: {
