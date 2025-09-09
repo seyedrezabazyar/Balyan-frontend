@@ -36,6 +36,8 @@
 </template>
 
 <script setup>
+import { useCartStore } from '~/stores/cart';
+
 const props = defineProps({
   book: {
     type: Object,
