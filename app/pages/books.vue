@@ -1,44 +1,47 @@
 <template>
-  <div class="container mx-auto p-4">
-    <!-- Loading Indicator -->
-    <div v-if="loading" class="text-center">
-      <p>در حال بارگذاری کتاب‌ها...</p>
+  <div>
+    <NuxtPage v-if="route.params.slug" />
+    <div v-else class="container mx-auto p-4">
+      <!-- Loading Indicator -->
+      <div v-if="loading" class="text-center">
+        <p>در حال بارگذاری کتاب‌ها...</p>
+      </div>
+
+      <!-- Error Message -->
+      <div v-else-if="!books.length && !loading" class="text-center">
+        <p>کتابی برای نمایش وجود ندارد.</p>
+      </div>
+
+      <!-- Books Grid -->
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <BookCard v-for="book in books" :key="book.id" :book="book" />
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="pagination && pagination.last_page > 1" class="flex justify-center items-center mt-8">
+        <button @click="changePage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="px-4 py-2 mx-1 bg-white border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          قبلی
+        </button>
+
+        <span class="px-4 py-2 mx-1">
+          صفحه {{ pagination.current_page }} از {{ pagination.last_page }}
+        </span>
+
+        <button @click="changePage(currentPage + 1)"
+                :disabled="currentPage === pagination.last_page"
+                class="px-4 py-2 mx-1 bg-white border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+          بعدی
+        </button>
+      </div>
     </div>
-
-    <!-- Error Message -->
-    <div v-else-if="!books.length && !loading" class="text-center">
-      <p>کتابی برای نمایش وجود ندارد.</p>
-    </div>
-
-    <!-- Books Grid -->
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-      <BookCard v-for="book in books" :key="book.id" :book="book" />
-    </div>
-
-    <!-- Pagination -->
-    <div v-if="pagination && pagination.last_page > 1" class="flex justify-center items-center mt-8">
-      <button @click="changePage(currentPage - 1)"
-              :disabled="currentPage === 1"
-              class="px-4 py-2 mx-1 bg-white border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
-        قبلی
-      </button>
-
-      <span class="px-4 py-2 mx-1">
-        صفحه {{ pagination.current_page }} از {{ pagination.last_page }}
-      </span>
-
-      <button @click="changePage(currentPage + 1)"
-              :disabled="currentPage === pagination.last_page"
-              class="px-4 py-2 mx-1 bg-white border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
-        بعدی
-      </button>
-    </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useApi } from '~/composables/useApi'
 import BookCard from '~/components/BookCard.vue'
 
@@ -46,6 +49,8 @@ import BookCard from '~/components/BookCard.vue'
 useHead({
   title: 'کتاب‌ها',
 })
+
+const route = useRoute()
 
 const books = ref([])
 const pagination = ref(null)
