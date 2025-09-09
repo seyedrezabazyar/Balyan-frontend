@@ -1,15 +1,5 @@
 <template>
   <div class="container mx-auto p-4">
-    <div class="p-4 bg-yellow-100 border border-yellow-400 rounded">
-      <h2 class="font-bold">محتوای پاسخ API (برای دیباگ):</h2>
-      <pre class="whitespace-pre-wrap text-xs">{{ debugResponse }}</pre>
-    </div>
-
-    <header class="mt-8 mb-8 text-center">
-      <h1 class="text-4xl font-bold text-gray-800">آخرین کتاب‌ها</h1>
-      <p class="text-gray-600">جدیدترین کتاب‌های اضافه شده را کشف کنید</p>
-    </header>
-
     <!-- Loading Indicator -->
     <div v-if="loading" class="text-center">
       <p>در حال بارگذاری کتاب‌ها...</p>
@@ -77,17 +67,15 @@ const fetchBooks = async (page) => {
     })
     debugResponse.value = response; // Store raw response for debugging
 
-    // Per code review, handle a potentially nested data structure
-    if (response && response.data && response.data.data) {
-      books.value = response.data.data
-      pagination.value = response.data.meta
-    } else if (response && response.data) {
-      // Fallback for a flatter structure
-      books.value = response.data
-      pagination.value = response.meta
-    }
-     else {
-      console.error("Unexpected API response structure:", response);
+    // Based on the provided API response, the book list is in `response.data`
+    // and pagination details are in `response.meta`.
+    if (response && response.data && Array.isArray(response.data)) {
+      books.value = response.data;
+      if (response.meta) {
+        pagination.value = response.meta;
+      }
+    } else {
+      console.error("Unexpected API response structure. Expected 'data' property with an array.", response);
     }
   } catch (error) {
     console.error('Failed to fetch books:', error)
