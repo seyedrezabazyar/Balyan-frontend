@@ -111,7 +111,7 @@ export const useProfile = () => {
   const verifyEmail = async (email: string, code: string) => {
     try {
       console.log('Verifying email:', email, 'with code:', code)
-      const response = await api.post('/auth/email/verify', { email, code })
+      const response = await api.post('/auth/email/verify', { email, otp: code })
       console.log('Email verification response:', response)
       return response
     } catch (error) {
@@ -141,7 +141,7 @@ export const useProfile = () => {
   const verifyPhone = async (phone: string, code: string) => {
     try {
       console.log('Verifying phone:', phone, 'with code:', code)
-      const response = await api.post('/auth/phone/verify', { phone, code })
+      const response = await api.post('/auth/phone/verify', { phone, otp: code })
       console.log('Phone verification response:', response)
       return response
     } catch (error) {
