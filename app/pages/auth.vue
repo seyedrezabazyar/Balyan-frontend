@@ -36,7 +36,7 @@
             </div>
             <button
               type="submit"
-              :disabled="loading || identifierError"
+              :disabled="isSubmitDisabled"
               class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
               {{ loading ? 'در حال بررسی...' : 'ادامه' }}
@@ -204,7 +204,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, watch } from 'vue'
+import { ref, onUnmounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
 import { useApi } from '~/composables/useApi'
@@ -241,6 +241,10 @@ const nameError = ref('')
 
 let resendInterval = null
 
+const isSubmitDisabled = computed(() => {
+  return loading.value || !identifier.value.trim() || !!identifierError.value
+})
+
 // Helper function
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input
@@ -251,21 +255,21 @@ const checkUser = async () => {
   error.value = '';
   identifierError.value = '';
 
-  const value = formatters.toEnglishDigits(identifier.value);
-  const isPhone = /^[0-9+]+$/.test(value.trim());
+  const value = formatters.toEnglishDigits(identifier.value.trim());
+  const isEmail = value.includes('@');
 
-  if (isPhone) {
+  if (isEmail) {
+    if (!validator.isEmail(value)) {
+      identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.';
+      return;
+    }
+  } else {
     const normalizedPhone = formatters.normalizePhone(value);
     if (!validator.isMobilePhone(normalizedPhone, 'fa-IR')) {
       identifierError.value = 'شماره موبایل وارد شده معتبر نیست.';
       return;
     }
     identifier.value = normalizedPhone;
-  } else {
-    if (!validator.isEmail(value)) {
-      identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.';
-      return;
-    }
   }
 
   loading.value = true;
