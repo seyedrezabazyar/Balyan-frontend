@@ -244,57 +244,6 @@
                 </div>
               </div>
 
-              <!-- Address Information -->
-              <div class="space-y-4">
-                <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 flex items-center gap-2">
-                  <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  آدرس و موقعیت مکانی
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">استان</label>
-                    <select
-                      v-model="form.province_id"
-                      @change="onProvinceChange"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    >
-                      <option value="">انتخاب استان</option>
-                      <option v-for="province in provinces" :key="province.id" :value="province.id">
-                        {{ province.name }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">شهر</label>
-                    <select
-                      v-model="form.city_id"
-                      :disabled="!form.province_id || loadingCities"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <option value="">{{ loadingCities ? 'در حال بارگذاری...' : 'انتخاب شهر' }}</option>
-                      <option v-for="city in cities" :key="city.id" :value="city.id">
-                        {{ city.name }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">آدرس کامل</label>
-                  <textarea
-                    v-model="form.address"
-                    rows="4"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                    placeholder="آدرس کامل و دقیق خود را وارد کنید..."
-                  ></textarea>
-                  <p class="text-xs text-gray-500">این آدرس برای ارسال کتاب‌های فیزیکی (در صورت وجود) استفاده خواهد شد</p>
-                </div>
-              </div>
 
               <!-- Action Buttons -->
               <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
@@ -560,13 +509,6 @@
                 {{ formatDate(user.username_last_changed_at) }}
               </p>
             </div>
-
-            <div>
-              <span class="text-sm text-gray-600">روش ورود ترجیحی:</span>
-              <p class="text-sm font-medium text-gray-900">
-                {{ user?.preferred_method === 'password' ? 'رمز عبور' : 'کد یکبار مصرف' }}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -717,11 +659,8 @@ const showVerificationModal = ref(false)
 const showDebug = ref(false)
 const emailVerificationSending = ref(false)
 const smsVerificationSending = ref(false)
-const loadingCities = ref(false)
 
 // Data
-const provinces = ref([])
-const cities = ref([])
 const verificationCode = ref('')
 const verificationModal = ref({
   type: '', // 'email' or 'phone'
@@ -737,9 +676,6 @@ const form = ref({
   email: '',
   phone: '',
   username: '',
-  province_id: '',
-  city_id: '',
-  address: ''
 })
 
 const passwordForm = ref({
@@ -802,18 +738,10 @@ const loadUserData = async () => {
       email: user.value.email || '',
       phone: user.value.phone || '',
       username: user.value.username || '',
-      province_id: user.value.province_id || '',
-      city_id: user.value.city_id || '',
-      address: user.value.address || ''
     }
 
     form.value = { ...formData }
     originalForm.value = { ...formData }
-
-    // بارگذاری شهرها اگر استان انتخاب شده
-    if (form.value.province_id) {
-      await loadCitiesData(form.value.province_id)
-    }
 
   } catch (error) {
     showMessage('خطا در دریافت اطلاعات کاربر', 'error')
@@ -823,36 +751,6 @@ const loadUserData = async () => {
   }
 }
 
-const loadProvincesData = async () => {
-  try {
-    const response = await profileComposable.getProvinces()
-    provinces.value = response.data || response
-  } catch (error) {
-    console.error('خطا در دریافت استان‌ها:', error)
-  }
-}
-
-const loadCitiesData = async (provinceId) => {
-  if (!provinceId) {
-    cities.value = []
-    return
-  }
-
-  loadingCities.value = true
-  try {
-    const response = await profileComposable.getCities(provinceId)
-    cities.value = response.data || response
-  } catch (error) {
-    console.error('خطا در دریافت شهرها:', error)
-  } finally {
-    loadingCities.value = false
-  }
-}
-
-const onProvinceChange = async () => {
-  form.value.city_id = ''
-  await loadCitiesData(form.value.province_id)
-}
 
 const updateProfile = async () => {
   loading.value = true
@@ -864,9 +762,6 @@ const updateProfile = async () => {
 
     const updateData = {
       name: form.value.name,
-      province_id: form.value.province_id || null,
-      city_id: form.value.city_id || null,
-      address: form.value.address || null
     }
 
     // فقط فیلدهای تغییر یافته را ارسال کن
@@ -1077,10 +972,7 @@ watch(() => form.value.username, (newUsername) => {
 // Lifecycle
 onMounted(async () => {
   console.log('Profile page mounted')
-  await Promise.all([
-    loadUserData(),
-    loadProvincesData()
-  ])
+  await loadUserData()
 })
 </script>
 
