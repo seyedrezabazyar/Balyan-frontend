@@ -36,6 +36,7 @@ export const useCartStore = defineStore('cart', {
       this.loading = true
       try {
         const response = await api.get('/v1/cart')
+        console.log('Full response from /v1/cart:', JSON.stringify(response, null, 2))
         this.items = response.items || []
         this.total = response.total || 0
         this.coupon = response.coupon
