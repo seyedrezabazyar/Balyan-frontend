@@ -36,7 +36,7 @@
             </div>
             <button
               type="submit"
-              :disabled="loading || !isIdentifierValid"
+              :disabled="loading || identifierError"
               class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
               {{ loading ? 'در حال بررسی...' : 'ادامه' }}
@@ -238,7 +238,6 @@ const showDebug = ref(false)
 const nameDirection = ref('rtl')
 const identifierError = ref('')
 const nameError = ref('')
-const isIdentifierValid = ref(false)
 
 let resendInterval = null
 
@@ -246,18 +245,6 @@ let resendInterval = null
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input
   return input.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-}
-
-const validateIdentifier = (value) => {
-  const englishValue = formatters.toEnglishDigits(value);
-  const isPhone = /^[0-9+]+$/.test(englishValue.trim());
-
-  if (isPhone) {
-    const normalizedPhone = formatters.normalizePhone(englishValue);
-    isIdentifierValid.value = validator.isMobilePhone(normalizedPhone, 'fa-IR');
-  } else {
-    isIdentifierValid.value = validator.isEmail(englishValue);
-  }
 }
 
 const checkUser = async () => {
@@ -485,6 +472,5 @@ watch(userName, (newName) => {
 
 watch(identifier, (newIdentifier) => {
   identifierError.value = ''
-  validateIdentifier(newIdentifier)
 })
 </script>
