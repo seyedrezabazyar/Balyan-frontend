@@ -41,48 +41,49 @@ export const useAuthApi = () => {
   }
 
   const api = useApi(token)
+  const AUTH_PREFIX = '/auth';
 
   return {
     // ====== Role Management ======
     getRoles: (withPermissions: boolean = false) => {
-      const url = withPermissions ? '/roles?with_permissions=true' : '/roles';
+      const url = withPermissions ? `${AUTH_PREFIX}/roles?with_permissions=true` : `${AUTH_PREFIX}/roles`;
       return api.get(url);
     },
 
     getRole: (id: number) => {
-      return api.get(`/roles/${id}`);
+      return api.get(`${AUTH_PREFIX}/roles/${id}`);
     },
 
     createRole: (data: CreateRolePayload) => {
-      return api.post('/roles', data);
+      return api.post(`${AUTH_PREFIX}/roles`, data);
     },
 
     updateRole: (id: number, data: UpdateRolePayload) => {
-      return api.put(`/roles/${id}`, data);
+      return api.put(`${AUTH_PREFIX}/roles/${id}`, data);
     },
 
     deleteRole: (id: number) => {
-      return api.delete(`/roles/${id}`);
+      return api.delete(`${AUTH_PREFIX}/roles/${id}`);
     },
 
     // ====== Permission Management ======
     getPermissions: () => {
-      return api.get('/permissions');
+      return api.get(`${AUTH_PREFIX}/permissions`);
     },
 
     updateRolePermissions: (roleId: number, permissionIds: number[]) => {
-      return api.put(`/permissions/role/${roleId}`, {
+      return api.put(`${AUTH_PREFIX}/permissions/role/${roleId}`, {
         permission_ids: permissionIds
       });
     },
 
     // ====== User Role Management ======
     assignRoleToUser: (userId: number, roleId: number) => {
-      return api.post(`/roles/user/${userId}/assign`, { role_id: roleId });
+      return api.post(`${AUTH_PREFIX}/roles/user/${userId}/assign`, { role_id: roleId });
     },
 
     removeRoleFromUser: (userId: number, roleId: number) => {
-      return api.post(`/roles/user/${userId}/remove`, { role_id: roleId });
+      return api.post(`${AUTH_PREFIX}/roles/user/${userId}/remove`, { role_id: roleId });
     }
   }
 }
