@@ -46,7 +46,7 @@ const fetchBook = async () => {
   try {
     // We need to get the raw response, so we can't use the processed one from useApi directly
     // Let's use $fetch directly for now to get the raw response
-    const response = await $fetch.raw('/api/v1/books/kelidar', {
+    const response = await $fetch.raw('/v1/books/kelidar', {
         baseURL: useRuntimeConfig().public.apiBase,
         headers: {
             'Accept': 'application/json',
