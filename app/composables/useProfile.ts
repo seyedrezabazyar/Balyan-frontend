@@ -2,19 +2,20 @@
 import { useAuthStore } from '~/stores/auth'
 import { useApi } from '~/composables/useApi'
 
+/**
+ * A composable that provides functions for interacting with the user profile API endpoints.
+ */
 export const useProfile = () => {
   const authStore = useAuthStore()
   const api = useApi(authStore.token)
 
   /**
-   * دریافت اطلاعات کاربر فعلی
+   * Fetches the data for the currently authenticated user.
+   * @returns {Promise<object>} The API response containing the user object.
    */
   const getCurrentUser = async () => {
     try {
-      console.log('Fetching current user...')
-      const response = await api.get('/auth/user')
-      console.log('User response:', response)
-      return response
+      return await api.get('/auth/user')
     } catch (error) {
       console.error('Error fetching current user:', error)
       throw error
@@ -22,7 +23,9 @@ export const useProfile = () => {
   }
 
   /**
-   * بروزرسانی پروفایل کاربر
+   * Updates the user's profile with the given data.
+   * @param {object} data - The profile data to update.
+   * @returns {Promise<object>} The API response, expected to contain the updated user object.
    */
   const updateProfile = async (data: {
     name?: string
@@ -34,19 +37,10 @@ export const useProfile = () => {
     address?: string | null
   }) => {
     try {
-      console.log('Updating profile with data:', data)
-
-      // پاک کردن فیلدهای خالی
       const cleanData = Object.fromEntries(
         Object.entries(data).filter(([_, value]) => value !== '' && value !== undefined)
       )
-
-      console.log('Clean data to send:', cleanData)
-
-      const response = await api.post('/auth/profile/update', cleanData)
-      console.log('Profile update response:', response)
-
-      return response
+      return await api.post('/auth/profile/update', cleanData)
     } catch (error) {
       console.error('Error updating profile:', error)
       throw error
@@ -54,17 +48,16 @@ export const useProfile = () => {
   }
 
   /**
-   * تنظیم رمز عبور (اولین بار)
+   * Sets a password for a user for the first time.
+   * @param {object} data - The password and password_confirmation.
+   * @returns {Promise<object>} The API response, expected to contain the updated user object.
    */
   const setPassword = async (data: {
     password: string
     password_confirmation: string
   }) => {
     try {
-      console.log('Setting password...')
-      const response = await api.post('/auth/password/set', data)
-      console.log('Password set response:', response)
-      return response
+      return await api.post('/auth/password/set', data)
     } catch (error) {
       console.error('Error setting password:', error)
       throw error
@@ -72,7 +65,9 @@ export const useProfile = () => {
   }
 
   /**
-   * تغییر رمز عبور
+   * Updates the password for a user who already has one.
+   * @param {object} data - The current_password, new password, and password_confirmation.
+   * @returns {Promise<object>} The API response, expected to contain the updated user object.
    */
   const updatePassword = async (data: {
     current_password: string
@@ -80,10 +75,7 @@ export const useProfile = () => {
     password_confirmation: string
   }) => {
     try {
-      console.log('Updating password...')
-      const response = await api.post('/auth/password/update', data)
-      console.log('Password update response:', response)
-      return response
+      return await api.post('/auth/password/update', data)
     } catch (error) {
       console.error('Error updating password:', error)
       throw error
@@ -91,14 +83,13 @@ export const useProfile = () => {
   }
 
   /**
-   * ارسال کد تایید ایمیل
+   * Sends a verification OTP to a new email address for the current user.
+   * @param {string} email - The new email address to verify.
+   * @returns {Promise<object>} The API response.
    */
   const sendEmailVerification = async (email: string) => {
     try {
-      console.log('Sending email verification to:', email)
-      const response = await api.post('/auth/email/send-verification', { email })
-      console.log('Email verification sent:', response)
-      return response
+      return await api.post('/auth/email/send-verification', { email })
     } catch (error) {
       console.error('Error sending email verification:', error)
       throw error
@@ -106,14 +97,14 @@ export const useProfile = () => {
   }
 
   /**
-   * تایید ایمیل با کد
+   * Verifies the OTP for a new email address.
+   * @param {string} email - The new email address.
+   * @param {string} code - The OTP code.
+   * @returns {Promise<object>} The API response, expected to contain the updated user object.
    */
   const verifyEmail = async (email: string, code: string) => {
     try {
-      console.log('Verifying email:', email, 'with code:', code)
-      const response = await api.post('/auth/email/verify', { email, otp: code })
-      console.log('Email verification response:', response)
-      return response
+      return await api.post('/auth/email/verify', { email, otp: code })
     } catch (error) {
       console.error('Error verifying email:', error)
       throw error
@@ -121,14 +112,13 @@ export const useProfile = () => {
   }
 
   /**
-   * ارسال کد تایید موبایل
+   * Sends a verification OTP to a new phone number for the current user.
+   * @param {string} phone - The new phone number to verify.
+   * @returns {Promise<object>} The API response.
    */
   const sendPhoneVerification = async (phone: string) => {
     try {
-      console.log('Sending phone verification to:', phone)
-      const response = await api.post('/auth/phone/send-verification', { phone })
-      console.log('Phone verification sent:', response)
-      return response
+      return await api.post('/auth/phone/send-verification', { phone })
     } catch (error) {
       console.error('Error sending phone verification:', error)
       throw error
@@ -136,14 +126,14 @@ export const useProfile = () => {
   }
 
   /**
-   * تایید موبایل با کد
+   * Verifies the OTP for a new phone number.
+   * @param {string} phone - The new phone number.
+   * @param {string} code - The OTP code.
+   * @returns {Promise<object>} The API response, expected to contain the updated user object.
    */
   const verifyPhone = async (phone: string, code: string) => {
     try {
-      console.log('Verifying phone:', phone, 'with code:', code)
-      const response = await api.post('/auth/phone/verify', { phone, otp: code })
-      console.log('Phone verification response:', response)
-      return response
+      return await api.post('/auth/phone/verify', { phone, otp: code })
     } catch (error) {
       console.error('Error verifying phone:', error)
       throw error
@@ -151,55 +141,21 @@ export const useProfile = () => {
   }
 
   /**
-   * دریافت لیست استان‌ها
+   * Fetches the list of provinces.
+   * @returns {Promise<object>} A list of provinces.
    */
   const getProvinces = async () => {
     try {
-      console.log('Fetching provinces...')
-
       // سعی می‌کنیم از API استفاده کنیم
       try {
-        const response = await api.get('/locations/provinces')
-        console.log('Provinces response:', response)
-        return response
+        return await api.get('/locations/provinces')
       } catch (apiError) {
         console.warn('Province API not available, using fallback data')
-
         // داده‌های fallback برای استان‌ها
         return {
           success: true,
           data: [
-            { id: 1, name: 'آذربایجان شرقی' },
-            { id: 2, name: 'آذربایجان غربی' },
-            { id: 3, name: 'اردبیل' },
-            { id: 4, name: 'اصفهان' },
-            { id: 5, name: 'ایلام' },
-            { id: 6, name: 'بوشهر' },
-            { id: 7, name: 'تهران' },
-            { id: 8, name: 'چهارمحال و بختیاری' },
-            { id: 9, name: 'خراسان جنوبی' },
-            { id: 10, name: 'خراسان رضوی' },
-            { id: 11, name: 'خراسان شمالی' },
-            { id: 12, name: 'خوزستان' },
-            { id: 13, name: 'زنجان' },
-            { id: 14, name: 'سمنان' },
-            { id: 15, name: 'سیستان و بلوچستان' },
-            { id: 16, name: 'فارس' },
-            { id: 17, name: 'قزوین' },
-            { id: 18, name: 'قم' },
-            { id: 19, name: 'کردستان' },
-            { id: 20, name: 'کرمان' },
-            { id: 21, name: 'کرمانشاه' },
-            { id: 22, name: 'کهگیلویه و بویراحمد' },
-            { id: 23, name: 'گلستان' },
-            { id: 24, name: 'گیلان' },
-            { id: 25, name: 'لرستان' },
-            { id: 26, name: 'مازندران' },
-            { id: 27, name: 'مرکزی' },
-            { id: 28, name: 'هرمزگان' },
-            { id: 29, name: 'همدان' },
-            { id: 30, name: 'یزد' },
-            { id: 31, name: 'البرز' }
+            { id: 1, name: 'آذربایجان شرقی' }, { id: 2, name: 'آذربایجان غربی' }, { id: 3, name: 'اردبیل' }, { id: 4, name: 'اصفهان' }, { id: 5, name: 'ایلام' }, { id: 6, name: 'بوشهر' }, { id: 7, name: 'تهران' }, { id: 8, name: 'چهارمحال و بختیاری' }, { id: 9, name: 'خراسان جنوبی' }, { id: 10, name: 'خراسان رضوی' }, { id: 11, name: 'خراسان شمالی' }, { id: 12, name: 'خوزستان' }, { id: 13, name: 'زنجان' }, { id: 14, name: 'سمنان' }, { id: 15, name: 'سیستان و بلوچستان' }, { id: 16, name: 'فارس' }, { id: 17, name: 'قزوین' }, { id: 18, name: 'قم' }, { id: 19, name: 'کردستان' }, { id: 20, name: 'کرمان' }, { id: 21, name: 'کرمانشاه' }, { id: 22, name: 'کهگیلویه و بویراحمد' }, { id: 23, name: 'گلستان' }, { id: 24, name: 'گیلان' }, { id: 25, name: 'لرستان' }, { id: 26, name: 'مازندران' }, { id: 27, name: 'مرکزی' }, { id: 28, name: 'هرمزگان' }, { id: 29, name: 'همدان' }, { id: 30, name: 'یزد' }, { id: 31, name: 'البرز' }
           ]
         }
       }
@@ -210,88 +166,27 @@ export const useProfile = () => {
   }
 
   /**
-   * دریافت لیست شهرهای یک استان
+   * Fetches the list of cities for a given province.
+   * @param {number} provinceId - The ID of the province.
+   * @returns {Promise<object>} A list of cities.
    */
   const getCities = async (provinceId: number) => {
     try {
-      console.log('Fetching cities for province:', provinceId)
-
       // سعی می‌کنیم از API استفاده کنیم
       try {
-        const response = await api.get(`/locations/provinces/${provinceId}/cities`)
-        console.log('Cities response:', response)
-        return response
+        return await api.get(`/locations/provinces/${provinceId}/cities`)
       } catch (apiError) {
         console.warn('Cities API not available, using fallback data')
-
         // داده‌های fallback برای شهرها - چند استان پرکاربرد
         const citiesData: Record<number, Array<{id: number, name: string}>> = {
-          7: [ // تهران
-            { id: 1, name: 'تهران' },
-            { id: 2, name: 'شهریار' },
-            { id: 3, name: 'ورامین' },
-            { id: 4, name: 'پردیس' },
-            { id: 5, name: 'دماوند' },
-            { id: 6, name: 'فیروزکوه' },
-            { id: 7, name: 'پاکدشت' },
-            { id: 8, name: 'ری' },
-            { id: 9, name: 'اسلامشهر' },
-            { id: 10, name: 'کرج' }
-          ],
-          4: [ // اصفهان
-            { id: 11, name: 'اصفهان' },
-            { id: 12, name: 'کاشان' },
-            { id: 13, name: 'نجف‌آباد' },
-            { id: 14, name: 'خمینی‌شهر' },
-            { id: 15, name: 'شاهین‌شهر' },
-            { id: 16, name: 'فولادشهر' },
-            { id: 17, name: 'زرین‌شهر' },
-            { id: 18, name: 'نطنز' }
-          ],
-          16: [ // فارس
-            { id: 19, name: 'شیراز' },
-            { id: 20, name: 'مرودشت' },
-            { id: 21, name: 'کازرون' },
-            { id: 22, name: 'جهرم' },
-            { id: 23, name: 'لار' },
-            { id: 24, name: 'آباده' },
-            { id: 25, name: 'داراب' },
-            { id: 26, name: 'فسا' }
-          ],
-          10: [ // خراسان رضوی
-            { id: 27, name: 'مشهد' },
-            { id: 28, name: 'نیشابور' },
-            { id: 29, name: 'سبزوار' },
-            { id: 30, name: 'تربت حیدریه' },
-            { id: 31, name: 'کاشمر' },
-            { id: 32, name: 'تایباد' },
-            { id: 33, name: 'قوچان' }
-          ],
-          1: [ // آذربایجان شرقی
-            { id: 34, name: 'تبریز' },
-            { id: 35, name: 'مراغه' },
-            { id: 36, name: 'میانه' },
-            { id: 37, name: 'مرند' },
-            { id: 38, name: 'اهر' },
-            { id: 39, name: 'بناب' },
-            { id: 40, name: 'سراب' }
-          ],
-          12: [ // خوزستان
-            { id: 41, name: 'اهواز' },
-            { id: 42, name: 'آبادان' },
-            { id: 43, name: 'خرمشهر' },
-            { id: 44, name: 'دزفول' },
-            { id: 45, name: 'شوشتر' },
-            { id: 46, name: 'بهبهان' },
-            { id: 47, name: 'ماهشهر' },
-            { id: 48, name: 'اندیمشک' }
-          ]
+          7: [ { id: 1, name: 'تهران' }, { id: 2, name: 'شهریار' }, { id: 3, name: 'ورامین' }, { id: 4, name: 'پردیس' }, { id: 5, name: 'دماوند' }, { id: 6, name: 'فیروزکوه' }, { id: 7, name: 'پاکدشت' }, { id: 8, name: 'ری' }, { id: 9, name: 'اسلامشهر' }, { id: 10, name: 'کرج' } ],
+          4: [ { id: 11, name: 'اصفهان' }, { id: 12, name: 'کاشان' }, { id: 13, name: 'نجف‌آباد' }, { id: 14, name: 'خمینی‌شهر' }, { id: 15, name: 'شاهین‌شهر' }, { id: 16, name: 'فولادشهر' }, { id: 17, name: 'زرین‌شهر' }, { id: 18, name: 'نطنز' } ],
+          16: [ { id: 19, name: 'شیراز' }, { id: 20, name: 'مرودشت' }, { id: 21, name: 'کازرون' }, { id: 22, name: 'جهرم' }, { id: 23, name: 'لار' }, { id: 24, name: 'آباده' }, { id: 25, name: 'داراب' }, { id: 26, name: 'فسا' } ],
+          10: [ { id: 27, name: 'مشهد' }, { id: 28, name: 'نیشابور' }, { id: 29, name: 'سبزوار' }, { id: 30, name: 'تربت حیدریه' }, { id: 31, name: 'کاشمر' }, { id: 32, name: 'تایباد' }, { id: 33, name: 'قوچان' } ],
+          1: [ { id: 34, name: 'تبریز' }, { id: 35, name: 'مراغه' }, { id: 36, name: 'میانه' }, { id: 37, name: 'مرند' }, { id: 38, name: 'اهر' }, { id: 39, name: 'بناب' }, { id: 40, name: 'سراب' } ],
+          12: [ { id: 41, name: 'اهواز' }, { id: 42, name: 'آبادان' }, { id: 43, name: 'خرمشهر' }, { id: 44, name: 'دزفول' }, { id: 45, name: 'شوشتر' }, { id: 46, name: 'بهبهان' }, { id: 47, name: 'ماهشهر' }, { id: 48, name: 'اندیمشک' } ]
         }
-
-        return {
-          success: true,
-          data: citiesData[provinceId] || []
-        }
+        return { success: true, data: citiesData[provinceId] || [] }
       }
     } catch (error) {
       console.error('Error getting cities:', error)
@@ -300,28 +195,20 @@ export const useProfile = () => {
   }
 
   /**
-   * آپلود آواتار کاربر (در صورت پشتیبانی API)
+   * Uploads a new avatar for the user.
+   * @param {File} file - The avatar image file.
+   * @returns {Promise<object>} The API response.
    */
   const uploadAvatar = async (file: File) => {
     try {
-      console.log('Uploading avatar...')
-
       const formData = new FormData()
       formData.append('avatar', file)
-
-      // استفاده از fetch برای آپلود فایل
-      const response = await $fetch('/auth/profile/avatar', {
+      return await $fetch('/auth/profile/avatar', {
         baseURL: useRuntimeConfig().public.apiBase,
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authStore.token}`,
-          'Accept': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' },
         body: formData
       })
-
-      console.log('Avatar upload response:', response)
-      return response
     } catch (error) {
       console.error('Error uploading avatar:', error)
       throw error
@@ -329,14 +216,12 @@ export const useProfile = () => {
   }
 
   /**
-   * حذف آواتار کاربر
+   * Deletes the user's current avatar.
+   * @returns {Promise<object>} The API response.
    */
   const deleteAvatar = async () => {
     try {
-      console.log('Deleting avatar...')
-      const response = await api.delete('/auth/profile/avatar')
-      console.log('Avatar delete response:', response)
-      return response
+      return await api.delete('/auth/profile/avatar')
     } catch (error) {
       console.error('Error deleting avatar:', error)
       throw error
@@ -344,16 +229,13 @@ export const useProfile = () => {
   }
 
   /**
-   * تغییر روش ورود ترجیحی کاربر
+   * Updates the user's preferred login method.
+   * @param {'password' | 'otp'} method - The new preferred method.
+   * @returns {Promise<object>} The API response.
    */
   const updatePreferredMethod = async (method: 'password' | 'otp') => {
     try {
-      console.log('Updating preferred method to:', method)
-      const response = await api.post('/auth/profile/preferred-method', {
-        preferred_method: method
-      })
-      console.log('Preferred method update response:', response)
-      return response
+      return await api.post('/auth/profile/preferred-method', { preferred_method: method })
     } catch (error) {
       console.error('Error updating preferred method:', error)
       throw error
@@ -361,38 +243,30 @@ export const useProfile = () => {
   }
 
   /**
-   * دریافت تاریخچه ورود کاربر
+   * Fetches the user's login history.
+   * @param {number} [page=1] - The page number for pagination.
+   * @param {number} [perPage=10] - The number of items per page.
+   * @returns {Promise<object>} A paginated list of login history entries.
    */
   const getLoginHistory = async (page: number = 1, perPage: number = 10) => {
     try {
-      console.log('Fetching login history...')
-      const response = await api.get('/auth/profile/login-history', {
+      return await api.get('/auth/profile/login-history', {
         query: { page, per_page: perPage }
       })
-      console.log('Login history response:', response)
-      return response
     } catch (error) {
       console.error('Error fetching login history:', error)
-      // در صورت عدم وجود API، داده‌های نمونه برگردان
-      return {
-        success: true,
-        data: [],
-        message: 'تاریخچه ورود در دسترس نیست'
-      }
+      return { success: true, data: [], message: 'تاریخچه ورود در دسترس نیست' }
     }
   }
 
   /**
-   * فعال/غیرفعال کردن احراز هویت دو مرحله‌ای
+   * Toggles two-factor authentication for the user.
+   * @param {boolean} enable - Whether to enable or disable 2FA.
+   * @returns {Promise<object>} The API response.
    */
   const toggle2FA = async (enable: boolean) => {
     try {
-      console.log('Toggling 2FA to:', enable)
-      const response = await api.post('/auth/profile/2fa-toggle', {
-        enable
-      })
-      console.log('2FA toggle response:', response)
-      return response
+      return await api.post('/auth/profile/2fa-toggle', { enable })
     } catch (error) {
       console.error('Error toggling 2FA:', error)
       throw error
@@ -400,27 +274,21 @@ export const useProfile = () => {
   }
 
   /**
-   * اعتبارسنجی داده‌های فرم
+   * Validates profile data on the client side.
+   * @param {object} data - The form data to validate.
+   * @returns {{valid: boolean, errors: string[]}} An object indicating if the data is valid and a list of errors.
    */
   const validateProfileData = (data: any): { valid: boolean; errors: string[] } => {
     const errors: string[] = []
-
-    // نام الزامی است
     if (!data.name || data.name.trim().length < 2) {
       errors.push('نام باید حداقل 2 کاراکتر باشد')
     }
-
-    // اعتبارسنجی ایمیل
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.push('فرمت ایمیل معتبر نیست')
     }
-
-    // اعتبارسنجی شماره تلفن
     if (data.phone && !/^09[0-9]{9}$/.test(data.phone)) {
       errors.push('شماره تلفن باید با 09 شروع شود و 11 رقم باشد')
     }
-
-    // اعتبارسنجی نام کاربری
     if (data.username) {
       if (data.username.length < 3) {
         errors.push('نام کاربری باید حداقل 3 کاراکتر باشد')
@@ -429,71 +297,48 @@ export const useProfile = () => {
         errors.push('نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد و _ باشد')
       }
     }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
+    return { valid: errors.length === 0, errors }
   }
 
   /**
-   * اعتبارسنجی رمز عبور
+   * Validates password strength on the client side.
+   * @param {string} password - The password to validate.
+   * @returns {{valid: boolean, errors: string[]}} An object indicating if the password is valid and a list of unmet criteria.
    */
   const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
     const errors: string[] = []
-
     if (password.length < 8) {
       errors.push('رمز عبور باید حداقل 8 کاراکتر باشد')
     }
-
     if (!/(?=.*[a-z])/.test(password)) {
       errors.push('رمز عبور باید حداقل یک حرف کوچک داشته باشد')
     }
-
     if (!/(?=.*[A-Z])/.test(password)) {
       errors.push('رمز عبور باید حداقل یک حرف بزرگ داشته باشد')
     }
-
     if (!/(?=.*\d)/.test(password)) {
       errors.push('رمز عبور باید حداقل یک عدد داشته باشد')
     }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
+    return { valid: errors.length === 0, errors }
   }
 
   // بازگرداندن تمام توابع
   return {
-    // Profile management
     getCurrentUser,
     updateProfile,
-
-    // Password management
     setPassword,
     updatePassword,
-
-    // Verification
     sendEmailVerification,
     verifyEmail,
     sendPhoneVerification,
     verifyPhone,
-
-    // Location data
     getProvinces,
     getCities,
-
-    // Avatar management
     uploadAvatar,
     deleteAvatar,
-
-    // Settings
     updatePreferredMethod,
     getLoginHistory,
     toggle2FA,
-
-    // Validation utilities
     validateProfileData,
     validatePassword
   }

@@ -13,46 +13,8 @@
                     class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
             بازگشت به داشبورد
           </NuxtLink>
-          <button v-if="!showDebug" @click="showDebug = true"
-                  class="px-3 py-1 text-xs bg-gray-200 text-gray-600 rounded hover:bg-gray-300">
-            Debug Mode
-          </button>
         </div>
       </div>
-    </div>
-
-    <!-- Debug Panel -->
-    <div v-if="showDebug" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <div class="flex justify-between items-start mb-3">
-        <h3 class="font-semibold text-yellow-800">Debug Information</h3>
-        <button @click="showDebug = false" class="text-yellow-600 hover:text-yellow-800">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div class="space-y-1">
-          <div><strong>Token:</strong> {{ authStore.token ? 'موجود' : 'ندارد' }}</div>
-          <div><strong>User ID:</strong> {{ user?.id || 'نامشخص' }}</div>
-        </div>
-        <div class="space-y-1">
-          <div><strong>Email Verified:</strong> {{ user?.email_verified_at ? 'تایید شده' : 'خیر' }}</div>
-          <div><strong>Phone Verified:</strong> {{ user?.phone_verified_at ? 'تایید شده' : 'خیر' }}</div>
-        </div>
-        <div class="space-y-1">
-          <div><strong>Has Password:</strong> {{ hasPassword ? 'دارد' : 'ندارد' }}</div>
-          <div><strong>Is Admin:</strong> {{ authStore.isAdmin ? 'بله' : 'خیر' }}</div>
-        </div>
-        <div class="space-y-1">
-          <div><strong>Form Changed:</strong> {{ hasFormChanges ? 'بله' : 'خیر' }}</div>
-          <div><strong>Loading:</strong> {{ loading ? 'بله' : 'خیر' }}</div>
-        </div>
-      </div>
-      <details class="mt-3">
-        <summary class="cursor-pointer text-sm font-medium text-yellow-700">نمایش کل اطلاعات کاربر</summary>
-        <pre class="mt-2 text-xs bg-yellow-100 p-3 rounded overflow-auto max-h-40">{{ JSON.stringify(user, null, 2) }}</pre>
-      </details>
     </div>
 
     <!-- Success/Error Messages -->
@@ -65,7 +27,7 @@
         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
       </svg>
       <div class="flex-1">
-        <p class="font-medium">{{ message }}</p>
+        <p class="font-medium" style="white-space: pre-wrap;">{{ message }}</p>
         <button @click="clearMessage" class="text-sm underline mt-1 opacity-75 hover:opacity-100">
           بستن
         </button>
@@ -243,7 +205,6 @@
                   </div>
                 </div>
               </div>
-
 
               <!-- Address Information -->
               <div class="space-y-4">
@@ -659,12 +620,8 @@
             {{ verificationModal.type === 'email' ? 'تایید ایمیل' : 'تایید شماره موبایل' }}
           </h3>
 
-          <p class="text-sm text-gray-600 mb-1">
+          <p class="text-sm text-gray-600 mb-6">
             کد تایید به {{ verificationModal.target }} ارسال شد
-          </p>
-
-          <p class="text-xs text-red-600 mb-6">
-            برای تست، کد تایید: <span class="font-mono font-bold">123456</span>
           </p>
         </div>
 
@@ -725,7 +682,6 @@ const usernameError = ref('')
 const showPasswordForm = ref(false)
 const showUsernameWarning = ref(false)
 const showVerificationModal = ref(false)
-const showDebug = ref(false)
 const emailVerificationSending = ref(false)
 const smsVerificationSending = ref(false)
 const loadingCities = ref(false)
@@ -806,8 +762,6 @@ const loadUserData = async () => {
     const response = await profileComposable.getCurrentUser()
     user.value = response.user || response
 
-    console.log('User loaded:', user.value)
-
     // پر کردن فرم با اطلاعات کاربر
     const formData = {
       name: user.value.name || '',
@@ -829,7 +783,6 @@ const loadUserData = async () => {
 
   } catch (error) {
     showMessage('خطا در دریافت اطلاعات کاربر', 'error')
-    console.error('Error loading user data:', error)
   } finally {
     loading.value = false
   }
@@ -841,7 +794,7 @@ const loadProvincesData = async () => {
     const response = await profileComposable.getProvinces()
     provinces.value = response.data || response
   } catch (error) {
-    console.error('خطا در دریافت استان‌ها:', error)
+    // console.error('خطا در دریافت استان‌ها:', error)
   }
 }
 
@@ -856,7 +809,7 @@ const loadCitiesData = async (provinceId) => {
     const response = await profileComposable.getCities(provinceId)
     cities.value = response.data || response
   } catch (error) {
-    console.error('خطا در دریافت شهرها:', error)
+    // console.error('خطا در دریافت شهرها:', error)
   } finally {
     loadingCities.value = false
   }
@@ -873,8 +826,6 @@ const updateProfile = async () => {
   usernameError.value = ''
 
   try {
-    console.log('Sending update data:', form.value)
-
     const updateData = {
       name: form.value.name,
       province_id: form.value.province_id || null,
@@ -893,11 +844,7 @@ const updateProfile = async () => {
       updateData.username = form.value.username
     }
 
-    console.log('Final update data:', updateData)
-
     const response = await profileComposable.updateProfile(updateData)
-
-    console.log('Update response:', response)
 
     const updatedUser = response.user || response
     user.value = updatedUser
@@ -908,7 +855,6 @@ const updateProfile = async () => {
 
     showMessage('اطلاعات با موفقیت ذخیره شد', 'success')
   } catch (error) {
-    console.error('Error updating profile:', error)
     if (error.statusCode === 422 && error.data?.errors?.username) {
       usernameError.value = error.data.errors.username[0]
     } else {
@@ -946,7 +892,6 @@ const handlePassword = async () => {
     showPasswordForm.value = false
     resetPasswordForm()
   } catch (error) {
-    console.error('Error handling password:', error)
     const errorMap = {
       "The password field must contain at least one uppercase and one lowercase letter.": "رمز عبور باید شامل حروف بزرگ و کوچک انگلیسی باشد.",
       "The password field must contain at least one symbol.": "رمز عبور باید شامل حداقل یک نماد (مانند @#$!) باشد.",
@@ -981,7 +926,6 @@ const handleEmailVerification = async () => {
     showVerificationModal.value = true
   } catch (error) {
     showMessage('خطا در ارسال کد تایید ایمیل', 'error')
-    console.error('Error sending email verification:', error)
   } finally {
     emailVerificationSending.value = false
   }
@@ -1001,7 +945,6 @@ const handlePhoneVerification = async () => {
     showVerificationModal.value = true
   } catch (error) {
     showMessage('خطا در ارسال کد تایید موبایل', 'error')
-    console.error('Error sending phone verification:', error)
   } finally {
     smsVerificationSending.value = false
   }
@@ -1039,7 +982,6 @@ const verifyCode = async () => {
     closeVerificationModal()
   } catch (error) {
     showMessage(error.data?.message || 'کد تایید اشتباه است', 'error')
-    console.error('Error verifying code:', error)
   } finally {
     loading.value = false
   }
@@ -1086,7 +1028,6 @@ const copyToClipboard = async (text) => {
       passwordCopied.value = false;
     }, 2000);
   } catch (err) {
-    console.error('Failed to copy: ', err);
     showMessage('خطا در کپی کردن رمز عبور', 'error')
   }
 };
@@ -1150,7 +1091,6 @@ watch(() => form.value.username, (newUsername) => {
 
 // Lifecycle
 onMounted(async () => {
-  console.log('Profile page mounted')
   await Promise.all([
     loadUserData(),
     loadProvincesData()
