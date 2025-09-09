@@ -1,6 +1,11 @@
 <template>
   <div class="container mx-auto p-4">
-    <header class="mb-8 text-center">
+    <div class="p-4 bg-yellow-100 border border-yellow-400 rounded">
+      <h2 class="font-bold">محتوای پاسخ API (برای دیباگ):</h2>
+      <pre class="whitespace-pre-wrap text-xs">{{ debugResponse }}</pre>
+    </div>
+
+    <header class="mt-8 mb-8 text-center">
       <h1 class="text-4xl font-bold text-gray-800">آخرین کتاب‌ها</h1>
       <p class="text-gray-600">جدیدترین کتاب‌های اضافه شده را کشف کنید</p>
     </header>
@@ -56,6 +61,7 @@ const books = ref([])
 const pagination = ref(null)
 const currentPage = ref(1)
 const loading = ref(false)
+const debugResponse = ref(null)
 
 const api = useApi()
 
@@ -69,6 +75,8 @@ const fetchBooks = async (page) => {
         page: page
       }
     })
+    debugResponse.value = response; // Store raw response for debugging
+
     // Per code review, handle a potentially nested data structure
     if (response && response.data && response.data.data) {
       books.value = response.data.data
