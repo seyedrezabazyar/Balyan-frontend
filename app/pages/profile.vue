@@ -821,7 +821,14 @@ const handlePassword = async () => {
     await loadUserData()
   } catch (error) {
     console.error('Error handling password:', error)
-    showMessage(error.data?.message || 'خطا در ذخیره رمز عبور', 'error')
+    let errorMessage = 'خطا در ذخیره رمز عبور';
+    if (error.data?.errors) {
+      // Flatten all error messages into one string.
+      errorMessage = Object.values(error.data.errors).flat().join(' ');
+    } else if (error.data?.message) {
+      errorMessage = error.data.message;
+    }
+    showMessage(errorMessage, 'error');
   } finally {
     loading.value = false
   }
