@@ -25,14 +25,18 @@
               <input
                 v-model="identifier"
                 type="text"
-                placeholder="09123456789 یا email@example.com"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                dir="ltr"
+                placeholder="09123456789 or email@example.com"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left"
+                :class="{ 'border-red-500': identifierError }"
                 required
+                @input="identifier = formatters.toEnglishDigits($event.target.value)"
               />
+              <p v-if="identifierError" class="text-xs text-red-500 mt-1">{{ identifierError }}</p>
             </div>
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="loading || identifierError"
               class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
               {{ loading ? 'در حال بررسی...' : 'ادامه' }}
@@ -103,8 +107,11 @@
                   type="text"
                   placeholder="نام و نام خانوادگی"
                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  :class="{ 'text-right': nameDirection === 'rtl', 'text-left': nameDirection === 'ltr' }"
+                  :dir="nameDirection"
                   required
                 />
+                <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
               </div>
 
               <button
@@ -197,10 +204,12 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import validator from 'validator'
 import { useApi } from '~/composables/useApi'
 import { useAuthStore } from '~/stores/auth'
+import { useFormatters } from '~/composables/useFormatters'
 
 definePageMeta({
   layout: false,
@@ -210,6 +219,7 @@ definePageMeta({
 const api = useApi()
 const authStore = useAuthStore()
 const router = useRouter()
+const formatters = useFormatters()
 
 // State
 const step = ref(1)
@@ -225,6 +235,9 @@ const error = ref('')
 const resendTimer = ref(0)
 const showOtpForm = ref(false)
 const showDebug = ref(false)
+const nameDirection = ref('rtl')
+const identifierError = ref('')
+const nameError = ref('')
 
 let resendInterval = null
 
@@ -236,19 +249,28 @@ const sanitizeInput = (input) => {
 
 const checkUser = async () => {
   error.value = ''
-  loading.value = true
+  identifierError.value = ''
 
-  try {
-    const cleanIdentifier = sanitizeInput(identifier.value)
-
-    if (!cleanIdentifier) {
-      throw new Error('لطفاً شماره موبایل یا ایمیل معتبر وارد کنید')
+  // Client-side validation
+  const isPhone = /^[0-9]/.test(identifier.value);
+  if (isPhone) {
+    const normalizedPhone = formatters.normalizePhone(identifier.value);
+    if (!validator.isMobilePhone(normalizedPhone, 'fa-IR')) {
+      identifierError.value = 'شماره موبایل وارد شده معتبر نیست.';
+      return;
     }
+    identifier.value = normalizedPhone; // Use the normalized version
+  } else {
+    if (!validator.isEmail(identifier.value)) {
+      identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.';
+      return;
+    }
+  }
 
-    console.log('Checking user:', cleanIdentifier)
-
+  loading.value = true
+  try {
     const response = await api.post('/auth/check-user', {
-      identifier: cleanIdentifier
+      identifier: identifier.value
     })
 
     console.log('Check user response:', response)
@@ -441,5 +463,17 @@ const goBack = () => {
 
 onUnmounted(() => {
   if (resendInterval) clearInterval(resendInterval)
+})
+
+watch(userName, (newName) => {
+  nameError.value = ''
+  if (newName && newName.length > 0) {
+    const isRtl = /[\u0600-\u06FF]/.test(newName.charAt(0));
+    nameDirection.value = isRtl ? 'rtl' : 'ltr';
+  }
+})
+
+watch(identifier, (newIdentifier) => {
+  identifierError.value = ''
 })
 </script>
