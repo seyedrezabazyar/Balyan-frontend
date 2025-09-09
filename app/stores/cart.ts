@@ -13,7 +13,9 @@ export const useCartStore = defineStore('cart', {
   state: () => ({
     items: [] as CartItem[],
     total: 0,
-    coupon: null as any
+    coupon: null as any,
+    loading: false,
+    paymentLoading: false,
   }),
 
   getters: {
@@ -31,6 +33,7 @@ export const useCartStore = defineStore('cart', {
   actions: {
     async fetchCart() {
       const api = useApi()
+      this.loading = true
       try {
         const response = await api.get('/v1/cart')
         this.items = response.items || []
@@ -39,16 +42,15 @@ export const useCartStore = defineStore('cart', {
         return response
       } catch (error) {
         console.error('Error fetching cart:', error)
+      } finally {
+        this.loading = false
       }
     },
 
-    async addToCart(bookId: number, quantity: number = 1) {
+    async addToCart(item: { product_id: number, product_type: string, price: number, quantity: number }) {
       const api = useApi()
       try {
-        const response = await api.post('/v1/cart/add', {
-          book_id: bookId,
-          quantity
-        })
+        const response = await api.post('/v1/cart/add', item)
         await this.fetchCart()
         return response
       } catch (error) {
@@ -75,6 +77,22 @@ export const useCartStore = defineStore('cart', {
         this.coupon = null
       } catch (error) {
         throw error
+      }
+    },
+
+    async initiatePayment() {
+      const api = useApi()
+      this.paymentLoading = true
+      try {
+        const response = await api.post('/v1/purchase/payment/initiate')
+        if (response.payment_url) {
+          window.location.href = response.payment_url
+        }
+        return response
+      } catch (error) {
+        throw error
+      } finally {
+        this.paymentLoading = false
       }
     }
   }

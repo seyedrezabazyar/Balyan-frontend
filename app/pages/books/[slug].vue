@@ -100,7 +100,12 @@ const addToCartHandler = async () => {
   if (!book.value) return
   addToCartStatus.value = 'loading'
   try {
-    await cartStore.addToCart(book.value.id)
+    await cartStore.addToCart({
+      product_id: book.value.id,
+      product_type: 'book',
+      quantity: 1,
+      price: book.value.sale_price || book.value.price
+    })
     addToCartStatus.value = 'success'
     setTimeout(() => {
       addToCartStatus.value = 'idle'
