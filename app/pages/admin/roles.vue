@@ -105,15 +105,12 @@ async function fetchRoles() {
 async function fetchPermissions() {
   try {
     const response = await api.getPermissions();
-    // Group permissions by module
-    groupedPermissions.value = response.data.reduce((acc, permission) => {
-      const module = permission.module || 'General';
-      if (!acc[module]) {
-        acc[module] = [];
-      }
-      acc[module].push(permission);
-      return acc;
-    }, {});
+    // The API likely returns pre-grouped permissions.
+    // Handle both wrapped {data: {...}} and direct {...} object responses.
+    const permissionsData = response.data && typeof response.data === 'object' && !Array.isArray(response.data)
+      ? response.data
+      : response;
+    groupedPermissions.value = permissionsData;
   } catch (e) {
     console.error("Failed to fetch permissions:", e);
     error.value = e as Error; // Also set error if permissions fail
