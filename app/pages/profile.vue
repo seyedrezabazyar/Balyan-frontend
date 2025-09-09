@@ -977,18 +977,33 @@ const verifyCode = async () => {
 
   loading.value = true
   try {
+    let response
     if (verificationModal.value.type === 'email') {
-      await profileComposable.verifyEmail(verificationModal.value.target, verificationCode.value)
+      response = await profileComposable.verifyEmail(verificationModal.value.target, verificationCode.value)
       showMessage('ایمیل با موفقیت تایید شد', 'success')
     } else {
-      await profileComposable.verifyPhone(verificationModal.value.target, verificationCode.value)
+      response = await profileComposable.verifyPhone(verificationModal.value.target, verificationCode.value)
       showMessage('شماره موبایل با موفقیت تایید شد', 'success')
     }
 
+    // Use the response to update state directly, avoiding race conditions with refetching.
+    if (response) {
+      const updatedUser = response.user || response
+      if (updatedUser && typeof updatedUser === 'object') {
+        user.value = updatedUser
+        authStore.setUser(updatedUser)
+
+        // Update the form to reflect the new verified data
+        form.value.email = updatedUser.email || ''
+        form.value.phone = updatedUser.phone || ''
+        originalForm.value.email = updatedUser.email || ''
+        originalForm.value.phone = updatedUser.phone || ''
+      }
+    }
+
     closeVerificationModal()
-    await loadUserData()
   } catch (error) {
-    showMessage('کد تایید اشتباه است', 'error')
+    showMessage(error.data?.message || 'کد تایید اشتباه است', 'error')
     console.error('Error verifying code:', error)
   } finally {
     loading.value = false
