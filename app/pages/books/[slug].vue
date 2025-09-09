@@ -1,0 +1,118 @@
+<template>
+  <div class="container mx-auto p-4 md:p-8">
+    <div v-if="loading" class="text-center">
+      <p>در حال بارگذاری اطلاعات کتاب...</p>
+    </div>
+    <div v-else-if="error" class="text-center text-red-500">
+      <p>خطا در دریافت اطلاعات کتاب: {{ error.message }}</p>
+    </div>
+    <article v-else-if="book" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="md:col-span-1">
+        <img v-if="book.image" :src="book.image.url" :alt="book.title" class="w-full rounded-lg shadow-lg">
+      </div>
+      <div class="md:col-span-2">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ book.title }}</h1>
+        <div class="flex items-center mb-4">
+          <p class="text-lg text-gray-600 ml-4">{{ book.authors.map(a => a.name).join(', ') }}</p>
+          <span class="text-sm text-gray-500">{{ book.category.name }}</span>
+        </div>
+        <p class="text-gray-700 leading-relaxed mb-6">{{ book.excerpt }}</p>
+
+        <div class="bg-gray-100 p-4 rounded-lg mb-6">
+          <h3 class="font-semibold text-lg mb-2">مشخصات کتاب</h3>
+          <ul class="grid grid-cols-2 gap-4 text-sm">
+            <li><strong>زبان:</strong> {{ book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
+            <li><strong>سال انتشار:</strong> {{ book.publication_year }}</li>
+            <li><strong>تعداد صفحات:</strong> {{ book.pages_count }}</li>
+            <li><strong>شابک (ISBN):</strong> {{ book.isbn }}</li>
+          </ul>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="text-2xl font-bold text-green-600">
+            <span v-if="book.sale_price" class="text-base text-gray-400 line-through mr-2">{{ formatPrice(book.price) }}</span>
+            <span>{{ formatPrice(book.sale_price || book.price) }}</span>
+          </div>
+          <button @click="addToCartHandler"
+                  :disabled="addToCartStatus === 'loading'"
+                  class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition w-40 text-center"
+                  :class="{
+                    'bg-green-500 hover:bg-green-600': addToCartStatus === 'success',
+                    'bg-red-500 hover:bg-red-600': addToCartStatus === 'error',
+                  }">
+            <span v-if="addToCartStatus === 'idle'">افزودن به سبد</span>
+            <span v-if="addToCartStatus === 'loading'">در حال افزودن...</span>
+            <span v-if="addToCartStatus === 'success'">اضافه شد!</span>
+            <span v-if="addToCartStatus === 'error'">خطا</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useApi } from '~/composables/useApi'
+import { useCartStore } from '~/stores/cart'
+
+useHead({
+  title: 'جزئیات کتاب',
+})
+
+const route = useRoute()
+const api = useApi()
+const cartStore = useCartStore()
+
+const book = ref(null)
+const loading = ref(true)
+const error = ref(null)
+const addToCartStatus = ref('idle') // idle, loading, success, error
+
+const slug = route.params.slug
+
+const fetchBook = async () => {
+  try {
+    const response = await api.get(`/v1/books/${slug}`)
+    if (response.data) {
+      book.value = response.data
+      useHead({
+        title: response.data.title,
+      })
+    } else {
+      throw new Error('کتاب مورد نظر یافت نشد.')
+    }
+  } catch (err) {
+    error.value = err
+    console.error('Failed to fetch book details:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const formatPrice = (price) => {
+  if (!price) return ''
+  return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
+}
+
+const addToCartHandler = async () => {
+  if (!book.value) return
+  addToCartStatus.value = 'loading'
+  try {
+    await cartStore.addToCart(book.value.id)
+    addToCartStatus.value = 'success'
+    setTimeout(() => {
+      addToCartStatus.value = 'idle'
+    }, 2000)
+  } catch (err) {
+    addToCartStatus.value = 'error'
+    console.error('Failed to add to cart:', err)
+    setTimeout(() => {
+      addToCartStatus.value = 'idle'
+    }, 2000)
+  }
+}
+
+onMounted(fetchBook)
+</script>
