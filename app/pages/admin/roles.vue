@@ -92,7 +92,8 @@ async function fetchRoles() {
     isLoading.value = true;
     // Fetch roles with their assigned permissions
     const response = await api.getRoles(true);
-    roles.value = response.data;
+    // Handle both wrapped and direct array responses
+    roles.value = Array.isArray(response.data) ? response.data : response;
   } catch (e) {
     error.value = e as Error;
     console.error("Failed to fetch roles:", e);
