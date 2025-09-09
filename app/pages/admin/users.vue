@@ -18,9 +18,6 @@
     </div>
     <div v-if="error" class="text-center py-4 text-red-500">
       <p>خطا در دریافت اطلاعات: {{ error.message }}</p>
-      <p class="text-sm text-gray-600 mt-2">
-        (توجه: این صفحه نیازمند اندپوینتی برای دریافت لیست کاربران است که هنوز ارائه نشده است. از داده‌های موقت استفاده می‌شود.)
-      </p>
     </div>
 
     <!-- Users Table -->
@@ -107,20 +104,36 @@ async function fetchAllRoles() {
   }
 }
 
-// Fetch users (currently placeholder)
+// Fetch users
 async function fetchUsers() {
   isLoading.value = true;
-  // This is where the real API call will go.
-  // For now, we use placeholder data and simulate a delay.
-  // We'll also set an error to inform that the real API is missing.
-  setTimeout(() => {
-    users.value = [
-      { id: 1, name: 'مدیر سیستم', email: 'admin@example.com', roles: allRoles.value.filter(r => r.name === 'admin' || r.id === 1) },
-      { id: 2, name: 'کاربر تستی', email: 'test@example.com', roles: allRoles.value.filter(r => r.name === 'user' || r.id === 2) },
-    ];
-    error.value = new Error("API endpoint for fetching users is not available.");
+  error.value = null;
+
+  try {
+    // We use useFetch to call our local mock API
+    const { data: response, error: fetchError } = await useFetch('/api/admin/users');
+
+    if (fetchError.value) {
+      throw fetchError.value;
+    }
+
+    if (response.value && response.value.data) {
+      // Assign roles to users based on the allRoles list
+      const usersData = response.value.data.map(user => ({
+        ...user,
+        roles: user.roles.map(role => allRoles.value.find(r => r.id === role.id)).filter(Boolean)
+      }));
+      users.value = usersData;
+    } else {
+      users.value = [];
+    }
+  } catch (e) {
+    console.error("Failed to fetch users:", e);
+    error.value = new Error(e.message || "یک خطای ناشناخته رخ داد.");
+    users.value = [];
+  } finally {
     isLoading.value = false;
-  }, 500);
+  }
 }
 
 onMounted(async () => {
