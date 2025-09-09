@@ -248,34 +248,31 @@ const sanitizeInput = (input) => {
 }
 
 const checkUser = async () => {
-  error.value = ''
-  identifierError.value = ''
+  error.value = '';
+  identifierError.value = '';
 
-  // Client-side validation
-  const isPhone = /^[0-9]/.test(identifier.value);
+  const value = formatters.toEnglishDigits(identifier.value);
+  const isPhone = /^[0-9+]+$/.test(value.trim());
+
   if (isPhone) {
-    const normalizedPhone = formatters.normalizePhone(identifier.value);
+    const normalizedPhone = formatters.normalizePhone(value);
     if (!validator.isMobilePhone(normalizedPhone, 'fa-IR')) {
       identifierError.value = 'شماره موبایل وارد شده معتبر نیست.';
       return;
     }
-    identifier.value = normalizedPhone; // Use the normalized version
+    identifier.value = normalizedPhone;
   } else {
-    if (!validator.isEmail(identifier.value)) {
+    if (!validator.isEmail(value)) {
       identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.';
       return;
     }
   }
 
-  loading.value = true
+  loading.value = true;
   try {
     const response = await api.post('/auth/check-user', {
       identifier: identifier.value
     })
-
-    console.log('Check user response:', response)
-    console.log('Response type:', typeof response)
-    console.log('Response keys:', Object.keys(response || {}))
 
     // اگر response یک string است، آن را parse کن
     let parsedResponse = response
