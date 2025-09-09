@@ -100,13 +100,9 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '~/stores/auth'
-
 definePageMeta({
   middleware: 'admin'
 })
-
-const authStore = useAuthStore()
 
 const roles = ref([])
 const permissions = ref([])
@@ -122,8 +118,8 @@ const availablePermissions = computed(() => {
 
 const loadRoles = async () => {
   try {
-    const authAPI = useAuthAPI()
-    const data = await authAPI.getRoles()
+    const authApi = useAuthApi()
+    const data = await authApi.getRoles()
     roles.value = data || []
   } catch (error) {
     console.error('خطا در دریافت نقش‌ها:', error)
@@ -132,8 +128,8 @@ const loadRoles = async () => {
 
 const loadPermissions = async () => {
   try {
-    const authAPI = useAuthAPI()
-    const data = await authAPI.getPermissions()
+    const authApi = useAuthApi()
+    const data = await authApi.getPermissions()
     permissions.value = data || []
   } catch (error) {
     console.error('خطا در دریافت دسترسی‌ها:', error)
@@ -143,8 +139,8 @@ const loadPermissions = async () => {
 const selectRole = async (role) => {
   selectedRole.value = role
   try {
-    const authAPI = useAuthAPI()
-    const data = await authAPI.getRolePermissions(role.id)
+    const authApi = useAuthApi()
+    const data = await authApi.getRolePermissions(role.id)
     rolePermissions.value = data || []
   } catch (error) {
     console.error('خطا در دریافت دسترسی‌های نقش:', error)
@@ -158,8 +154,8 @@ const addPermission = async () => {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = [...currentPermissionIds, selectedPermission.value]
 
-    const authAPI = useAuthAPI()
-    await authAPI.updateRolePermissions(selectedRole.value.id, newPermissions)
+    const authApi = useAuthApi()
+    await authApi.updateRolePermissions(selectedRole.value.id, newPermissions)
 
     selectedPermission.value = ''
     await selectRole(selectedRole.value)
@@ -174,8 +170,8 @@ const removePermission = async (permissionId) => {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = currentPermissionIds.filter(id => id !== permissionId)
 
-    const authAPI = useAuthAPI()
-    await authAPI.updateRolePermissions(selectedRole.value.id, newPermissions)
+    const authApi = useAuthApi()
+    await authApi.updateRolePermissions(selectedRole.value.id, newPermissions)
 
     await selectRole(selectedRole.value)
     alert('دسترسی با موفقیت حذف شد')
