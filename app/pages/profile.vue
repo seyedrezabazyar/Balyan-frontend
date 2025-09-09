@@ -821,10 +821,17 @@ const handlePassword = async () => {
     await loadUserData()
   } catch (error) {
     console.error('Error handling password:', error)
+    const errorMap = {
+      "The password field must contain at least one uppercase and one lowercase letter.": "رمز عبور باید شامل حروف بزرگ و کوچک انگلیسی باشد.",
+      "The password field must contain at least one symbol.": "رمز عبور باید شامل حداقل یک نماد (مانند @#$!) باشد.",
+      "The password field must be at least 8 characters.": "رمز عبور باید حداقل ۸ کاراکتر باشد."
+    };
+
     let errorMessage = 'خطا در ذخیره رمز عبور';
-    if (error.data?.errors) {
-      // Flatten all error messages into one string.
-      errorMessage = Object.values(error.data.errors).flat().join(' ');
+    if (error.data?.errors?.password) {
+      const passwordErrors = error.data.errors.password;
+      // Translate each error and join with a newline for better readability
+      errorMessage = passwordErrors.map(e => errorMap[e] || e).join('\n');
     } else if (error.data?.message) {
       errorMessage = error.data.message;
     }
