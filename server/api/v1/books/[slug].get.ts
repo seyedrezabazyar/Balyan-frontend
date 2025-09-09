@@ -61,14 +61,16 @@ const books = {
 export default defineEventHandler((event) => {
   const slug = getRouterParam(event, 'slug')
 
-  if (slug && books[slug]) {
-    return {
-      data: books[slug]
-    }
-  } else {
-    event.res.statusCode = 404
-    return {
-      error: 'کتاب مورد نظر یافت نشد.'
-    }
+  const book = books[slug]
+
+  if (book) {
+    // Return the book object directly
+    return book
+  }
+
+  // Set the status code and return an error object
+  event.res.statusCode = 404
+  return {
+    error: 'کتاب مورد نظر یافت نشد.'
   }
 })
