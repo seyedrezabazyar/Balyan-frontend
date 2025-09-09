@@ -37,7 +37,6 @@ export const useAuthStore = defineStore('auth', {
     currentUser: (state) => state.user,
     isLoggedIn: (state) => state.isAuthenticated && !!state.token,
     isAdmin: (state) => {
-      console.log('isAdmin getter called, user:', state.user)
       if (!state.user) return false
       return !!(state.user.is_admin || state.user.roles?.some(role => role.name === 'admin'))
     }
