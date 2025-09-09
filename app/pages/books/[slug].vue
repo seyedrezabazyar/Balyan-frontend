@@ -75,10 +75,10 @@ const slug = route.params.slug
 const fetchBook = async () => {
   try {
     const response = await api.get(`/v1/books/${slug}`)
-    if (response && !response.error) {
-      book.value = response
+    if (response.success && response.data && response.data.book) {
+      book.value = response.data.book
       useHead({
-        title: response.title,
+        title: response.data.book.title,
       })
     } else {
       throw new Error(response.error || 'کتاب مورد نظر یافت نشد.')
