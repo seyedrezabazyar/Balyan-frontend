@@ -33,14 +33,22 @@
             <span v-if="book.sale_price" class="text-base text-gray-400 line-through mr-2">{{ formatPrice(book.price) }}</span>
             <span>{{ formatPrice(book.sale_price || book.price) }}</span>
           </div>
-          <!-- Show "View Cart" link if item is already in cart -->
-          <NuxtLink v-if="isInCart"
+
+          <!-- 1. Purchased State -->
+          <button v-if="book.is_purchased"
+                  disabled
+                  class="bg-gray-400 text-white font-bold py-2 px-6 rounded-lg w-48 text-center cursor-not-allowed">
+            خریداری شده
+          </button>
+
+          <!-- 2. In Cart State -->
+          <NuxtLink v-else-if="isInCart"
                     to="/cart"
                     class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center hover:bg-green-600">
             مشاهده سبد خرید
           </NuxtLink>
 
-          <!-- Otherwise, show the "Add to Cart" button -->
+          <!-- 3. Add to Cart State -->
           <button v-else
                   @click="addToCartHandler"
                   :disabled="isAddingToCart"
@@ -52,6 +60,7 @@
             <span v-if="isAddingToCart">در حال افزودن...</span>
             <span v-else>افزودن به سبد خرید</span>
           </button>
+
         </div>
       </div>
     </article>
@@ -108,20 +117,17 @@ const formatPrice = (price) => {
 }
 
 const addToCartHandler = async () => {
-  if (isInCart.value || isAddingToCart.value || !book.value) return
+  if (book.value?.is_purchased || isInCart.value || isAddingToCart.value || !book.value) return
 
   isAddingToCart.value = true
   try {
     await cartStore.addToCart({
       product_id: book.value.id,
       product_type: 'book',
-      quantity: 1, // Quantity is always 1 as per new requirement
       price: book.value.sale_price || book.value.price
     })
-    // The button will reactively update once `isInCart` becomes true
   } catch (err) {
     console.error('Failed to add to cart:', err)
-    // Optionally, show an error message to the user here
   } finally {
     isAddingToCart.value = false
   }
