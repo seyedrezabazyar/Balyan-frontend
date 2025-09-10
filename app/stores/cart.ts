@@ -50,11 +50,17 @@ export const useCartStore = defineStore('cart', {
     async addToCart(item: { product_id: number, product_type: string, price: number, quantity: number }) {
       const api = useApi()
       try {
-        const response = await api.post('/v1/cart/add', item)
-        await this.fetchCart()
-        return response
-      } catch (error) {
-        throw error
+        await api.post('/v1/cart/add', item)
+      } catch (error: any) {
+        // If the error is 409 Conflict, it means the item is already in the cart.
+        // This is not a real error for the user, so we can suppress it.
+        // For any other error, we let it propagate to the component.
+        if (error.response?.status !== 409) {
+          throw error;
+        }
+      } finally {
+        // No matter if it was a success or a 409 conflict, we want to sync the cart state.
+        await this.fetchCart();
       }
     },
 
