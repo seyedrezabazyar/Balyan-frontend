@@ -2,10 +2,9 @@ import { defineStore } from 'pinia'
 
 interface CartItem {
   id: number
-  book_id: number
+  product_id: number
   title: string
   price: number
-  quantity: number
   thumbnail?: string
 }
 
