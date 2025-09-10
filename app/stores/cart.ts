@@ -47,7 +47,7 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async addToCart(item: { product_id: number, product_type: string, price: number, quantity: number }) {
+    async addToCart(item: { product_id: number, product_type: string, price: number }) {
       const api = useApi()
       try {
         await api.post('/v1/cart/add', item)
