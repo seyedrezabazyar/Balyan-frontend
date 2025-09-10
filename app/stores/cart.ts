@@ -90,6 +90,20 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    async verifyPayment(payload: { status?: string, order_id?: string, authority?: string }) {
+      const api = useApi()
+      // The backend expects `payment_id` and `authority`.
+      // We are assuming the order_id from the URL can be used as payment_id.
+      // This might need adjustment based on the final backend implementation.
+      const response = await api.post('/v1/payment/verify', {
+        payment_id: payload.order_id,
+        authority: payload.authority,
+      })
+      // After successful verification, the cart should be empty. Let's refetch it.
+      await this.fetchCart()
+      return response
+    },
+
     async initiatePayment() {
       const api = useApi()
       this.paymentLoading = true
