@@ -34,16 +34,16 @@
             <span>{{ formatPrice(book.sale_price || book.price) }}</span>
           </div>
           <button @click="addToCartHandler"
-                  :disabled="addToCartStatus === 'loading'"
-                  class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition w-40 text-center"
+                  :disabled="isInCart || isAddingToCart"
+                  class="text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center"
                   :class="{
-                    'bg-green-500 hover:bg-green-600': addToCartStatus === 'success',
-                    'bg-red-500 hover:bg-red-600': addToCartStatus === 'error',
+                    'bg-green-500 cursor-not-allowed': isInCart,
+                    'bg-blue-600 hover:bg-blue-700': !isInCart && !isAddingToCart,
+                    'bg-blue-400 cursor-wait': isAddingToCart
                   }">
-            <span v-if="addToCartStatus === 'idle'">افزودن به سبد</span>
-            <span v-if="addToCartStatus === 'loading'">در حال افزودن...</span>
-            <span v-if="addToCartStatus === 'success'">اضافه شد!</span>
-            <span v-if="addToCartStatus === 'error'">خطا</span>
+            <span v-if="isInCart">موجود در سبد خرید</span>
+            <span v-else-if="isAddingToCart">در حال افزودن...</span>
+            <span v-else>افزودن به سبد خرید</span>
           </button>
         </div>
       </div>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApi } from '~/composables/useApi'
 import { useCartStore } from '~/stores/cart'
@@ -68,9 +68,13 @@ const cartStore = useCartStore()
 const book = ref(null)
 const loading = ref(true)
 const error = ref(null)
-const addToCartStatus = ref('idle') // idle, loading, success, error
+const isAddingToCart = ref(false)
 
 const slug = route.params.slug
+
+const isInCart = computed(() => {
+  return cartStore.items.some(item => item.book_id === book.value?.id)
+})
 
 const fetchBook = async () => {
   try {
@@ -97,25 +101,22 @@ const formatPrice = (price) => {
 }
 
 const addToCartHandler = async () => {
-  if (!book.value) return
-  addToCartStatus.value = 'loading'
+  if (isInCart.value || isAddingToCart.value || !book.value) return
+
+  isAddingToCart.value = true
   try {
     await cartStore.addToCart({
       product_id: book.value.id,
       product_type: 'book',
-      quantity: 1,
+      quantity: 1, // Quantity is always 1 as per new requirement
       price: book.value.sale_price || book.value.price
     })
-    addToCartStatus.value = 'success'
-    setTimeout(() => {
-      addToCartStatus.value = 'idle'
-    }, 2000)
+    // The button will reactively update once `isInCart` becomes true
   } catch (err) {
-    addToCartStatus.value = 'error'
     console.error('Failed to add to cart:', err)
-    setTimeout(() => {
-      addToCartStatus.value = 'idle'
-    }, 2000)
+    // Optionally, show an error message to the user here
+  } finally {
+    isAddingToCart.value = false
   }
 }
 
