@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 
 interface CartItem {
-  id: number
-  product_id: number
-  title: string
-  price: number
-  thumbnail?: string
+  id: number;
+  price: number;
+  product: {
+    id: number;
+    title: string;
+    slug: string;
+    thumbnail_url: string;
+  };
 }
 
 export const useCartStore = defineStore('cart', {
@@ -19,10 +22,11 @@ export const useCartStore = defineStore('cart', {
 
   getters: {
     uniqueItemCount: (state) => state.items.length,
-    itemCount: (state) => state.items.reduce((acc, item) => acc + item.quantity, 0),
-    cartTotal: (state) => state.items.reduce((acc, item) => acc + (item.price * item.quantity), 0),
+    // itemCount is now the same as uniqueItemCount since quantity is always 1
+    itemCount: (state) => state.items.length,
+    cartTotal: (state) => state.items.reduce((acc, item) => acc + item.price, 0),
     finalTotal: (state) => {
-      let total = state.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+      let total = state.items.reduce((acc, item) => acc + item.price, 0)
       if (state.coupon) {
         total = total - (state.coupon.discount_amount || 0)
       }
