@@ -89,7 +89,7 @@ const isAddingToCart = ref(false)
 const slug = route.params.slug
 
 const isInCart = computed(() => {
-  return cartStore.items.some(item => item.product_id === book.value?.id)
+  return cartStore.items.some(item => item.product.id === book.value?.id)
 })
 
 const fetchBook = async () => {
