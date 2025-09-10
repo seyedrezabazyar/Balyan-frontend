@@ -33,16 +33,23 @@
             <span v-if="book.sale_price" class="text-base text-gray-400 line-through mr-2">{{ formatPrice(book.price) }}</span>
             <span>{{ formatPrice(book.sale_price || book.price) }}</span>
           </div>
-          <button @click="addToCartHandler"
-                  :disabled="isInCart || isAddingToCart"
+          <!-- Show "View Cart" link if item is already in cart -->
+          <NuxtLink v-if="isInCart"
+                    to="/cart"
+                    class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center hover:bg-green-600">
+            مشاهده سبد خرید
+          </NuxtLink>
+
+          <!-- Otherwise, show the "Add to Cart" button -->
+          <button v-else
+                  @click="addToCartHandler"
+                  :disabled="isAddingToCart"
                   class="text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center"
                   :class="{
-                    'bg-green-500 cursor-not-allowed': isInCart,
-                    'bg-blue-600 hover:bg-blue-700': !isInCart && !isAddingToCart,
+                    'bg-blue-600 hover:bg-blue-700': !isAddingToCart,
                     'bg-blue-400 cursor-wait': isAddingToCart
                   }">
-            <span v-if="isInCart">موجود در سبد خرید</span>
-            <span v-else-if="isAddingToCart">در حال افزودن...</span>
+            <span v-if="isAddingToCart">در حال افزودن...</span>
             <span v-else>افزودن به سبد خرید</span>
           </button>
         </div>
