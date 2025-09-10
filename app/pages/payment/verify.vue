@@ -62,7 +62,7 @@ onMounted(async () => {
     } else {
       throw new Error(response.message || 'خطا در تایید پرداخت در سرور.')
     }
-  } catch (err: any) {
+  } catch (err) {
     status.value = 'failure'
     errorMessage.value = err.response?._data?.message || err.message || 'یک خطای پیش‌بینی نشده رخ داد.'
   }
