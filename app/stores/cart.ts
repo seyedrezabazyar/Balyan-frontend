@@ -46,7 +46,7 @@ export const useCartStore = defineStore('cart', {
         this.items = response.data?.items || []
         this.total = response.data?.total || 0
         this.coupon = response.coupon
-        this.cartId = response.data?.cart_id || null
+        this.cartId = response.data?.cart_id || response.cart_id || null
         return response
       } catch (error) {
         console.error('Error fetching cart:', error)
