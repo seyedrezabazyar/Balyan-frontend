@@ -55,6 +55,33 @@ const books = {
         id: 2,
         name: 'نشر تستی'
     }
+  },
+  'buf-e-kur': {
+    id: 3,
+    slug: 'buf-e-kur',
+    title: 'بوف کور',
+    publication_year: 1937,
+    pages_count: 132,
+    isbn: '978-964-351-012-4',
+    language: 'fa',
+    price: 35.00,
+    sale_price: null,
+    excerpt: 'رمانی نوشته صادق هدایت، نویسنده ایرانی، که از نخستین نثرهای داستانی مدرن در زبان فارسی به شمار می‌رود.',
+    image: {
+      id: 3,
+      url: 'https://images-na.ssl-images-amazon.com/images/I/51YJ4X1QZQL._SX331_BO1,204,203,200_.jpg'
+    },
+    authors: [
+      { id: 3, name: 'صادق هدایت', slug: 'sadegh-hedayat' }
+    ],
+    category: {
+      id: 3,
+      name: 'ادبیات داستانی'
+    },
+     publisher: {
+        id: 3,
+        name: 'نشر جامی'
+    }
   }
 }
 
