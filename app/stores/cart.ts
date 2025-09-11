@@ -102,7 +102,10 @@ export const useCartStore = defineStore('cart', {
       const api = useApi(authStore.token)
       this.paymentLoading = true
       try {
-        const response = await api.post('/v1/purchase/payment/initiate')
+        // Pass the cart items in the request body
+        const response = await api.post('/v1/purchase/payment/initiate', {
+          items: this.items
+        })
 
         // After a successful purchase, the cart on the server is cleared.
         // We fetch the (now empty) cart to sync the frontend state.
