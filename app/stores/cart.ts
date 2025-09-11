@@ -102,9 +102,9 @@ export const useCartStore = defineStore('cart', {
       const api = useApi(authStore.token)
       this.paymentLoading = true
       try {
-        // Pass the cart items in the request body
+        // Pass the cart items in the request body, formatted as the backend expects
         const response = await api.post('/v1/purchase/payment/initiate', {
-          items: this.items
+          items: this.items.map(item => ({ product_id: item.product.id }))
         })
 
         // After a successful purchase, the cart on the server is cleared.
