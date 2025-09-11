@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from '~/stores/auth'
 
 interface CartItem {
   id: number;
@@ -105,7 +106,8 @@ export const useCartStore = defineStore('cart', {
     },
 
     async initiatePayment() {
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       this.paymentLoading = true
       try {
         const response = await api.post('/v1/purchase/payment/initiate')
