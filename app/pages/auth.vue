@@ -193,10 +193,10 @@ const checkUser = async () => {
   try {
     const response = await api.post('/auth/check-user', { identifier: identifier.value })
 
-    // Assuming the response is { data: { userExists, hasPassword } } as per the new guide
-    const data = response.data
-    userExists.value = data.userExists
-    hasPassword.value = data.hasPassword
+    // The backend response is flat, so we access properties directly from the response object.
+    // Also, the property names from the backend are snake_case.
+    userExists.value = response.user_exists
+    hasPassword.value = response.has_password
 
     if (!userExists.value) {
       uiState.value = 'register'
