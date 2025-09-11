@@ -274,9 +274,13 @@ const checkUser = async () => {
 
   loading.value = true;
   try {
-    const response = await api.post('/auth/check-user', {
-      identifier: identifier.value
-    })
+    const response = await api.post(
+      '/auth/check-user',
+      {
+        identifier: identifier.value
+      },
+      { baseURL: '/' }
+    )
 
     // اگر response یک string است، آن را parse کن
     let parsedResponse = response
@@ -343,10 +347,14 @@ const loginWithPassword = async () => {
 
     console.log('Login attempt:', { identifier: cleanIdentifier })
 
-    const response = await api.post('/auth/login-password', {
-      identifier: cleanIdentifier,
-      password: cleanPassword
-    })
+    const response = await api.post(
+      '/auth/login-password',
+      {
+        identifier: cleanIdentifier,
+        password: cleanPassword
+      },
+      { baseURL: '/' }
+    )
 
     console.log('Login response:', response)
 
