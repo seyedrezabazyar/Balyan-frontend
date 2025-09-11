@@ -61,8 +61,8 @@
                     :disabled="cartStore.paymentLoading"
                     class="mt-4 w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition"
                     :class="{ 'opacity-50 cursor-not-allowed': cartStore.paymentLoading }">
-              <span v-if="cartStore.paymentLoading">در حال انتقال...</span>
-              <span v-else>ادامه و پرداخت</span>
+              <span v-if="cartStore.paymentLoading">در حال خرید...</span>
+              <span v-else>خرید</span>
             </button>
         </div>
       </div>
