@@ -19,6 +19,7 @@ export const useCartStore = defineStore('cart', {
     coupon: null as any,
     loading: false,
     paymentLoading: false,
+    cartId: null as number | string | null,
   }),
 
   getters: {
@@ -45,6 +46,7 @@ export const useCartStore = defineStore('cart', {
         this.items = response.data?.items || []
         this.total = response.data?.total || 0
         this.coupon = response.coupon
+        this.cartId = response.data?.cart_id || null
         return response
       } catch (error) {
         console.error('Error fetching cart:', error)
@@ -90,6 +92,7 @@ export const useCartStore = defineStore('cart', {
         this.items = []
         this.total = 0
         this.coupon = null
+        this.cartId = null
       } catch (error) {
         throw error
       }
@@ -102,9 +105,9 @@ export const useCartStore = defineStore('cart', {
       const api = useApi(authStore.token)
       this.paymentLoading = true
       try {
-        // Pass the cart items in the request body, formatted as the backend expects
+        // As per backend instructions, only the guest_cart_id is needed.
         const response = await api.post('/v1/purchase/payment/initiate', {
-          items: this.items.map(item => ({ product_id: item.product.id }))
+          guest_cart_id: this.cartId
         })
 
         // After a successful purchase, the cart on the server is cleared.
