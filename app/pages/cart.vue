@@ -73,12 +73,15 @@
 <script setup>
 import { useCartStore } from '~/stores/cart'
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useHead } from '#app'
 
 useHead({
   title: 'سبد خرید',
 })
 
 const cartStore = useCartStore()
+const router = useRouter()
 
 const formatPrice = (price) => {
   if (price === null || price === undefined) return ''
@@ -97,11 +100,18 @@ const clearCart = async () => {
 
 const proceedToPayment = async () => {
   try {
-    await cartStore.initiatePayment()
+    const response = await cartStore.initiatePayment()
+    if (response && response.success) {
+      alert(response.data?.message || 'خرید شما با موفقیت انجام شد!')
+      router.push('/dashboard')
+    } else {
+      // Handle cases where the API returns success: false or other non-crashing errors
+      throw new Error(response?.message || 'سرور با خطا مواجه شد.')
+    }
   } catch (error) {
-    // You might want to show an error message to the user
+    // Handle crashes or errors thrown from the block above
     console.error('Payment initiation failed:', error)
-    alert('خطا در شروع فرآیند پرداخت. لطفاً دوباره تلاش کنید.')
+    alert(error.response?._data?.message || error.message || 'خطا در شروع فرآیند پرداخت. لطفاً دوباره تلاش کنید.')
   }
 }
 

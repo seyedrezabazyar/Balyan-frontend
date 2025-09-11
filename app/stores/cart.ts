@@ -91,28 +91,18 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
-    async verifyPayment(payload: { status?: string, order_id?: string, authority?: string }) {
-      const api = useApi()
-      // The backend expects `payment_id` and `authority`.
-      // We are assuming the order_id from the URL can be used as payment_id.
-      // This might need adjustment based on the final backend implementation.
-      const response = await api.post('/v1/payment/verify', {
-        payment_id: payload.order_id,
-        authority: payload.authority,
-      })
-      // After successful verification, the cart should be empty. Let's refetch it.
-      await this.fetchCart()
-      return response
-    },
-
     async initiatePayment() {
-      const api = useApi() // Reverted: Do not send token, rely on session cookie
+      // This action now directly completes the purchase without a gateway redirect.
+      // It relies on the session cookie for authentication.
+      const api = useApi()
       this.paymentLoading = true
       try {
         const response = await api.post('/v1/purchase/payment/initiate')
-        if (response.payment_url) {
-          window.location.href = response.payment_url
-        }
+
+        // After a successful purchase, the cart on the server is cleared.
+        // We fetch the (now empty) cart to sync the frontend state.
+        await this.fetchCart()
+
         return response
       } catch (error) {
         throw error
