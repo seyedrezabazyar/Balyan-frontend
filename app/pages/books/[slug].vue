@@ -42,11 +42,11 @@
           </button>
 
           <!-- 2. In Cart State -->
-          <NuxtLink v-else-if="isInCart"
-                    to="/cart"
-                    class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center hover:bg-green-600">
-            مشاهده سبد خرید
-          </NuxtLink>
+          <button v-else-if="isInCart"
+                  disabled
+                  class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg w-48 text-center cursor-not-allowed">
+            رفته به سبد خرید
+          </button>
 
           <!-- 3. Add to Cart State -->
           <button v-else
