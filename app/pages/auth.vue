@@ -377,9 +377,13 @@ const requestOtp = async () => {
 
     console.log('Requesting OTP for:', cleanIdentifier)
 
-    const response = await api.post('/auth/send-otp', {
-      identifier: cleanIdentifier
-    })
+    const response = await api.post(
+      '/auth/send-otp',
+      {
+        identifier: cleanIdentifier
+      },
+      { baseURL: '/' }
+    )
 
     console.log('OTP request response:', response)
 
@@ -414,7 +418,11 @@ const verifyOtp = async () => {
       requestData.name = sanitizeInput(userName.value)
     }
 
-    const response = await api.post('/auth/verify-otp', requestData)
+    const response = await api.post(
+      '/auth/verify-otp',
+      requestData,
+      { baseURL: '/' }
+    )
 
     console.log('OTP verification response:', response)
 
