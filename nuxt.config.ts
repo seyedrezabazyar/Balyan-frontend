@@ -22,22 +22,20 @@ export default defineNuxtConfig({
 
   ssr: false,
 
-  nitro: {
-    devProxy: {
-      '/api': {
-        target: 'http://localhost:8000/api',
-        changeOrigin: true,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json; charset=utf-8'
+  vite: {
+    server: {
+      proxy: {
+        // Proxy all requests starting with /api to the backend
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true, // This is crucial for fixing host-header related issues
         },
-        cookieDomainRewrite: {
-          '*': ''
+
+        // Also proxy the /sanctum endpoint for authentication
+        '/sanctum': {
+          target: 'http://localhost:8000',
+          changeOrigin: true, // Also crucial here
         }
-      },
-      '/sanctum': {
-        target: 'http://localhost:8000/sanctum',
-        changeOrigin: true,
       }
     }
   },
