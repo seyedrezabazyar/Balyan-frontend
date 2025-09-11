@@ -160,43 +160,31 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    initAuth() {
+    async initAuth() {
       if (process.client) {
-        console.log('Initializing auth from localStorage')
+        console.log('Initializing auth from localStorage and verifying with server...');
 
-        const token = localStorage.getItem('token')
-        const userStr = localStorage.getItem('user')
-        const isAuthenticated = localStorage.getItem('isAuthenticated')
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('No token found in localStorage. User is logged out.');
+          this.clearAuth();
+          return;
+        }
 
-        console.log('Found in localStorage:', {
-          hasToken: !!token,
-          hasUser: !!userStr,
-          isAuthenticated
-        })
+        this.token = token;
+        this.isAuthenticated = true; // Optimistically set to true
+        this.refreshToken = localStorage.getItem('refreshToken');
 
-        if (token && isAuthenticated === 'true') {
-          this.token = token
-          this.refreshToken = localStorage.getItem('refreshToken')
+        console.log('Token found in localStorage. Attempting to fetch user data to verify session.');
 
-          try {
-            let parsedUser: any = null
-            if (userStr && userStr !== 'undefined') {
-              parsedUser = JSON.parse(userStr)
-            }
-            this.user = parsedUser
-            this.isAuthenticated = true
-            console.log('Auth initialized successfully:', {
-              tokenLength: this.token.length,
-              userName: this.user?.name,
-              isAdmin: this.isAdmin
-            })
-          } catch (error) {
-            console.warn('Error parsing user data from localStorage, defaulting to null user:', error)
-            this.user = null
-            this.isAuthenticated = true
-          }
+        // Now, verify the token by fetching the user.
+        // The fetchUser action will handle clearing auth on failure.
+        const user = await this.fetchUser();
+
+        if (user) {
+          console.log('Session verified successfully. User is logged in.');
         } else {
-          console.log('Auth data not found or incomplete in localStorage')
+          console.log('Session verification failed. Token is likely invalid or expired. User has been logged out.');
         }
       }
     }
