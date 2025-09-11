@@ -106,8 +106,7 @@ export const useCartStore = defineStore('cart', {
     },
 
     async initiatePayment() {
-      const authStore = useAuthStore()
-      const api = useApi(authStore.token)
+      const api = useApi() // Reverted: Do not send token, rely on session cookie
       this.paymentLoading = true
       try {
         const response = await api.post('/v1/purchase/payment/initiate')
