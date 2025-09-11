@@ -1,6 +1,6 @@
-import { defineEventHandler, getRouterParam } from 'h3'
+import { defineEventHandler } from 'h3'
 
-// Use the same mock data as the book list endpoint for consistency
+// Mock data to simulate a database
 const mockBooks = [
   {
     id: 1,
@@ -38,31 +38,19 @@ const mockBooks = [
   },
 ];
 
-
 export default defineEventHandler((event) => {
-  const slug = getRouterParam(event, 'slug')
-
-  // Find the book in the array by its slug
-  const book = mockBooks.find(b => b.slug === slug)
-
-  if (book) {
-    // The frontend expects a specific wrapper object
-    return {
-      success: true,
-      data: {
-        book: book
-      },
-      error: null,
-      error_code: null
-    }
-  }
-
-  // Set the status code and return an error object if not found
-  event.node.res.statusCode = 404
+  // The frontend component expects a specific structure with `data` and `meta` properties.
   return {
-    success: false,
-    data: null,
-    error: 'کتاب مورد نظر یافت نشد.',
-    error_code: 'NOT_FOUND'
+    success: true,
+    data: mockBooks,
+    meta: {
+      current_page: 1,
+      last_page: 1,
+      per_page: 10,
+      total: mockBooks.length
+    },
+    links: {},
+    error: null,
+    error_code: null
   }
 })
