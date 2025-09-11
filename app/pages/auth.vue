@@ -8,185 +8,93 @@
 
         <!-- Debug Info -->
         <div v-if="showDebug" class="mb-4 p-3 bg-gray-100 rounded text-xs">
-          <p><strong>Step:</strong> {{ step }}</p>
+          <p><strong>UI State:</strong> {{ uiState }}</p>
+          <p><strong>Identifier:</strong> {{ identifier }}</p>
           <p><strong>User Exists:</strong> {{ userExists }}</p>
           <p><strong>Has Password:</strong> {{ hasPassword }}</p>
           <p><strong>OTP Sent:</strong> {{ otpSent }}</p>
-          <p><strong>Identifier:</strong> {{ identifier }}</p>
         </div>
 
-        <!-- Step 1: Enter identifier -->
-        <div v-if="step === 1">
+        <!-- Step 1: Enter Identifier -->
+        <div v-if="uiState === 'identifier'">
           <form @submit.prevent="checkUser">
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                شماره موبایل یا ایمیل
-              </label>
-              <input
-                v-model="identifier"
-                type="text"
-                dir="ltr"
-                placeholder="09123456789 or email@example.com"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left"
-                :class="{ 'border-red-500': identifierError }"
-                required
-                @input="identifier = formatters.toEnglishDigits($event.target.value)"
-              />
+              <label class="block text-sm font-medium text-gray-700 mb-2">شماره موبایل یا ایمیل</label>
+              <input v-model="identifier" type="text" dir="ltr" placeholder="09123456789 or email@example.com" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left" :class="{ 'border-red-500': identifierError }" required @input="identifier = formatters.toEnglishDigits($event.target.value)" />
               <p v-if="identifierError" class="text-xs text-red-500 mt-1">{{ identifierError }}</p>
             </div>
-            <button
-              type="submit"
-              :disabled="isSubmitDisabled"
-              class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
+            <button type="submit" :disabled="isSubmitDisabled" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
               {{ loading ? 'در حال بررسی...' : 'ادامه' }}
             </button>
           </form>
         </div>
 
-        <!-- Step 2: Authentication Options -->
-        <div v-else-if="step === 2">
-          <!-- Show identifier -->
+        <!-- Step 2: Password Login -->
+        <div v-if="uiState === 'password'">
           <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-            <p class="text-sm text-blue-800">
-              <strong>شناسه:</strong> {{ identifier }}
-            </p>
-            <p class="text-xs text-blue-600 mt-1">
-              {{ userExists ? 'کاربر موجود است' : 'کاربر جدید خواهد شد' }}
-              {{ hasPassword ? ' - دارای رمز عبور' : ' - بدون رمز عبور' }}
-            </p>
+            <p class="text-sm text-blue-800"><strong>شناسه:</strong> {{ identifier }}</p>
           </div>
+          <form @submit.prevent="loginWithPassword">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">رمز عبور</label>
+              <input v-model="password" type="password" placeholder="رمز عبور خود را وارد کنید" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
+            </div>
+            <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
+              {{ loading ? 'در حال ورود...' : 'ورود با رمز عبور' }}
+            </button>
+            <button type="button" @click="requestOtp()" class="w-full text-blue-600 hover:text-blue-700 text-sm border border-blue-300 py-2 rounded-lg">
+              ورود با کد یکبار مصرف
+            </button>
+          </form>
+        </div>
 
-          <!-- Password Login (if user exists and has password) -->
-          <div v-if="userExists && hasPassword && !showOtpForm">
-            <form @submit.prevent="loginWithPassword">
-              <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  رمز عبور
-                </label>
-                <input
-                  v-model="password"
-                  type="password"
-                  placeholder="رمز عبور خود را وارد کنید"
-                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                :disabled="loading"
-                class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3"
-              >
-                {{ loading ? 'در حال ورود...' : 'ورود با رمز عبور' }}
-              </button>
-              <button
-                type="button"
-                @click="switchToOtp"
-                class="w-full text-blue-600 hover:text-blue-700 text-sm border border-blue-300 py-2 rounded-lg"
-              >
-                ورود با کد یکبار مصرف
-              </button>
-            </form>
+        <!-- Step 2: Register (New User) -->
+        <div v-if="uiState === 'register'">
+           <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-sm text-blue-800"><strong>شناسه:</strong> {{ identifier }}</p>
+            <p class="text-xs text-blue-600 mt-1">به نظر می‌رسد کاربر جدید هستید. برای تکمیل ثبت‌نام، نام خود را وارد کرده و کد تایید را دریافت کنید.</p>
           </div>
-
-          <!-- OTP Form -->
-          <div v-else-if="showOtpForm || !userExists || !hasPassword">
-            <!-- Step 2a: Request OTP -->
-            <div v-if="!otpSent">
-              <p class="text-sm text-gray-600 mb-4">
-                {{ userExists ? 'برای ورود، کد تایید ارسال خواهد شد.' : 'برای ثبت‌نام، کد تایید ارسال خواهد شد.' }}
-              </p>
-
-              <!-- Add name field for new users -->
-              <div v-if="!userExists" class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  نام شما
-                </label>
-                <input
-                  v-model="userName"
-                  type="text"
-                  placeholder="نام و نام خانوادگی"
-                  class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  :class="{ 'text-right': nameDirection === 'rtl', 'text-left': nameDirection === 'ltr' }"
-                  :dir="nameDirection"
-                  required
-                />
+          <form @submit.prevent="requestOtp()">
+             <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">نام شما</label>
+                <input v-model="userName" type="text" placeholder="نام و نام خانوادگی" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" :class="{ 'text-right': nameDirection === 'rtl', 'text-left': nameDirection === 'ltr' }" :dir="nameDirection" required />
                 <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
               </div>
+            <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+              {{ loading ? 'در حال ارسال...' : 'ارسال کد تایید و ثبت‌نام' }}
+            </button>
+          </form>
+        </div>
 
-              <button
-                @click="requestOtp"
-                :disabled="loading"
-                class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {{ loading ? 'در حال ارسال...' : 'ارسال کد تایید' }}
+        <!-- Step 2: OTP Login / Verification -->
+        <div v-if="uiState === 'otp'">
+          <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-sm text-blue-800"><strong>شناسه:</strong> {{ identifier }}</p>
+            <p class="text-xs text-blue-600 mt-1" v-if="!userExists">برای ثبت‌نام، کد تایید به شما ارسال خواهد شد.</p>
+            <p class="text-xs text-blue-600 mt-1" v-else-if="!hasPassword">حساب شما رمز عبور ندارد. برای ورود، کد تایید ارسال خواهد شد.</p>
+            <p class="text-xs text-gray-600 mb-2 mt-2" v-if="otpSent">کد تایید به {{ identifier }} ارسال شد.</p>
+          </div>
+          <form @submit.prevent="verifyOtpAndLogin">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">کد تایید ۶ رقمی</label>
+               <p class="text-xs text-red-600 mb-2">برای تست، کد تایید: <strong>123456</strong></p>
+              <input v-model="otp" type="text" placeholder="123456" maxlength="6" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest" required @input="otp = otp.replace(/[^0-9]/g, '')" />
+            </div>
+            <button type="submit" :disabled="loading || otp.length !== 6" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
+              {{ loading ? 'در حال تایید...' : 'تایید و ورود' }}
+            </button>
+            <div class="flex justify-between text-sm">
+              <button type="button" @click="requestOtp()" :disabled="resendTimer > 0" class="text-blue-600 hover:text-blue-700 disabled:text-gray-400">
+                {{ resendTimer > 0 ? `ارسال مجدد (${resendTimer})` : 'ارسال مجدد کد' }}
               </button>
             </div>
-
-            <!-- Step 2b: Verify OTP -->
-            <div v-else>
-              <form @submit.prevent="verifyOtp">
-                <p class="text-sm text-gray-600 mb-2">
-                  کد تایید به {{ identifier }} ارسال شد
-                </p>
-                <p class="text-xs text-red-600 mb-4">
-                  برای تست، کد تایید: <strong>123456</strong>
-                </p>
-                <div class="mb-4">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    کد تایید ۶ رقمی
-                  </label>
-                  <input
-                    v-model="otp"
-                    type="text"
-                    placeholder="123456"
-                    maxlength="6"
-                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
-                    required
-                    @input="otp = otp.replace(/[^0-9]/g, '')"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  :disabled="loading || otp.length !== 6"
-                  class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3"
-                >
-                  {{ loading ? 'در حال تایید...' : 'تایید و ورود' }}
-                </button>
-                <div class="flex justify-between text-sm">
-                  <button
-                    type="button"
-                    @click="requestOtp"
-                    :disabled="resendTimer > 0"
-                    class="text-blue-600 hover:text-blue-700 disabled:text-gray-400"
-                  >
-                    {{ resendTimer > 0 ? `ارسال مجدد (${resendTimer})` : 'ارسال مجدد کد' }}
-                  </button>
-                  <button
-                    type="button"
-                    @click="changeIdentifier"
-                    class="text-gray-600 hover:text-gray-700"
-                  >
-                    تغییر شماره/ایمیل
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          </form>
         </div>
 
         <!-- Back button -->
-        <div v-if="step > 1" class="flex gap-2 mt-4">
-          <button
-            @click="goBack"
-            class="text-sm text-gray-600 hover:text-gray-700"
-          >
-            بازگشت
-          </button>
-          <button
-            @click="showDebug = !showDebug"
-            class="text-xs text-gray-500 hover:text-gray-700 ml-auto"
-          >
+        <div v-if="uiState !== 'identifier'" class="flex gap-2 mt-4">
+          <button @click="changeIdentifier" class="text-sm text-gray-600 hover:text-gray-700">بازگشت و تغییر شناسه</button>
+          <button @click="showDebug = !showDebug" class="text-xs text-gray-500 hover:text-gray-700 ml-auto">
             {{ showDebug ? 'مخفی کردن' : 'نمایش' }} Debug
           </button>
         </div>
@@ -194,16 +102,14 @@
         <!-- Error message -->
         <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p class="text-sm text-red-600">{{ error }}</p>
-          <button @click="error = ''" class="text-xs text-red-500 underline mt-1">
-            بستن
-          </button>
+          <button @click="error = ''" class="text-xs text-red-500 underline mt-1">بستن</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onUnmounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
@@ -221,117 +127,90 @@ const authStore = useAuthStore()
 const router = useRouter()
 const formatters = useFormatters()
 
-// State
-const step = ref(1)
+// New state management
+type UiState = 'identifier' | 'register' | 'password' | 'otp'
+const uiState = ref<UiState>('identifier')
+
+// Form data
 const identifier = ref('')
 const password = ref('')
 const otp = ref('')
 const userName = ref('')
+
+// User status from API
 const userExists = ref(false)
 const hasPassword = ref(false)
-const otpSent = ref(false)
+
+// UI control state
 const loading = ref(false)
 const error = ref('')
+const otpSent = ref(false) // Still useful to know when to show OTP input vs. "send" button
 const resendTimer = ref(0)
-const showOtpForm = ref(false)
+
+// For debug panel
 const showDebug = ref(false)
+
+// Input helpers
 const nameDirection = ref('rtl')
 const identifierError = ref('')
 const nameError = ref('')
 
-let resendInterval = null
+let resendInterval: NodeJS.Timeout | null = null
 
 const isSubmitDisabled = computed(() => {
   return loading.value || !identifier.value.trim() || !!identifierError.value
 })
 
-// Helper function
-const sanitizeInput = (input) => {
-  if (typeof input !== 'string') return input
-  return input.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+const changeIdentifier = () => {
+  uiState.value = 'identifier'
+  password.value = ''
+  otp.value = ''
+  userName.value = ''
+  otpSent.value = false
+  error.value = ''
 }
 
 const checkUser = async () => {
-  error.value = '';
-  identifierError.value = '';
+  error.value = ''
+  identifierError.value = ''
 
-  const value = formatters.toEnglishDigits(identifier.value.trim());
-  const isEmail = value.includes('@');
-
-  if (isEmail) {
+  const value = formatters.toEnglishDigits(identifier.value.trim())
+  if (value.includes('@')) {
     if (!validator.isEmail(value)) {
-      identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.';
-      return;
+      identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.'
+      return
     }
   } else {
-    const normalizedPhone = formatters.normalizePhone(value);
+    const normalizedPhone = formatters.normalizePhone(value)
     if (!validator.isMobilePhone(normalizedPhone, 'fa-IR')) {
-      identifierError.value = 'شماره موبایل وارد شده معتبر نیست.';
-      return;
+      identifierError.value = 'شماره موبایل وارد شده معتبر نیست.'
+      return
     }
-    identifier.value = normalizedPhone;
+    identifier.value = normalizedPhone
   }
 
-  loading.value = true;
+  loading.value = true
   try {
-    const response = await api.post(
-      '/auth/check-user',
-      {
-        identifier: identifier.value
-      },
-      { baseURL: '/' }
-    )
+    const response = await api.post('/auth/check-user', { identifier: identifier.value })
 
-    // اگر response یک string است، آن را parse کن
-    let parsedResponse = response
-    if (typeof response === 'string') {
-      try {
-        parsedResponse = JSON.parse(response)
-      } catch (e) {
-        console.error('Failed to parse response:', e)
-        parsedResponse = response
-      }
+    // Assuming the response is { data: { userExists, hasPassword } } as per the new guide
+    const data = response.data
+    userExists.value = data.userExists
+    hasPassword.value = data.hasPassword
+
+    if (!userExists.value) {
+      uiState.value = 'register'
+    } else if (hasPassword.value) {
+      uiState.value = 'password'
+    } else {
+      uiState.value = 'otp'
+      // Automatically request OTP for users without password
+      await requestOtp(false) // pass false to not show loading spinner again
     }
-
-    // بررسی ساختارهای مختلف response
-    const data = parsedResponse?.data || parsedResponse
-
-    // تشخیص وجود کاربر با روش‌های مختلف
-    const userExistsCheck =
-      data?.user_exists === true ||
-      data?.exists === true ||
-      data?.status === 'existing_user_with_password' ||
-      data?.status === 'existing_user_otp_only'
-
-    // تشخیص وجود رمز عبور
-    const hasPasswordCheck =
-      data?.has_password === true ||
-      data?.requires_password === true ||
-      data?.status === 'existing_user_with_password'
-
-    userExists.value = userExistsCheck
-    hasPassword.value = hasPasswordCheck
-
-    console.log('Parsed response:', {
-      userExists: userExists.value,
-      hasPassword: hasPassword.value,
-      responseStatus: data?.status,
-      rawData: data
-    })
-
-    step.value = 2
-
-    // If new user or user without password, show OTP form immediately
-    if (!userExists.value || !hasPassword.value) {
-      showOtpForm.value = true
-    }
-
-  } catch (err) {
+  } catch (err: any) {
     console.error('Check user error:', err)
-    console.error('Error response:', err?.response)
-    console.error('Error data:', err?.data)
-
-    error.value = err.data?.message || err.message || 'خطایی رخ داده است'
+    error.value = err.data?.message || 'خطایی در بررسی اطلاعات رخ داده است.'
+    // If check-user fails, stay on the identifier page
   } finally {
     loading.value = false
   }
@@ -340,142 +219,71 @@ const checkUser = async () => {
 const loginWithPassword = async () => {
   error.value = ''
   loading.value = true
-
   try {
-    const cleanIdentifier = sanitizeInput(identifier.value)
-    const cleanPassword = sanitizeInput(password.value)
-
-    console.log('Login attempt:', { identifier: cleanIdentifier })
-
-    const response = await api.post(
-      '/auth/login-password',
-      {
-        identifier: cleanIdentifier,
-        password: cleanPassword
-      },
-      { baseURL: '/' }
-    )
-
-    console.log('Login response:', response)
-
+    const response = await api.post('/auth/login-password', {
+      identifier: identifier.value,
+      password: password.value
+    })
     authStore.setAuth(response)
     await router.push('/dashboard')
-  } catch (err) {
+  } catch (err: any) {
     console.error('Login error:', err)
-    error.value = err.data?.message || err.message || 'خطا در ورود. لطفاً رمز عبور خود را بررسی کنید.'
+    error.value = err.data?.message || 'شناسه یا رمز عبور اشتباه است.'
   } finally {
     loading.value = false
   }
 }
 
-const requestOtp = async () => {
+// Pass a flag to control the loading spinner, as this can be called automatically
+const requestOtp = async (showLoading = true) => {
   error.value = ''
-  loading.value = true
-
+  if (showLoading) loading.value = true
   try {
-    const cleanIdentifier = sanitizeInput(identifier.value)
-
-    console.log('Requesting OTP for:', cleanIdentifier)
-
-    const response = await api.post(
-      '/auth/send-otp',
-      {
-        identifier: cleanIdentifier
-      },
-      { baseURL: '/' }
-    )
-
-    console.log('OTP request response:', response)
-
+    await api.post('/auth/send-otp', { identifier: identifier.value })
     otpSent.value = true
-    showOtpForm.value = true
+    uiState.value = 'otp' // Ensure we are in the OTP state
     startResendTimer()
-  } catch (err) {
+  } catch (err: any) {
     console.error('OTP request error:', err)
-    error.value = err.data?.message || err.message || 'خطا در ارسال کد تایید'
+    error.value = err.data?.message || 'خطا در ارسال کد تایید.'
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
-const verifyOtp = async () => {
+const verifyOtpAndLogin = async () => {
   error.value = ''
   loading.value = true
-
   try {
-    const cleanIdentifier = sanitizeInput(identifier.value)
-    const cleanOtp = sanitizeInput(otp.value)
-
-    console.log('Verifying OTP:', { identifier: cleanIdentifier, otp: cleanOtp })
-
-    const requestData = {
-      identifier: cleanIdentifier,
-      otp: cleanOtp
+    const payload: { identifier: string; otp: string; name?: string } = {
+      identifier: identifier.value,
+      otp: otp.value
+    }
+    if (uiState.value === 'register' && userName.value) {
+      payload.name = userName.value
     }
 
-    // Add name for new users
-    if (!userExists.value && userName.value) {
-      requestData.name = sanitizeInput(userName.value)
-    }
-
-    const response = await api.post(
-      '/auth/verify-otp',
-      requestData,
-      { baseURL: '/' }
-    )
-
-    console.log('OTP verification response:', response)
-
+    const response = await api.post('/auth/verify-otp', payload)
     authStore.setAuth(response)
     await router.push('/dashboard')
-  } catch (err) {
+  } catch (err: any) {
     console.error('OTP verification error:', err)
-    error.value = err.data?.message || err.message || 'کد تایید اشتباه است'
+    error.value = err.data?.message || 'کد تایید اشتباه است.'
   } finally {
     loading.value = false
   }
-}
-
-const switchToOtp = () => {
-  showOtpForm.value = true
-  password.value = ''
 }
 
 const startResendTimer = () => {
   resendTimer.value = 60
   if (resendInterval) clearInterval(resendInterval)
   resendInterval = setInterval(() => {
-    resendTimer.value--
-    if (resendTimer.value <= 0) {
-      clearInterval(resendInterval)
+    if (resendTimer.value > 0) {
+      resendTimer.value--
+    } else {
+      clearInterval(resendInterval!)
     }
   }, 1000)
-}
-
-const changeIdentifier = () => {
-  step.value = 1
-  otpSent.value = false
-  showOtpForm.value = false
-  otp.value = ''
-  password.value = ''
-  userName.value = ''
-  userExists.value = false
-  hasPassword.value = false
-  error.value = ''
-}
-
-const goBack = () => {
-  if (step.value === 2) {
-    if (otpSent.value) {
-      otpSent.value = false
-      otp.value = ''
-    } else if (showOtpForm.value && userExists.value && hasPassword.value) {
-      showOtpForm.value = false
-      password.value = ''
-    } else {
-      changeIdentifier()
-    }
-  }
 }
 
 onUnmounted(() => {
@@ -483,14 +291,10 @@ onUnmounted(() => {
 })
 
 watch(userName, (newName) => {
-  nameError.value = ''
-  if (newName && newName.length > 0) {
-    const isRtl = /[\u0600-\u06FF]/.test(newName.charAt(0));
-    nameDirection.value = isRtl ? 'rtl' : 'ltr';
+  if (newName && /[\u0600-\u06FF]/.test(newName.charAt(0))) {
+    nameDirection.value = 'rtl'
+  } else {
+    nameDirection.value = 'ltr'
   }
-})
-
-watch(identifier, (newIdentifier) => {
-  identifierError.value = ''
 })
 </script>
