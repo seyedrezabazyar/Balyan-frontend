@@ -26,24 +26,6 @@ export default defineNuxtConfig({
     host: '0.0.0.0'
   },
 
-  vite: {
-    server: {
-      proxy: {
-        // Proxy all requests starting with /api to the backend
-        '/api': {
-          target: 'http://localhost:8000',
-          changeOrigin: true, // This is crucial for fixing host-header related issues
-        },
-
-        // Also proxy the /sanctum endpoint for authentication
-        '/sanctum': {
-          target: 'http://localhost:8000',
-          changeOrigin: true, // Also crucial here
-        }
-      }
-    }
-  },
-
   pinia: {
     storesDirs: ['./stores/**']
   },
