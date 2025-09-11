@@ -37,7 +37,8 @@ export const useCartStore = defineStore('cart', {
 
   actions: {
     async fetchCart() {
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       this.loading = true
       try {
         const response = await api.get('/v1/cart')
@@ -53,7 +54,8 @@ export const useCartStore = defineStore('cart', {
     },
 
     async addToCart(item: { product_id: number, product_type: string, price: number }) {
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       try {
         await api.post('/v1/cart/add', item)
       } catch (error: any) {
@@ -70,7 +72,8 @@ export const useCartStore = defineStore('cart', {
     },
 
     async removeFromCart(itemId: number) {
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       try {
         await api.delete(`/v1/cart/remove/${itemId}`)
         await this.fetchCart()
@@ -80,7 +83,8 @@ export const useCartStore = defineStore('cart', {
     },
 
     async clearCart() {
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       try {
         await api.delete('/v1/cart/clear')
         this.items = []
@@ -94,7 +98,8 @@ export const useCartStore = defineStore('cart', {
     async initiatePayment() {
       // This action now directly completes the purchase without a gateway redirect.
       // It relies on the session cookie for authentication.
-      const api = useApi()
+      const authStore = useAuthStore()
+      const api = useApi(authStore.token)
       this.paymentLoading = true
       try {
         const response = await api.post('/v1/purchase/payment/initiate')
