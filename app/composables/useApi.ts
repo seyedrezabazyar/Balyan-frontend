@@ -56,7 +56,7 @@ export const useApi = (token: string | null = null) => {
     get: (url: string, options = {}) => {
       console.log('Making GET request to:', url)
       return $fetch(url, {
-        baseURL: config.public.apiBase,
+        baseURL: process.dev ? '' : config.public.apiBase,
         method: 'GET',
         headers: createHeaders(false),
         credentials: 'include',
@@ -110,7 +110,7 @@ export const useApi = (token: string | null = null) => {
       }
 
       return $fetch(url, {
-        baseURL: config.public.apiBase,
+        baseURL: process.dev ? '' : config.public.apiBase,
         method: 'POST',
         body: processedBody,
         headers: createHeaders(true),
@@ -154,7 +154,7 @@ export const useApi = (token: string | null = null) => {
     put: (url: string, body = {}, options = {}) => {
       console.log('Making PUT request to:', url)
       return $fetch(url, {
-        baseURL: config.public.apiBase,
+        baseURL: process.dev ? '' : config.public.apiBase,
         method: 'PUT',
         body,
         headers: createHeaders(true),
@@ -173,7 +173,7 @@ export const useApi = (token: string | null = null) => {
     patch: (url: string, body = {}, options = {}) => {
       console.log('Making PATCH request to:', url)
       return $fetch(url, {
-        baseURL: config.public.apiBase,
+        baseURL: process.dev ? '' : config.public.apiBase,
         method: 'PATCH',
         body,
         headers: createHeaders(true),
@@ -192,7 +192,7 @@ export const useApi = (token: string | null = null) => {
     delete: (url: string, options = {}) => {
       console.log('Making DELETE request to:', url)
       return $fetch(url, {
-        baseURL: config.public.apiBase,
+        baseURL: process.dev ? '' : config.public.apiBase,
         method: 'DELETE',
         headers: createHeaders(false),
         credentials: 'include',
