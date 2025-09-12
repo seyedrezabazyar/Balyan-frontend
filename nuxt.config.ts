@@ -14,7 +14,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api',
+      apiBase: '/api',
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'کتابخانه دیجیتال',
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '1.0.0'
     }

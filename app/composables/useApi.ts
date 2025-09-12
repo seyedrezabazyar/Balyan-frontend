@@ -31,58 +31,24 @@ export const useApi = (token: string | null = null) => {
     return headers
   }
 
-  // تابع پردازش response برای تمیز کردن و parse کردن
+  // A more robust response processor.
+  // $fetch automatically parses JSON, so this is mainly a fallback
+  // and a handler for non-JSON responses to prevent crashes.
   const processResponse = (response: any): any => {
-    console.log('Processing response:', {
-      type: typeof response,
-      isString: typeof response === 'string',
-      preview: typeof response === 'string' ? response.substring(0, 300) : response
-    })
-
-    // اگر response یک string است
     if (typeof response === 'string') {
-      try {
-        // حذف BOM و کاراکترهای اضافی از ابتدا
-        let cleanResponse = response.replace(/^\uFEFF/, '').trim()
-
-        // حذف کامنت‌ها و متن اضافی از ابتدای response
-        const lines = cleanResponse.split('\n')
-        let jsonStartIndex = -1
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim()
-          if (line.startsWith('{') || line.startsWith('[')) {
-            jsonStartIndex = i
-            break
-          }
+      const trimmed = response.trim()
+      // Only try to parse if it looks like JSON, and isn't an empty string.
+      if (trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+        try {
+          return JSON.parse(trimmed)
+        } catch (e) {
+          console.error('Failed to parse response string as JSON:', e)
+          // Return the original string if parsing fails
+          return response
         }
-
-        if (jsonStartIndex !== -1) {
-          cleanResponse = lines.slice(jsonStartIndex).join('\n')
-        }
-
-        // پیدا کردن شروع JSON با regex
-        const jsonMatch = cleanResponse.match(/[{\[].*[}\]]/s)
-        if (jsonMatch) {
-          cleanResponse = jsonMatch[0]
-        }
-
-        console.log('Clean response before parsing:', cleanResponse.substring(0, 200))
-
-        const parsed = JSON.parse(cleanResponse)
-        console.log('Successfully parsed response:', parsed)
-        return parsed
-
-      } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError)
-        console.error('Original response:', response)
-
-        // اگر parse نشد، response اصلی را برگردان
-        return response
       }
     }
-
-    // اگر response یک object است
+    // Return the response as-is if it's already an object or a non-JSON string.
     return response
   }
 
