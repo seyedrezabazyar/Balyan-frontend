@@ -1,5 +1,6 @@
 // app/plugins/sanctum.client.ts
 import { defineNuxtPlugin, useRuntimeConfig } from '#app'
+import { useApi } from '~/composables/useApi'
 
 export default defineNuxtPlugin({
   name: 'sanctum-csrf',
@@ -8,7 +9,7 @@ export default defineNuxtPlugin({
     // This plugin fetches the Laravel Sanctum CSRF cookie.
     // It must run before any API calls that require authentication.
     // It calls /sanctum/csrf-cookie, which is a standard Laravel endpoint.
-    // We use $fetch directly because useApi adds the /api/v1 prefix, which is incorrect for this specific route.
+    // We use useApi but override baseURL to avoid the /api/v1 prefix for this specific route.
 
     console.log('Sanctum CSRF plugin: Initializing to align with Laravel backend.')
 
@@ -18,21 +19,13 @@ export default defineNuxtPlugin({
 
     console.log(`Fetching CSRF cookie from: ${sanctumUrl}`)
 
+    const api = useApi()
+
     try {
-      await $fetch(sanctumUrl, {
-        method: 'GET',
-        credentials: 'include', // Crucial for cookie-based authentication
-        onResponse({ response }) {
-          console.log('Sanctum CSRF response received. Status:', response.status)
-        },
-        onResponseError({ response }) {
-           console.error('Sanctum CSRF request failed:', {
-             status: response.status,
-             body: response._data
-           })
-        }
+      await api.get(sanctumUrl, {
+        baseURL: undefined // Use the proxy by not setting a baseURL
       })
-      console.log('Sanctum CSRF cookie fetched successfully.')
+      console.log('Sanctum CSRF cookie fetched successfully via useApi.')
     } catch (error: any) {
       console.error('Fatal error fetching Sanctum CSRF cookie:', error.data || error)
     }
