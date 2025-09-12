@@ -8,9 +8,9 @@ export default defineNuxtPlugin(async () => {
     // We use the 'get' method from our useApi composable.
     // This ensures that all necessary headers (like Accept: application/json)
     // and options (like credentials: 'include') are automatically included.
-    // We override the baseURL because this specific endpoint is not under '/api'.
+    // This request will be proxied by the dev server to the Laravel backend.
     await api.get('/sanctum/csrf-cookie', {
-      baseURL: '/'
+      baseURL: undefined // Use the proxy by not setting a baseURL
     })
     console.log('Sanctum CSRF cookie requested successfully via useApi.')
   } catch (error) {
