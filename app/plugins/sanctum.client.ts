@@ -1,20 +1,33 @@
+// app/plugins/sanctum.client.ts
+import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 import { useApi } from '~/composables/useApi'
 
-export default defineNuxtPlugin(async () => {
-  // We don't need a token for the initial CSRF cookie request
-  const api = useApi()
+export default defineNuxtPlugin({
+  name: 'sanctum-csrf',
+  enforce: 'pre', // Run this plugin before others
+  async setup (nuxtApp) {
+    // This plugin fetches the Laravel Sanctum CSRF cookie.
+    // It must run before any API calls that require authentication.
+    // It calls /sanctum/csrf-cookie, which is a standard Laravel endpoint.
+    // We use useApi but override baseURL to avoid the /api/v1 prefix for this specific route.
 
-  try {
-    // We use the 'get' method from our useApi composable.
-    // This ensures that all necessary headers (like Accept: application/json)
-    // and options (like credentials: 'include') are automatically included.
-    // This request will be proxied by the dev server to the Laravel backend.
-    await api.get('/sanctum/csrf-cookie', {
-      baseURL: undefined // Use the proxy by not setting a baseURL
-    })
-    console.log('Sanctum CSRF cookie requested successfully via useApi.')
-  } catch (error) {
-    // The error is already logged by the useApi composable, but we can log it here too if needed.
-    console.error('Plugin failed to fetch Sanctum CSRF cookie:', error)
+    console.log('Sanctum CSRF plugin: Initializing to align with Laravel backend.')
+
+    // We assume the Nuxt dev server is proxying requests to the Laravel backend.
+    // Therefore, a relative path to /sanctum/csrf-cookie should be correctly routed.
+    const sanctumUrl = '/sanctum/csrf-cookie'
+
+    console.log(`Fetching CSRF cookie from: ${sanctumUrl}`)
+
+    const api = useApi()
+
+    try {
+      await api.get(sanctumUrl, {
+        baseURL: undefined // Use the proxy by not setting a baseURL
+      })
+      console.log('Sanctum CSRF cookie fetched successfully via useApi.')
+    } catch (error: any) {
+      console.error('Fatal error fetching Sanctum CSRF cookie:', error.data || error)
+    }
   }
 })
