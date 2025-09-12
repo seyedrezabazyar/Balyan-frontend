@@ -72,6 +72,7 @@
 
 <script setup>
 import { useCartStore } from '~/stores/cart'
+import { useAuthStore } from '~/stores/auth'
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '#app'
@@ -81,6 +82,7 @@ useHead({
 })
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 const router = useRouter()
 
 const formatPrice = (price) => {
@@ -99,10 +101,20 @@ const clearCart = async () => {
 }
 
 const proceedToPayment = async () => {
+  // First, check if the user is logged in.
+  if (!authStore.isLoggedIn) {
+    // If not logged in, redirect to the authentication page.
+    alert('برای تکمیل خرید، لطفاً ابتدا وارد حساب کاربری خود شوید.')
+    router.push('/auth')
+    return
+  }
+
+  // If logged in, proceed with the payment.
   try {
     const response = await cartStore.initiatePayment()
     if (response && response.success) {
       alert(response.data?.message || 'خرید شما با موفقیت انجام شد!')
+      // After successful purchase, redirect to the user's dashboard or orders page.
       router.push('/dashboard')
     } else {
       // Handle cases where the API returns success: false or other non-crashing errors
