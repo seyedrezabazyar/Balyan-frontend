@@ -60,12 +60,8 @@
             <span v-if="isAddingToCart">در حال افزودن...</span>
             <span v-else>افزودن به سبد خرید</span>
           </button>
-        </div>
 
-        <div v-if="addToCartError" class="mt-4 text-sm text-red-600 text-right">
-          {{ addToCartError }}
         </div>
-
       </div>
     </article>
   </div>
@@ -89,7 +85,6 @@ const book = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const isAddingToCart = ref(false)
-const addToCartError = ref('') // To hold specific add-to-cart errors
 
 const slug = route.params.slug
 
@@ -123,7 +118,7 @@ const formatPrice = (price) => {
 
 const addToCartHandler = async () => {
   if (book.value?.is_purchased || isInCart.value || isAddingToCart.value || !book.value) return
-  addToCartError.value = '' // Reset error on new attempt
+
   isAddingToCart.value = true
   try {
     await cartStore.addToCart({
@@ -133,7 +128,6 @@ const addToCartHandler = async () => {
     })
   } catch (err) {
     console.error('Failed to add to cart:', err)
-    addToCartError.value = err.data?.message || 'خطا در افزودن به سبد خرید. لطفاً دوباره تلاش کنید.'
   } finally {
     isAddingToCart.value = false
   }
