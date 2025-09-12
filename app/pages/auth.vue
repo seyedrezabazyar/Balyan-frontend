@@ -191,7 +191,7 @@ const checkUser = async () => {
 
   loading.value = true
   try {
-    const response = await api.post('/auth/check-user', { identifier: identifier.value })
+    const response = await api.post('/v1/auth/check-user', { identifier: identifier.value })
 
     // The backend response is flat, so we access properties directly from the response object.
     // Also, the property names from the backend are snake_case.
@@ -220,7 +220,7 @@ const loginWithPassword = async () => {
   error.value = ''
   loading.value = true
   try {
-    const response = await api.post('/auth/login-password', {
+    const response = await api.post('/v1/auth/login-password', {
       identifier: identifier.value,
       password: password.value
     })
@@ -239,7 +239,7 @@ const requestOtp = async (showLoading = true) => {
   error.value = ''
   if (showLoading) loading.value = true
   try {
-    await api.post('/auth/send-otp', { identifier: identifier.value })
+    await api.post('/v1/auth/send-otp', { identifier: identifier.value })
     otpSent.value = true
     uiState.value = 'otp' // Ensure we are in the OTP state
     startResendTimer()
@@ -263,7 +263,7 @@ const verifyOtpAndLogin = async () => {
       payload.name = userName.value
     }
 
-    const response = await api.post('/auth/verify-otp', payload)
+    const response = await api.post('/v1/auth/verify-otp', payload)
     authStore.setAuth(response)
     await router.push('/dashboard')
   } catch (err: any) {
