@@ -14,7 +14,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api/v1',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api',
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'کتابخانه دیجیتال',
       appVersion: process.env.NUXT_PUBLIC_APP_VERSION || '1.0.0'
     }
@@ -23,13 +23,12 @@ export default defineNuxtConfig({
   ssr: false,
 
   devServer: {
-    host: '0.0.0.0',
+    host: '127.0.0.1',
     port: 3000,
     proxy: {
-      '/api/v1': {
+      '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        // Path-rewriting is not needed if the backend has the /api/v1 prefix
       },
       '/sanctum': {
         target: 'http://localhost:8000',
