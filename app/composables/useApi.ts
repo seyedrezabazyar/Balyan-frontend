@@ -7,24 +7,37 @@ export const useApi = (token: string | null = null) => {
 
   // Centralized fetch function
   const fetchApi = (url: string, options: FetchOptions) => {
-    // Determine the correct baseURL
-    // In Development: Always use the relative path for the Nuxt proxy.
-    // In Production: Use the environment variable.
-    const baseURL = process.dev ? '/api/v1' : config.public.apiBase
+    console.log('--- [useApi] Initiating new API call ---')
+    console.log(`[useApi] Received URL: ${url}`)
 
-    // Special case for Sanctum CSRF cookie, which should not be prefixed with /api/v1.
+    // Log environment and config variables
+    console.log(`[useApi] process.dev: ${process.dev}`)
+    console.log(`[useApi] config.public.apiBase: ${config.public.apiBase}`)
+
+    // Determine the correct baseURL
+    const baseURL = process.dev ? '/api/v1' : config.public.apiBase
+    console.log(`[useApi] Calculated baseURL: ${baseURL}`)
+
+    // Special case for Sanctum CSRF cookie
     if (url === '/sanctum/csrf-cookie') {
-      // In dev, let the proxy handle it from the root. In prod, use the full base URL.
+      console.log('[useApi] Handling special case for /sanctum/csrf-cookie')
       const sanctumBaseURL = process.dev ? '' : config.public.apiBase
+      console.log(`[useApi] Sanctum baseURL: ${sanctumBaseURL}`)
       return $fetch(url, {
         ...options,
-        baseURL: sanctumBaseURL
+        baseURL: sanctumBaseURL,
+        onRequest({ request, options }) {
+          console.log('[useApi] Final $fetch request details (Sanctum):', { url: request.toString(), options })
+        }
       })
     }
 
     return $fetch(url, {
       ...options,
-      baseURL
+      baseURL,
+      onRequest({ request, options }) {
+        console.log('[useApi] Final $fetch request details:', { url: request.toString(), options })
+      }
     })
   }
 
