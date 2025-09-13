@@ -100,9 +100,14 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useApi } from '~/composables/useApi'
+
 definePageMeta({
   middleware: 'admin'
 })
+
+const { $api } = useApi()
 
 const roles = ref([])
 const permissions = ref([])
@@ -112,75 +117,76 @@ const selectedPermission = ref('')
 const loading = ref(true)
 
 const availablePermissions = computed(() => {
+  if (!selectedRole.value) return []
   const currentPermissionIds = rolePermissions.value.map(p => p.id)
   return permissions.value.filter(p => !currentPermissionIds.includes(p.id))
 })
 
 const loadRoles = async () => {
   try {
-    const authApi = useAuthApi()
-    const data = await authApi.getRoles()
-    roles.value = data || []
+    const response = await $api.get('/auth/roles')
+    roles.value = response.data || []
   } catch (error) {
-    console.error('خطا در دریافت نقش‌ها:', error)
+    console.error('Error fetching roles:', error)
   }
 }
 
 const loadPermissions = async () => {
   try {
-    const authApi = useAuthApi()
-    const data = await authApi.getPermissions()
-    permissions.value = data || []
+    const response = await $api.get('/auth/permissions')
+    // Assuming permissions are not grouped in this view
+    const permissionsData = response.data || {}
+    permissions.value = Object.values(permissionsData).flat()
   } catch (error) {
-    console.error('خطا در دریافت دسترسی‌ها:', error)
+    console.error('Error fetching permissions:', error)
   }
 }
 
 const selectRole = async (role) => {
   selectedRole.value = role
   try {
-    const authApi = useAuthApi()
-    const data = await authApi.getRolePermissions(role.id)
-    rolePermissions.value = data || []
+    const response = await $api.get(`/auth/roles/${role.id}/permissions`)
+    rolePermissions.value = response.data || []
   } catch (error) {
-    console.error('خطا در دریافت دسترسی‌های نقش:', error)
+    console.error('Error fetching role permissions:', error)
+    rolePermissions.value = [] // Reset on error
   }
 }
 
 const addPermission = async () => {
-  if (!selectedPermission.value) return
+  if (!selectedPermission.value || !selectedRole.value) return
 
   try {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = [...currentPermissionIds, selectedPermission.value]
 
-    const authApi = useAuthApi()
-    await authApi.updateRolePermissions(selectedRole.value.id, newPermissions)
+    await $api.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
 
     selectedPermission.value = ''
-    await selectRole(selectedRole.value)
-    alert('دسترسی با موفقیت اضافه شد')
+    await selectRole(selectedRole.value) // Refresh permissions for the role
+    alert('Permission added successfully')
   } catch (error) {
-    alert('خطا در افزودن دسترسی')
+    alert('Failed to add permission')
   }
 }
 
 const removePermission = async (permissionId) => {
+  if (!selectedRole.value) return
   try {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = currentPermissionIds.filter(id => id !== permissionId)
 
-    const authApi = useAuthApi()
-    await authApi.updateRolePermissions(selectedRole.value.id, newPermissions)
+    await $api.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
 
-    await selectRole(selectedRole.value)
-    alert('دسترسی با موفقیت حذف شد')
+    await selectRole(selectedRole.value) // Refresh
+    alert('Permission removed successfully')
   } catch (error) {
-    alert('خطا در حذف دسترسی')
+    alert('Failed to remove permission')
   }
 }
 
 onMounted(async () => {
+  loading.value = true
   await Promise.all([loadRoles(), loadPermissions()])
   loading.value = false
 })
