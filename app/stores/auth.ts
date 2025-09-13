@@ -44,6 +44,7 @@ export const useAuthStore = defineStore('auth', {
     currentUser: (state) => state.user,
     isLoggedIn: (state) => state.isAuthenticated && !!state.token,
     isAdmin: (state) => !!state.user?.is_admin,
+    hasPassword: (state) => !!state.user?.has_password,
   },
 
   actions: {
@@ -131,13 +132,12 @@ export const useAuthStore = defineStore('auth', {
         return response.user
       } catch (error) {
         console.error('Error fetching user:', error)
-        // If user fetch fails, token is likely invalid/expired
         this.clearAuth()
         return null
       }
     },
 
-    async updateProfile(data: { name: string, username: string, province_id: number, city_id: number, address: string }) {
+    async updateProfile(data: any) {
         const api = useApi(this.token)
         const response = await api.post('/auth/profile/update', data)
         this.setUser(response.user)
@@ -152,6 +152,42 @@ export const useAuthStore = defineStore('auth', {
     async updatePassword(current_password: string, password: string) {
         const api = useApi(this.token)
         return await api.post('/auth/password/update', { current_password, password, password_confirmation: password })
+    },
+
+    // --- Location and Verification Actions ---
+
+    async getProvinces() {
+      const api = useApi()
+      return await api.get('/provinces')
+    },
+
+    async getCities(provinceId: number) {
+      const api = useApi()
+      return await api.get(`/provinces/${provinceId}/cities`)
+    },
+
+    async sendEmailVerification(email: string) {
+      const api = useApi(this.token)
+      return await api.post('/auth/email/send-verification', { email })
+    },
+
+    async verifyEmail(email: string, code: string) {
+      const api = useApi(this.token)
+      const response = await api.post('/auth/email/verify', { email, code })
+      this.setUser(response.user)
+      return response
+    },
+
+    async sendPhoneVerification(phone: string) {
+      const api = useApi(this.token)
+      return await api.post('/auth/phone/send-verification', { phone })
+    },
+
+    async verifyPhone(phone: string, code: string) {
+      const api = useApi(this.token)
+      const response = await api.post('/auth/phone/verify', { phone, code })
+      this.setUser(response.user)
+      return response
     },
 
     // --- Token Management ---
@@ -196,14 +232,12 @@ export const useAuthStore = defineStore('auth', {
         this.token = token
         this.refreshToken = localStorage.getItem('refreshToken')
 
-        // Optimistically set user from localStorage
         const storedUser = localStorage.getItem('user')
         if (storedUser) {
             this.user = JSON.parse(storedUser)
         }
         this.isAuthenticated = true
 
-        // Verify token by fetching user data
         try {
             await this.fetchUser()
         } catch (e) {
