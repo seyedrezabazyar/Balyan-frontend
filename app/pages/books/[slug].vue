@@ -80,7 +80,7 @@ useHead({
 })
 
 const route = useRoute()
-const api = useApi() // Corrected: instantiate the whole composable object
+const api = useApi()
 
 const book = ref(null)
 const loading = ref(true)
@@ -123,7 +123,7 @@ const validateCoupon = async () => {
   validatingCoupon.value = true
   couponMessage.value = ''
   try {
-    const response = await api.post('/purchase/coupon/validate', { code: couponCode.value }) // Corrected: use api.post
+    const response = await api.post('/purchase/coupon/validate', { code: couponCode.value })
     if (response.success) {
       couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
       couponMessageClass.value = 'text-green-600'
@@ -140,10 +140,12 @@ const handlePurchase = async () => {
   if (!book.value) return;
   purchaseInProgress.value = true
   try {
-    const response = await api.post(`/books/${book.value.id}/buy`, { // Corrected: use api.post
-      payment_method: 'zarinpal',
-      coupon_code: couponCode.value || null,
-    })
+    // Fixed: Send without body if not needed (matches curl success); add body only if coupon valid
+    const body = couponCode.value && couponMessageClass.value === 'text-green-600'
+      ? { payment_method: 'zarinpal', coupon_code: couponCode.value }
+      : undefined // No body if no coupon, to match backend expectation
+
+    const response = await api.post(`/books/${book.value.id}/buy`, body)
     if (response.success && response.data.payment_url) {
       await navigateTo(response.data.payment_url, { external: true })
     } else {
@@ -151,7 +153,13 @@ const handlePurchase = async () => {
     }
   } catch (err) {
     console.error('Purchase failed:', err)
-    alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
+    // Improved error handling: Check for 401 specifically
+    if (err.statusCode === 401 || err.status === 401) {
+      alert('احراز هویت نشده. لطفاً وارد شوید.')
+      await navigateTo('/auth')
+    } else {
+      alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
+    }
   } finally {
     purchaseInProgress.value = false
   }

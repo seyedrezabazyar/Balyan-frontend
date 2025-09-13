@@ -3,6 +3,18 @@
     <h1 class="text-2xl font-bold mb-4">داشبورد</h1>
     <p class="text-gray-600 mb-6">به داشبورد خوش آمدید!</p>
 
+    <!-- نمایش آمار داشبورد -->
+    <div v-if="stats" class="mb-6 bg-gray-100 p-4 rounded-lg">
+      <h2 class="text-xl font-semibold mb-2">آمار داشبورد</h2>
+      <pre class="whitespace-pre-wrap text-sm">{{ JSON.stringify(stats, null, 2) }}</pre>
+    </div>
+    <div v-else-if="statsError" class="mb-6 text-red-500">
+      خطا در بارگذاری آمار: {{ statsError }}
+    </div>
+    <div v-else class="mb-6 text-gray-500">
+      در حال بارگذاری آمار...
+    </div>
+
     <!-- دکمه فقط برای ادمین -->
     <div v-if="authStore.isAdmin" class="mb-4">
       <button
@@ -35,7 +47,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useApi } from '~/composables/useApi'
 
@@ -44,18 +56,27 @@ definePageMeta({ middleware: 'auth' })
 const authStore = useAuthStore()
 const api = useApi()
 
-onMounted(async () => {
-  if (authStore.isLoggedIn && !authStore.currentUser) {
-    await authStore.fetchUser()
+const stats = ref(null)
+const statsError = ref(null)
+
+const loadStats = async () => {
+  try {
+    const response = await api.get('/dashboard/index') // Fixed: Use correct endpoint from backend docs
+    if (response?.success && response.data) {
+      stats.value = response.data
+    } else {
+      throw new Error('داده‌های نامعتبر از سرور دریافت شد.')
+    }
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+    statsError.value = error.message || 'خطا در دریافت آمار داشبورد'
   }
-})
+}
 
 const userInfo = computed(() => JSON.stringify(authStore.currentUser, null, 2) || 'هیچ اطلاعاتی موجود نیست')
 
 const performAdminAction = async () => {
   try {
-    // The new structure has a /dashboard/index.get.ts. A DELETE endpoint for cache
-    // would logically be /dashboard/cache.delete.ts. I'll assume this or create it.
     await api.delete('/dashboard/cache')
     alert('عملیات ادمین با موفقیت انجام شد!')
   } catch (error) {
@@ -63,4 +84,11 @@ const performAdminAction = async () => {
     alert('خطایی رخ داد!')
   }
 }
+
+onMounted(async () => {
+  if (authStore.isLoggedIn && !authStore.currentUser) {
+    await authStore.fetchUser()
+  }
+  await loadStats() // Load dashboard stats on mount
+})
 </script>
