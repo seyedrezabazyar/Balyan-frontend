@@ -46,13 +46,13 @@ export const useAuthStore = defineStore('auth', {
     async checkUser(identifier: string) {
       const api = useApi();
       // Using a more RESTful endpoint
-      return await api.post('/users/check', { identifier });
+      return await api.post('/auth/check-user', { identifier });
     },
 
     async loginWithPassword(identifier: string, password: string) {
       const api = useApi();
       // This endpoint seems correct as login is an auth action
-      const response = await api.post('/auth/login', { identifier, password });
+      const response = await api.post('/auth/login-password', { identifier, password });
       this.setAuth(response);
       return response;
     },
