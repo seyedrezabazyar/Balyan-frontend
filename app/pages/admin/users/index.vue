@@ -205,6 +205,7 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import { useAuthStore } from '~/stores/auth'
 
@@ -214,7 +215,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const api = useApi(authStore.token)
+const api = useApi()
 
 const users = ref([])
 const loading = ref(false)
@@ -246,77 +247,31 @@ const debouncedSearch = () => {
   }, 500)
 }
 
-const testUsersAPI = async () => {
-  try {
-    console.log('Testing users API...')
-    const response = await $fetch('/auth/users?per_page=5', {
-      baseURL: 'http://localhost:8000/api',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Accept': 'application/json'
-      }
-    })
-    console.log('Users API test success:', response)
-    alert('API کاربران کار می‌کند!')
-  } catch (err) {
-    console.error('Users API test failed:', err)
-    alert('API کاربران کار نمی‌کند: ' + err.message)
-  }
-}
-
 const loadUsers = async (page = 1) => {
   loading.value = true
   error.value = null
-
   try {
-    console.log('Loading users, page:', page)
-    console.log('Filters:', filters.value)
-
     const params = {
       page,
       per_page: 15,
       ...filters.value
     }
-
-    // Remove empty filters
     Object.keys(params).forEach(key => {
-      if (params[key] === '' || params[key] === null || params[key] === undefined) {
+      if (params[key] === '' || params[key] === null) {
         delete params[key]
       }
     })
-
-    console.log('Final params:', params)
-
-    const response = await api.get('/auth/users', { query: params })
-    console.log('Users response:', response)
-
-    // Handle different response structures
+    // The old API used `/auth/users`. The new structure is `/users`.
+    const response = await api.get('/users', { params })
     if (response.data && response.meta) {
       users.value = response.data
       pagination.value = response.meta
-    } else if (Array.isArray(response)) {
-      users.value = response
-      pagination.value = {
-        current_page: 1,
-        last_page: 1,
-        per_page: response.length,
-        total: response.length,
-        from: 1,
-        to: response.length
-      }
-    } else if (response.users) {
-      users.value = response.users
-      pagination.value = response.pagination || pagination.value
     } else {
-      users.value = []
+      users.value = response.data || response || []
     }
-
-    console.log('Users loaded:', users.value.length)
-    console.log('Pagination:', pagination.value)
-
   } catch (err) {
-    console.error('خطا در دریافت کاربران:', err)
-    error.value = `خطا در دریافت کاربران: ${err.message}`
+    console.error('Error fetching users:', err)
+    error.value = `Error fetching users: ${err.message}`
     users.value = []
   } finally {
     loading.value = false
@@ -325,39 +280,30 @@ const loadUsers = async (page = 1) => {
 
 const toggleUserLock = async (user) => {
   try {
-    await api.post(`/auth/users/${user.id}/toggle-lock`)
+    await api.post(`/users/${user.id}/toggle-lock`)
     await loadUsers(pagination.value.current_page)
-    alert('عملیات با موفقیت انجام شد')
+    alert('Operation successful')
   } catch (err) {
-    console.error('خطا در تغییر وضعیت قفل:', err)
-    alert('خطا در انجام عملیات: ' + err.message)
+    console.error('Error toggling lock:', err)
+    alert('Operation failed: ' + err.message)
   }
 }
 
 const resetUserPassword = async (user) => {
-  const newPassword = prompt('رمز عبور جدید را وارد کنید:')
+  const newPassword = prompt('Enter new password:')
   if (!newPassword) return
 
   try {
-    await api.post(`/auth/users/${user.id}/reset-password`, {
+    await api.post(`/users/${user.id}/reset-password`, {
       password: newPassword,
       password_confirmation: newPassword
     })
-    alert('رمز عبور با موفقیت تغییر کرد')
+    alert('Password changed successfully')
   } catch (err) {
-    console.error('خطا در تغییر رمز عبور:', err)
-    alert('خطا در تغییر رمز عبور: ' + err.message)
+    console.error('Error resetting password:', err)
+    alert('Error resetting password: ' + err.message)
   }
 }
 
-onMounted(async () => {
-  console.log('Users page mounted')
-  console.log('Auth state:', {
-    token: !!authStore.token,
-    user: authStore.user?.name,
-    isAdmin: authStore.isAdmin
-  })
-
-  await loadUsers()
-})
+onMounted(loadUsers)
 </script>

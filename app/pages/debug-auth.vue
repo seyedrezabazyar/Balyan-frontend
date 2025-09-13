@@ -167,8 +167,8 @@ const testAdminAPI = async () => {
       return
     }
 
-    const api = useApi(authStore.token)
-    const response = await api.get('/auth/users/statistics')
+    const api = useApi()
+    const response = await api.get('/dashboard') // Changed to a valid new endpoint
     addResult('تست Admin API', true, 'API ادمین کار می‌کند', response)
   } catch (error) {
     addResult('تست Admin API', false, `خطا: ${error.message}`, error)

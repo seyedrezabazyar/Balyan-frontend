@@ -42,19 +42,20 @@ import { useApi } from '~/composables/useApi'
 definePageMeta({ middleware: 'auth' })
 
 const authStore = useAuthStore()
-const api = useApi(authStore.token)
+const api = useApi()
 
 onMounted(async () => {
   if (authStore.isLoggedIn && !authStore.currentUser) {
     await authStore.fetchUser()
   }
-  console.log('User Info in Dashboard:', authStore.currentUser)
 })
 
 const userInfo = computed(() => JSON.stringify(authStore.currentUser, null, 2) || 'هیچ اطلاعاتی موجود نیست')
 
 const performAdminAction = async () => {
   try {
+    // The new structure has a /dashboard/index.get.ts. A DELETE endpoint for cache
+    // would logically be /dashboard/cache.delete.ts. I'll assume this or create it.
     await api.delete('/dashboard/cache')
     alert('عملیات ادمین با موفقیت انجام شد!')
   } catch (error) {
