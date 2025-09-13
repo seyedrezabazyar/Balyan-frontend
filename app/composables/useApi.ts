@@ -14,13 +14,10 @@ export const useApi = (token: string | null = null) => {
       return $fetch(url, { ...options, baseURL: apiBase })
     }
 
-    // Always construct the full versioned URL.
-    // Call sites should NOT include /v1/.
-    const versionedApiBase = `${apiBase}/v1`
-
+    // Use the apiBase directly, it should be versioned.
     return $fetch(url, {
       ...options,
-      baseURL: versionedApiBase
+      baseURL: apiBase
     })
   }
 

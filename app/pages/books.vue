@@ -63,7 +63,7 @@ const api = useApi()
 const fetchBooks = async (page) => {
   loading.value = true
   try {
-    const response = await api.get('/v1/books', {
+    const response = await api.get('/books', {
       params: {
         per_page: 10,
         sort: 'newest',
