@@ -8,23 +8,25 @@
     </div>
     <article v-else-if="book" class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div class="md:col-span-1">
-        <img v-if="book.image" :src="book.image.url" :alt="book.title" class="w-full rounded-lg shadow-lg">
+        <img v-if="book.image?.url" :src="book.image.url" :alt="book.title" class="w-full rounded-lg shadow-lg">
       </div>
       <div class="md:col-span-2">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ book.title }}</h1>
+        <h1 v-if="book.title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ book.title }}</h1>
         <div class="flex items-center mb-4">
-          <p class="text-lg text-gray-600 ml-4">{{ book.authors.map(a => a.name).join(', ') }}</p>
-          <span class="text-sm text-gray-500">{{ book.category.name }}</span>
+          <p v-if="book.authors && Array.isArray(book.authors) && book.authors.length" class="text-lg text-gray-600 ml-4">
+            {{ book.authors.map(a => a.name).join(', ') }}
+          </p>
+          <span v-if="book.category?.name" class="text-sm text-gray-500">{{ book.category.name }}</span>
         </div>
-        <p class="text-gray-700 leading-relaxed mb-6">{{ book.excerpt }}</p>
+        <p v-if="book.excerpt" class="text-gray-700 leading-relaxed mb-6">{{ book.excerpt }}</p>
 
-        <div class="bg-gray-100 p-4 rounded-lg mb-6">
+        <div v-if="book.language || book.publication_year || book.pages_count || book.isbn" class="bg-gray-100 p-4 rounded-lg mb-6">
           <h3 class="font-semibold text-lg mb-2">مشخصات کتاب</h3>
           <ul class="grid grid-cols-2 gap-4 text-sm">
-            <li><strong>زبان:</strong> {{ book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
-            <li><strong>سال انتشار:</strong> {{ book.publication_year }}</li>
-            <li><strong>تعداد صفحات:</strong> {{ book.pages_count }}</li>
-            <li><strong>شابک (ISBN):</strong> {{ book.isbn }}</li>
+            <li v-if="book.language"><strong>زبان:</strong> {{ book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
+            <li v-if="book.publication_year"><strong>سال انتشار:</strong> {{ book.publication_year }}</li>
+            <li v-if="book.pages_count"><strong>تعداد صفحات:</strong> {{ book.pages_count }}</li>
+            <li v-if="book.isbn"><strong>شابک (ISBN):</strong> {{ book.isbn }}</li>
           </ul>
         </div>
 
@@ -94,11 +96,16 @@ const purchaseInProgress = ref(false)
 
 const fetchBook = async () => {
   try {
-    const response = await api.get(`/books/${slug}`) // Corrected: use api.get
-    book.value = response
-    useHead({
-      title: response.title,
-    })
+    const response = await api.get(`/books/${slug}`)
+    // Handle the wrapped response structure
+    if (response?.success && response.data?.book) {
+      book.value = response.data.book
+      useHead({
+        title: response.data.book.title,
+      })
+    } else {
+      throw new Error('Invalid book data received from API.')
+    }
   } catch (err) {
     error.value = err
     console.error('Failed to fetch book details:', err)

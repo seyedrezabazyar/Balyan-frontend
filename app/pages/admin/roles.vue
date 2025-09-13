@@ -77,7 +77,7 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-const { $api } = useApi();
+const api = useApi();
 
 const roles = ref<Role[]>([]);
 const groupedPermissions = ref<Record<string, Permission[]>>({});
@@ -90,7 +90,7 @@ const currentRole = ref<Role | null>(null);
 async function fetchRoles() {
   try {
     isLoading.value = true;
-    const response = await $api.get('/auth/roles', { params: { with_permissions: true } });
+    const response = await api.get('/auth/roles', { params: { with_permissions: true } });
     roles.value = response.data || [];
   } catch (e) {
     error.value = e as Error;
@@ -102,7 +102,7 @@ async function fetchRoles() {
 
 async function fetchPermissions() {
   try {
-    const response = await $api.get('/auth/permissions');
+    const response = await api.get('/auth/permissions');
     groupedPermissions.value = response.data || {};
   } catch (e) {
     console.error("Failed to fetch permissions:", e);
@@ -141,13 +141,12 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
         display_name: formData.display_name,
         description: formData.description,
       };
-      // Note: The API calls are now distinct.
-      await $api.put(`/auth/roles/${roleId}`, updatePayload);
-      await $api.put(`/auth/permissions/role/${roleId}`, { permission_ids: formData.permission_ids });
+      await api.put(`/auth/roles/${roleId}`, updatePayload);
+      await api.put(`/auth/permissions/role/${roleId}`, { permission_ids: formData.permission_ids });
       alert('نقش با موفقیت به‌روزرسانی شد.');
     } else {
       // Create mode
-      await $api.post('/auth/roles', formData);
+      await api.post('/auth/roles', formData);
       alert('نقش با موفقیت ایجاد شد.');
     }
     closeModal();
@@ -161,7 +160,7 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
 async function handleDeleteRole(roleId: number) {
   if (confirm('آیا از حذف این نقش اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
     try {
-      await $api.delete(`/auth/roles/${roleId}`);
+      await api.delete(`/auth/roles/${roleId}`);
       alert('نقش با موفقیت حذف شد.');
       roles.value = roles.value.filter(r => r.id !== roleId);
     } catch (e) {

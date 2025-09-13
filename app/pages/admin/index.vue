@@ -105,7 +105,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const { $api } = useApi()
+const api = useApi()
 
 const stats = ref({})
 const errors = ref([])
@@ -116,9 +116,7 @@ const addError = (error) => {
 
 const loadStats = async () => {
   try {
-    // The new useApi is self-contained and doesn't need a token passed.
-    // It will call GET /api/v1/dashboard
-    const response = await $api.get('/dashboard')
+    const response = await api.get('/dashboard')
     stats.value = response.data || response
   } catch (error) {
     console.error('Error fetching stats:', error)
