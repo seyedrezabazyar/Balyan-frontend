@@ -1,210 +1,125 @@
 // ~/composables/useApi.ts
 import { useRuntimeConfig } from '#app'
+import type { FetchOptions } from 'ofetch'
+
+// A centralized fetch function that handles API base URL and versioning.
+const useFetchApi = (url: string, options: FetchOptions) => {
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBase || '/api/v1'
+
+  // In development, Nuxt's proxy is used, so we call the path directly.
+  // In production, we use the configured apiBase as the baseURL.
+  const baseURL = process.dev ? '' : apiBase;
+
+  // Prepend the API version path if it's not already in the URL,
+  // but avoid prefixing special paths like /sanctum.
+  const fullUrl = (url.startsWith('/api') || url.startsWith('/sanctum')) ? url : `${apiBase}${url}`
+
+  return $fetch(fullUrl, {
+    ...options,
+    baseURL,
+    credentials: 'include',
+    onRequest({ request, options }) {
+      console.log('Request details:', {
+        url: request,
+        baseURL: options.baseURL,
+        headers: options.headers,
+      })
+    },
+    onRequestError({ request, error }) {
+      console.error('Request Error:', { url: request, error: error.message })
+    },
+    onResponse({ response }) {
+      console.log('Raw response received:', {
+        status: response.status,
+        bodyType: typeof response._data,
+      })
+    },
+    onResponseError({ request, response }) {
+      console.error('API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: request,
+        response: response._data,
+      })
+    },
+  })
+}
 
 export const useApi = (token: string | null = null) => {
-  const config = useRuntimeConfig()
-
-  console.log('useApi called with token:', token ? `${token.substring(0, 20)}...` : 'null')
-
   const normalizeAuthorization = (rawToken: string | null): string | undefined => {
-    if (!rawToken) {
-      console.log('No token provided to normalizeAuthorization')
-      return undefined
-    }
-    const hasScheme = /^(Bearer|Token)\s+/.test(rawToken)
-    const result = hasScheme ? rawToken : `Bearer ${rawToken}`
-    console.log('Authorization header:', result.substring(0, 30) + '...')
-    return result
+    if (!rawToken) return undefined
+    return /^(Bearer|Token)\s+/.test(rawToken) ? rawToken : `Bearer ${rawToken}`
   }
 
   const createHeaders = (hasBody: boolean) => {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
+      'X-Requested-With': 'XMLHttpRequest',
     }
-
     const authHeader = normalizeAuthorization(token)
     if (authHeader) headers['Authorization'] = authHeader
     if (hasBody) headers['Content-Type'] = 'application/json; charset=utf-8'
-
-    console.log('Created headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : 'not set' })
     return headers
   }
 
-  // A more robust response processor.
-  // $fetch automatically parses JSON, so this is mainly a fallback
-  // and a handler for non-JSON responses to prevent crashes.
   const processResponse = (response: any): any => {
     if (typeof response === 'string') {
       const trimmed = response.trim()
-      // Only try to parse if it looks like JSON, and isn't an empty string.
       if (trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['))) {
         try {
           return JSON.parse(trimmed)
         } catch (e) {
           console.error('Failed to parse response string as JSON:', e)
-          // Return the original string if parsing fails
           return response
         }
       }
     }
-    // Return the response as-is if it's already an object or a non-JSON string.
     return response
   }
 
   return {
-    get: (url: string, options = {}) => {
-      console.log('Making GET request to:', url)
-      return $fetch(url, {
-        baseURL: process.dev ? '' : config.public.apiBase,
+    get: (url: string, options: FetchOptions = {}) => {
+      return useFetchApi(url, {
+        ...options,
         method: 'GET',
         headers: createHeaders(false),
-        credentials: 'include',
-        onRequest({ request, options }) {
-          console.log('Request details:', {
-            url: request,
-            headers: options.headers
-          })
-        },
-        onRequestError({ request, error }) {
-          console.error('Request Error:', {
-            url: request,
-            error: error.message
-          })
-        },
-        onResponse({ response }) {
-          console.log('Raw response received:', {
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            bodyType: typeof response._data
-          })
-        },
-        onResponseError({ request, response }) {
-          console.error('API GET Error:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: request,
-            response: response._data
-          })
-        },
-        ...options
-      }).then(response => {
-        return processResponse(response)
-      })
+      }).then(processResponse)
     },
 
-    post: (url: string, body = {}, options = {}) => {
-      console.log('Making POST request to:', url, 'with body:', body)
-
-      // پردازش body
-      let processedBody
-      try {
-        if (typeof body === 'object' && body !== null) {
-          processedBody = JSON.parse(JSON.stringify(body))
-        } else {
-          processedBody = body
-        }
-      } catch (error) {
-        console.error('Error processing body:', error)
-        processedBody = body
-      }
-
-      return $fetch(url, {
-        baseURL: process.dev ? '' : config.public.apiBase,
+    post: (url: string, body: any = {}, options: FetchOptions = {}) => {
+      return useFetchApi(url, {
+        ...options,
         method: 'POST',
-        body: processedBody,
+        body,
         headers: createHeaders(true),
-        credentials: 'include',
-        onRequest({ request, options }) {
-          console.log('POST Request details:', {
-            url: request,
-            headers: options.headers,
-            bodyType: typeof options.body,
-            bodyKeys: options.body && typeof options.body === 'object' ? Object.keys(options.body) : 'not object'
-          })
-        },
-        onRequestError({ request, error }) {
-          console.error('POST Request Error:', {
-            url: request,
-            error: error.message
-          })
-        },
-        onResponse({ response }) {
-          console.log('Raw POST response received:', {
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            bodyType: typeof response._data,
-            bodyPreview: typeof response._data === 'string' ? response._data.substring(0, 200) : response._data
-          })
-        },
-        onResponseError({ request, response }) {
-          console.error('API POST Error:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: request,
-            response: response._data
-          })
-        },
-        ...options
-      }).then(response => {
-        return processResponse(response)
-      })
+      }).then(processResponse)
     },
 
-    put: (url: string, body = {}, options = {}) => {
-      console.log('Making PUT request to:', url)
-      return $fetch(url, {
-        baseURL: process.dev ? '' : config.public.apiBase,
+    put: (url: string, body: any = {}, options: FetchOptions = {}) => {
+      return useFetchApi(url, {
+        ...options,
         method: 'PUT',
         body,
         headers: createHeaders(true),
-        credentials: 'include',
-        onResponseError({ request, response }) {
-          console.error('API PUT Error:', response.status, response.statusText)
-          console.error('Request URL:', request)
-          console.error('Response:', response._data)
-        },
-        ...options
-      }).then(response => {
-        return processResponse(response)
-      })
+      }).then(processResponse)
     },
 
-    patch: (url: string, body = {}, options = {}) => {
-      console.log('Making PATCH request to:', url)
-      return $fetch(url, {
-        baseURL: process.dev ? '' : config.public.apiBase,
+    patch: (url: string, body: any = {}, options: FetchOptions = {}) => {
+      return useFetchApi(url, {
+        ...options,
         method: 'PATCH',
         body,
         headers: createHeaders(true),
-        credentials: 'include',
-        onResponseError({ request, response }) {
-          console.error('API PATCH Error:', response.status, response.statusText)
-          console.error('Request URL:', request)
-          console.error('Response:', response._data)
-        },
-        ...options
-      }).then(response => {
-        return processResponse(response)
-      })
+      }).then(processResponse)
     },
 
-    delete: (url: string, options = {}) => {
-      console.log('Making DELETE request to:', url)
-      return $fetch(url, {
-        baseURL: process.dev ? '' : config.public.apiBase,
+    delete: (url: string, options: FetchOptions = {}) => {
+      return useFetchApi(url, {
+        ...options,
         method: 'DELETE',
         headers: createHeaders(false),
-        credentials: 'include',
-        onResponseError({ request, response }) {
-          console.error('API DELETE Error:', response.status, response.statusText)
-          console.error('Request URL:', request)
-          console.error('Response:', response._data)
-        },
-        ...options
-      }).then(response => {
-        return processResponse(response)
-      })
-    }
+      }).then(processResponse)
+    },
   }
 }
