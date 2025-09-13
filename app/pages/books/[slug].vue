@@ -74,13 +74,15 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, navigateTo } from '#app'
 import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 useHead({
   title: 'جزئیات کتاب',
 })
 
 const route = useRoute()
-const api = useApi() // Corrected: instantiate the whole composable object
+const api = useApi() // Public client
+const apiAuth = useApiAuth() // Authenticated client
 
 const book = ref(null)
 const loading = ref(true)
@@ -123,7 +125,7 @@ const validateCoupon = async () => {
   validatingCoupon.value = true
   couponMessage.value = ''
   try {
-    const response = await api.post('/purchase/coupon/validate', { code: couponCode.value }) // Corrected: use api.post
+    const response = await apiAuth.post('/purchase/coupon/validate', { code: couponCode.value })
     if (response.success) {
       couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
       couponMessageClass.value = 'text-green-600'
@@ -140,7 +142,7 @@ const handlePurchase = async () => {
   if (!book.value) return;
   purchaseInProgress.value = true
   try {
-    const response = await api.post(`/books/${book.value.id}/buy`, { // Corrected: use api.post
+    const response = await apiAuth.post(`/books/${book.value.id}/buy`, {
       payment_method: 'zarinpal',
       coupon_code: couponCode.value || null,
     })

@@ -206,7 +206,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
@@ -215,7 +215,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const api = useApi()
+const api = useApiAuth()
 
 const users = ref([])
 const loading = ref(false)

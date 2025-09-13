@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 interface User {
   id: number
@@ -44,24 +44,24 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async checkUser(identifier: string) {
-      const api = useApi();
+      const api = useApiAuth();
       return await api.post('/auth/check-user', { identifier });
     },
 
     async loginWithPassword(identifier: string, password: string) {
-      const api = useApi();
+      const api = useApiAuth();
       const response = await api.post('/auth/login-password', { identifier, password });
       this.setAuth(response);
       return response;
     },
 
     async sendOtp(identifier: string) {
-      const api = useApi();
+      const api = useApiAuth();
       return await api.post('/auth/send-otp', { identifier });
     },
 
     async verifyOtp(identifier: string, otp: string, name?: string) {
-      const api = useApi();
+      const api = useApiAuth();
       const payload: { identifier: string; otp: string; name?: string } = { identifier, otp };
       if (name) {
         payload.name = name;
@@ -72,7 +72,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const api = useApi();
+      const api = useApiAuth();
       try {
         await api.post('/auth/logout');
       } catch (error) {
@@ -83,7 +83,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logoutAll() {
-      const api = useApi();
+      const api = useApiAuth();
       try {
         await api.post('/auth/logout-all');
       } catch (error) {
@@ -94,7 +94,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async updateProfile(data: any) {
-      const api = useApi();
+      const api = useApiAuth();
       const response = await api.post('/auth/profile/update', data);
       if (response.user) {
         this.setUser(response.user);
@@ -103,18 +103,18 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async setPassword(password: string, password_confirmation: string) {
-      const api = useApi();
+      const api = useApiAuth();
       return await api.post('/auth/password/set', { password, password_confirmation });
     },
 
     async updatePassword(current_password: string, password: string, password_confirmation: string) {
-      const api = useApi();
+      const api = useApiAuth();
       return await api.post('/auth/password/update', { current_password, password, password_confirmation });
     },
 
     async refreshToken() {
       if (!this.refreshToken) return;
-      const api = useApi();
+      const api = useApiAuth();
       try {
         const response = await api.post('/auth/refresh', { refresh_token: this.refreshToken });
         this.setAuth(response);
@@ -170,7 +170,7 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) {
         return null
       }
-      const api = useApi()
+      const api = useApiAuth()
       try {
         const response = await api.get('/auth/user')
         this.user = (response && typeof response === 'object') ? (response.user || response) : null
