@@ -158,12 +158,12 @@ export const useAuthStore = defineStore('auth', {
 
     async getProvinces() {
       const api = useApi()
-      return await api.get('/provinces')
+      return await api.get('/locations/provinces')
     },
 
     async getCities(provinceId: number) {
       const api = useApi()
-      return await api.get(`/provinces/${provinceId}/cities`)
+      return await api.get(`/locations/provinces/${provinceId}/cities`)
     },
 
     async sendEmailVerification(email: string) {
