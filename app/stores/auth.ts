@@ -1,28 +1,35 @@
 import { defineStore } from 'pinia'
 import { useApi } from '~/composables/useApi'
 
+// Matches the User Object from the new documentation
 interface User {
   id: number
-  name?: string
-  email?: string
-  phone?: string
-  username?: string
+  name: string
+  username: string
+  email: string | null
+  phone: string | null
+  email_verified_at: string | null
+  phone_verified_at: string | null
+  has_password: boolean
+  avatar_url: string | null
+  last_login_at: string | null
+  is_admin: boolean
+  province_id: number | null
+  city_id: number | null
+  address: string | null
+  username_last_changed_at: string | null
+  days_until_username_change: number | null
+  roles?: Array<{id: number, name:string, display_name: string}>
   permissions?: string[]
-  roles?: Array<{id: number, name: string, display_name: string}>
-  is_admin?: boolean
-  email_verified_at?: string
-  phone_verified_at?: string
-  last_login_at?: string
-  created_at?: string
-  preferred_method?: string
-  locked_until?: string
-  password?: boolean // This might be a simplified check from older API versions
-  has_password?: boolean // More explicit check
-  username_last_changed_at?: string | null
-  days_until_username_change?: number | null
-  province_id?: number | null
-  city_id?: number | null
-  address?: string | null
+}
+
+// For API responses that include tokens and user
+interface AuthResponse {
+  tokens: {
+    access_token: string
+    refresh_token: string
+  }
+  user: User
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -30,62 +37,27 @@ export const useAuthStore = defineStore('auth', {
     user: null as User | null,
     token: null as string | null,
     refreshToken: null as string | null,
-    isAuthenticated: false
+    isAuthenticated: false,
   }),
 
   getters: {
     currentUser: (state) => state.user,
     isLoggedIn: (state) => state.isAuthenticated && !!state.token,
-    isAdmin: (state) => {
-      if (!state.user) return false
-      return !!(state.user.is_admin || state.user.roles?.some(role => role.name === 'admin'))
-    }
+    isAdmin: (state) => !!state.user?.is_admin,
   },
 
   actions: {
-    setAuth(data: any) {
-      console.log('Setting auth data:', data)
-
-      // Normalize response: handle strings with non-JSON prefixes and wrapped payloads
-      let payload: any = data
-      if (typeof payload === 'string') {
-        try {
-          const sanitized = payload.replace(/^\uFEFF/, '').trim()
-          const firstBrace = sanitized.indexOf('{')
-          const firstBracket = sanitized.indexOf('[')
-          const start = firstBrace === -1
-            ? firstBracket
-            : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
-          if (start !== -1) {
-            payload = JSON.parse(sanitized.slice(start))
-          } else {
-            console.warn('Auth response string did not contain JSON; defaulting to empty object')
-            payload = {}
-          }
-        } catch (e) {
-          console.error('Failed to parse auth response JSON:', e)
-          payload = {}
-        }
-      } else if (payload && typeof payload === 'object' && 'data' in payload && (payload as any).data && typeof (payload as any).data === 'object') {
-        payload = (payload as any).data
-      }
-
-      // Handle different response structures
-      this.token = payload?.tokens?.access_token || payload?.access_token || payload?.token || null
-      this.refreshToken = payload?.tokens?.refresh_token || payload?.refresh_token || null
-      this.user = (payload && typeof payload === 'object') ? (payload.user ?? null) : null
-      this.isAuthenticated = !!this.token
-
-      console.log('Token set:', this.token ? 'exists' : 'missing')
-      console.log('User set:', this.user)
+    // Simplified setAuth action
+    setAuth(data: AuthResponse) {
+      this.token = data.tokens.access_token
+      this.refreshToken = data.tokens.refresh_token
+      this.user = data.user
+      this.isAuthenticated = true
 
       if (process.client) {
-        if (this.token) localStorage.setItem('token', this.token)
-        if (this.refreshToken) localStorage.setItem('refreshToken', this.refreshToken)
-        // Persist user as JSON even if null to avoid "undefined" string in storage
+        localStorage.setItem('token', this.token)
+        localStorage.setItem('refreshToken', this.refreshToken)
         localStorage.setItem('user', JSON.stringify(this.user))
-        localStorage.setItem('isAuthenticated', this.isAuthenticated ? 'true' : 'false')
-        console.log('Data saved to localStorage')
       }
     },
 
@@ -93,59 +65,11 @@ export const useAuthStore = defineStore('auth', {
       this.user = newUser
       if (process.client) {
         localStorage.setItem('user', JSON.stringify(this.user))
-        console.log('User data updated in store and localStorage via setUser')
       }
     },
 
-    async fetchUser() {
-      if (!this.token) {
-        console.error('No token available for fetchUser')
-        return null
-      }
-
-      console.log('Fetching user with token:', this.token.substring(0, 20) + '...')
-      const api = useApi(this.token)
-
-      try {
-        let response: any = await api.get('/auth/user')
-        console.log('fetchUser raw response:', response)
-
-        // Normalize potential string response with preface text
-        if (typeof response === 'string') {
-          try {
-            const sanitized = response.replace(/^\uFEFF/, '').trim()
-            const firstBrace = sanitized.indexOf('{')
-            const firstBracket = sanitized.indexOf('[')
-            const start = firstBrace === -1
-              ? firstBracket
-              : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
-            if (start !== -1) {
-              response = JSON.parse(sanitized.slice(start))
-            }
-          } catch (e) {
-            console.error('Failed to parse user response JSON:', e)
-          }
-        }
-
-        this.user = (response && typeof response === 'object') ? (response.user || response) : null
-        this.isAuthenticated = true
-
-        // Update localStorage
-        if (process.client) {
-          localStorage.setItem('user', JSON.stringify(this.user))
-          localStorage.setItem('isAuthenticated', 'true')
-        }
-
-        return this.user
-      } catch (error) {
-        console.error('Error fetching user:', error)
-        this.clearAuth()
-        return null
-      }
-    },
-
+    // Action to clear auth state from store and localStorage
     clearAuth() {
-      console.log('Clearing auth data')
       this.token = null
       this.refreshToken = null
       this.user = null
@@ -155,38 +79,137 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
-        localStorage.removeItem('isAuthenticated')
-        console.log('Auth data cleared from localStorage')
       }
     },
 
+    // Full logout process
+    async logout() {
+      const api = useApi(this.token)
+      try {
+        await api.post('/auth/logout')
+      } catch (error) {
+        console.error('Logout API call failed, clearing local state anyway.', error)
+      } finally {
+        this.clearAuth()
+      }
+    },
+
+    // --- New Authentication Flow Actions ---
+
+    async checkUser(identifier: string) {
+      const api = useApi()
+      return await api.post('/auth/check-user', { identifier })
+    },
+
+    async sendOtp(identifier: string) {
+      const api = useApi()
+      return await api.post('/auth/send-otp', { identifier })
+    },
+
+    async verifyOtp(identifier: string, otp: string, name?: string) {
+      const api = useApi()
+      const response: AuthResponse = await api.post('/auth/verify-otp', { identifier, otp, name })
+      this.setAuth(response)
+      return response
+    },
+
+    async loginWithPassword(identifier: string, password: string) {
+      const api = useApi()
+      const response: AuthResponse = await api.post('/auth/login-password', { identifier, password })
+      this.setAuth(response)
+      return response
+    },
+
+    // --- User and Profile Actions ---
+
+    async fetchUser() {
+      if (!this.token) return null
+      const api = useApi(this.token)
+      try {
+        const response = await api.get('/auth/user')
+        this.setUser(response.user)
+        return response.user
+      } catch (error) {
+        console.error('Error fetching user:', error)
+        // If user fetch fails, token is likely invalid/expired
+        this.clearAuth()
+        return null
+      }
+    },
+
+    async updateProfile(data: { name: string, username: string, province_id: number, city_id: number, address: string }) {
+        const api = useApi(this.token)
+        const response = await api.post('/auth/profile/update', data)
+        this.setUser(response.user)
+        return response
+    },
+
+    async setPassword(password: string) {
+        const api = useApi(this.token)
+        return await api.post('/auth/password/set', { password, password_confirmation: password })
+    },
+
+    async updatePassword(current_password: string, password: string) {
+        const api = useApi(this.token)
+        return await api.post('/auth/password/update', { current_password, password, password_confirmation: password })
+    },
+
+    // --- Token Management ---
+
+    async refreshAccessToken() {
+      if (!this.refreshToken) {
+        this.clearAuth()
+        throw new Error('No refresh token available.')
+      }
+      const api = useApi()
+      try {
+        const response = await api.post('/auth/refresh', { refresh_token: this.refreshToken })
+        this.token = response.access_token
+        if(response.refresh_token) {
+            this.refreshToken = response.refresh_token
+        }
+        this.isAuthenticated = true
+        if (process.client) {
+            localStorage.setItem('token', this.token)
+            if(response.refresh_token) {
+                localStorage.setItem('refreshToken', this.refreshToken)
+            }
+        }
+        return this.token
+      } catch (error) {
+        console.error('Failed to refresh token:', error)
+        this.clearAuth() // Force logout if refresh fails
+        throw error
+      }
+    },
+
+    // --- Initialization ---
+
     async initAuth() {
       if (process.client) {
-        console.log('Initializing auth from localStorage and verifying with server...');
-
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token')
         if (!token) {
-          console.log('No token found in localStorage. User is logged out.');
-          this.clearAuth();
-          return;
+          this.clearAuth()
+          return
         }
 
-        this.token = token;
-        this.isAuthenticated = true; // Optimistically set to true
-        this.refreshToken = localStorage.getItem('refreshToken');
+        this.token = token
+        this.refreshToken = localStorage.getItem('refreshToken')
 
-        console.log('Token found in localStorage. Attempting to fetch user data to verify session.');
+        // Optimistically set user from localStorage
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+            this.user = JSON.parse(storedUser)
+        }
+        this.isAuthenticated = true
 
-        // Now, verify the token by fetching the user.
-        // The fetchUser action will handle clearing auth on failure.
-        const user = await this.fetchUser();
-
-        if (user) {
-          console.log('Session verified successfully. User is logged in.');
-        } else {
-          console.log('Session verification failed. Token is likely invalid or expired. User has been logged out.');
+        // Verify token by fetching user data
+        try {
+            await this.fetchUser()
+        } catch (e) {
+            // fetchUser handles clearing auth on failure
         }
       }
-    }
-  }
+    },
+  },
 })
