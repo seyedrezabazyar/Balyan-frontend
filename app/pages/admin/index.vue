@@ -116,7 +116,7 @@ const addError = (error) => {
 
 const loadStats = async () => {
   try {
-    const response = await api.get('/dashboard')
+    const response = await api.get('/dashboard/stats')
     stats.value = response.data || response
   } catch (error) {
     console.error('Error fetching stats:', error)

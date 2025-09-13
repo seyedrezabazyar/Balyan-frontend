@@ -262,7 +262,7 @@ const loadUsers = async (page = 1) => {
       }
     })
     // The old API used `/auth/users`. The new structure is `/users`.
-    const response = await api.get('/users', { params })
+    const response = await api.get('/auth/users', { params })
     if (response.data && response.meta) {
       users.value = response.data
       pagination.value = response.meta
@@ -280,7 +280,7 @@ const loadUsers = async (page = 1) => {
 
 const toggleUserLock = async (user) => {
   try {
-    await api.post(`/users/${user.id}/toggle-lock`)
+    await api.post(`/auth/users/${user.id}/toggle-lock`)
     await loadUsers(pagination.value.current_page)
     alert('Operation successful')
   } catch (err) {
@@ -294,7 +294,7 @@ const resetUserPassword = async (user) => {
   if (!newPassword) return
 
   try {
-    await api.post(`/users/${user.id}/reset-password`, {
+    await api.post(`/auth/users/${user.id}/reset-password`, {
       password: newPassword,
       password_confirmation: newPassword
     })
