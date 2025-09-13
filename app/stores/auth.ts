@@ -75,6 +75,17 @@ export const useAuthStore = defineStore('auth', {
       return response;
     },
 
+    async logout() {
+      const api = useApi(this.token);
+      try {
+        await api.post('/auth/logout');
+      } catch (error) {
+        console.error('Logout failed, but clearing auth state anyway.', error);
+      } finally {
+        this.clearAuth();
+      }
+    },
+
     setAuth(data: any) {
       // ... (rest of the existing setAuth function)
       let payload: any = data
