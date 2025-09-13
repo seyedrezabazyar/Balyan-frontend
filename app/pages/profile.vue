@@ -663,7 +663,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { useProfile } from '~/composables/useProfile'
+import { useApi } from '~/composables/useApi' // Replaced useProfile with useApi
 import { useFormatters } from '~/composables/useFormatters'
 
 definePageMeta({
@@ -671,13 +671,15 @@ definePageMeta({
   layout: 'default'
 })
 
-// Store
+// Store and API
 const authStore = useAuthStore()
-const profileComposable = useProfile()
+const api = useApi() // Use the main API composable
 const formatters = useFormatters()
 
+// Use the user from the store as the single source of truth
+const user = computed(() => authStore.currentUser)
+
 // Reactive state
-const user = ref(null)
 const loading = ref(false)
 const message = ref('')
 const messageType = ref('success')
@@ -719,28 +721,59 @@ const passwordForm = ref({
   password_confirmation: ''
 })
 
-// Computed properties
+// --- Refactored Logic ---
+
+// This function now populates the form from the store's user data
+const populateForm = (userData) => {
+  if (!userData) return
+  const formData = {
+    name: userData.name || '',
+    email: userData.email || '',
+    phone: userData.phone || '',
+    username: userData.username || '',
+    province_id: userData.province_id || '',
+    city_id: userData.city_id || '',
+    address: userData.address || ''
+  }
+  form.value = { ...formData }
+  originalForm.value = { ...formData }
+
+  if (formData.province_id) {
+    loadCitiesData(formData.province_id)
+  }
+}
+
+// Watch for the user data to become available from the store
+watch(user, (newUser) => {
+  if (newUser) {
+    populateForm(newUser)
+  }
+}, { immediate: true }) // 'immediate' will run the watcher on component mount
+
+// Lifecycle
+onMounted(async () => {
+  // The middleware already ensures the user is fetched.
+  // We just need to populate the form if the user is already available.
+  if (user.value) {
+    populateForm(user.value)
+  }
+  // Also load provinces data
+  await loadProvincesData()
+})
+
+// --- Computed properties ---
+
 const isUsernameChangeable = computed(() => {
-  // 1. If a server error is active, field is not changeable.
-  if (usernameError.value) {
-    return false
-  }
-  // 2. If user data is not loaded yet, default to not changeable to prevent premature editing.
-  if (!user.value) {
-    return false
-  }
-  // 3. The backend now provides the source of truth.
-  // The field is changeable if the days remaining is 0, null, or undefined.
+  if (usernameError.value) return false
+  if (!user.value) return false
   return !(user.value.days_until_username_change > 0)
 })
 
 const hasPassword = computed(() => {
   if (!user.value) return false
-  // Prioritize the more explicit 'has_password' field if it exists.
   if (typeof user.value.has_password === 'boolean') {
     return user.value.has_password
   }
-  // Fallback to the 'password' field.
   return !!user.value.password
 })
 
@@ -752,49 +785,21 @@ const messageClass = computed(() => {
 
 const hasFormChanges = computed(() => {
   if (!originalForm.value || !form.value) return false
-
   return Object.keys(form.value).some(key => {
-    return form.value[key] !== originalForm.value[key]
+    // Treat null and empty string as the same for comparison
+    const formVal = form.value[key] === null ? '' : form.value[key]
+    const originalVal = originalForm.value[key] === null ? '' : originalForm.value[key]
+    return formVal !== originalVal
   })
 })
 
-// Methods
-const loadUserData = async () => {
-  try {
-    loading.value = true
-    const response = await profileComposable.getCurrentUser()
-    user.value = response.user || response
 
-    // پر کردن فرم با اطلاعات کاربر
-    const formData = {
-      name: user.value.name || '',
-      email: user.value.email || '',
-      phone: user.value.phone || '',
-      username: user.value.username || '',
-      province_id: user.value.province_id || '',
-      city_id: user.value.city_id || '',
-      address: user.value.address || ''
-    }
-
-    form.value = { ...formData }
-    originalForm.value = { ...formData }
-
-    // بارگذاری شهرها اگر استان انتخاب شده
-    if (form.value.province_id) {
-      await loadCitiesData(form.value.province_id)
-    }
-
-  } catch (error) {
-    showMessage('خطا در دریافت اطلاعات کاربر', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
+// --- API Methods (now using `authStore` and `api`) ---
 
 const loadProvincesData = async () => {
   try {
-    const response = await profileComposable.getProvinces()
+    // Assuming a public endpoint for locations
+    const response = await api.get('/locations/provinces')
     provinces.value = response.data || response
   } catch (error) {
     // console.error('خطا در دریافت استان‌ها:', error)
@@ -806,10 +811,9 @@ const loadCitiesData = async (provinceId) => {
     cities.value = []
     return
   }
-
   loadingCities.value = true
   try {
-    const response = await profileComposable.getCities(provinceId)
+    const response = await api.get(`/locations/provinces/${provinceId}/cities`)
     cities.value = response.data || response
   } catch (error) {
     // console.error('خطا در دریافت شهرها:', error)
@@ -827,35 +831,11 @@ const updateProfile = async () => {
   loading.value = true
   clearMessage()
   usernameError.value = ''
-
   try {
-    const updateData = {
-      name: form.value.name,
-      province_id: form.value.province_id || null,
-      city_id: form.value.city_id || null,
-      address: form.value.address || null
-    }
-
-    // فقط فیلدهای تغییر یافته را ارسال کن
-    if (form.value.email !== originalForm.value.email) {
-      updateData.email = form.value.email || null
-    }
-    if (form.value.phone !== originalForm.value.phone) {
-      updateData.phone = form.value.phone || null
-    }
-    if (form.value.username !== originalForm.value.username) {
-      updateData.username = form.value.username
-    }
-
-    const response = await profileComposable.updateProfile(updateData)
-
-    const updatedUser = response.user || response
-    user.value = updatedUser
-    authStore.setUser(updatedUser)
-
-    // Update original form data
+    // No need to construct `updateData` manually. The store action handles it.
+    const response = await authStore.updateProfile(form.value)
+    // The store automatically updates the user, so we just need to update our `originalForm`
     originalForm.value = { ...form.value }
-
     showMessage('اطلاعات با موفقیت ذخیره شد', 'success')
   } catch (error) {
     if (error.statusCode === 422 && error.data?.errors?.username) {
@@ -871,26 +851,19 @@ const updateProfile = async () => {
 const handlePassword = async () => {
   loading.value = true
   clearMessage()
-
   try {
-    let response;
     if (hasPassword.value) {
-      response = await profileComposable.updatePassword(passwordForm.value)
+      await authStore.updatePassword(
+        passwordForm.value.current_password,
+        passwordForm.value.password,
+        passwordForm.value.password_confirmation
+      )
     } else {
-      response = await profileComposable.setPassword({
-        password: passwordForm.value.password,
-        password_confirmation: passwordForm.value.password_confirmation
-      })
+      await authStore.setPassword(
+        passwordForm.value.password,
+        passwordForm.value.password_confirmation
+      )
     }
-
-    if (response) {
-      const updatedUser = response.user || response;
-      if (updatedUser && typeof updatedUser === 'object') {
-        user.value = updatedUser;
-        authStore.setUser(updatedUser);
-      }
-    }
-
     showMessage('رمز عبور با موفقیت ذخیره شد', 'success')
     showPasswordForm.value = false
     resetPasswordForm()
@@ -900,12 +873,9 @@ const handlePassword = async () => {
       "The password field must contain at least one symbol.": "رمز عبور باید شامل حداقل یک نماد (مانند @#$!) باشد.",
       "The password field must be at least 8 characters.": "رمز عبور باید حداقل ۸ کاراکتر باشد."
     };
-
     let errorMessage = 'خطا در ذخیره رمز عبور';
     if (error.data?.errors?.password) {
-      const passwordErrors = error.data.errors.password;
-      // Translate each error and join with a newline for better readability
-      errorMessage = passwordErrors.map(e => errorMap[e] || e).join('\n');
+      errorMessage = error.data.errors.password.map(e => errorMap[e] || e).join('\n');
     } else if (error.data?.message) {
       errorMessage = error.data.message;
     }
@@ -915,17 +885,13 @@ const handlePassword = async () => {
   }
 }
 
+// These methods can remain similar, just ensuring they use the main `api` composable
 const handleEmailVerification = async () => {
   if (!form.value.email) return
-
   emailVerificationSending.value = true
   try {
-    await profileComposable.sendEmailVerification(form.value.email)
-
-    verificationModal.value = {
-      type: 'email',
-      target: form.value.email
-    }
+    await api.post('/email/send-verification', { email: form.value.email })
+    verificationModal.value = { type: 'email', target: form.value.email }
     showVerificationModal.value = true
   } catch (error) {
     showMessage('خطا در ارسال کد تایید ایمیل', 'error')
@@ -936,15 +902,10 @@ const handleEmailVerification = async () => {
 
 const handlePhoneVerification = async () => {
   if (!form.value.phone) return
-
   smsVerificationSending.value = true
   try {
-    await profileComposable.sendPhoneVerification(form.value.phone)
-
-    verificationModal.value = {
-      type: 'phone',
-      target: form.value.phone
-    }
+    await api.post('/phone/send-verification', { phone: form.value.phone })
+    verificationModal.value = { type: 'phone', target: form.value.phone }
     showVerificationModal.value = true
   } catch (error) {
     showMessage('خطا در ارسال کد تایید موبایل', 'error')
@@ -955,33 +916,20 @@ const handlePhoneVerification = async () => {
 
 const verifyCode = async () => {
   if (!verificationCode.value || verificationCode.value.length !== 6) return
-
   loading.value = true
   try {
-    let response
+    let response;
     if (verificationModal.value.type === 'email') {
-      response = await profileComposable.verifyEmail(verificationModal.value.target, verificationCode.value)
+      response = await api.post('/email/verify', { email: verificationModal.value.target, otp: verificationCode.value })
       showMessage('ایمیل با موفقیت تایید شد', 'success')
     } else {
-      response = await profileComposable.verifyPhone(verificationModal.value.target, verificationCode.value)
+      response = await api.post('/phone/verify', { phone: verificationModal.value.target, otp: verificationCode.value })
       showMessage('شماره موبایل با موفقیت تایید شد', 'success')
     }
-
-    // Use the response to update state directly, avoiding race conditions with refetching.
     if (response) {
-      const updatedUser = response.user || response
-      if (updatedUser && typeof updatedUser === 'object') {
-        user.value = updatedUser
-        authStore.setUser(updatedUser)
-
-        // Update the form to reflect the new verified data
-        form.value.email = updatedUser.email || ''
-        form.value.phone = updatedUser.phone || ''
-        originalForm.value.email = updatedUser.email || ''
-        originalForm.value.phone = updatedUser.phone || ''
-      }
+      authStore.setUser(response.user || response)
+      populateForm(response.user || response) // Repopulate form with new data
     }
-
     closeVerificationModal()
   } catch (error) {
     showMessage(error.data?.message || 'کد تایید اشتباه است', 'error')
@@ -989,6 +937,9 @@ const verifyCode = async () => {
     loading.value = false
   }
 }
+
+
+// --- UI and Helper Methods ---
 
 const confirmUsernameChange = () => {
   showUsernameWarning.value = false
@@ -1020,7 +971,7 @@ const closeVerificationModal = () => {
 }
 
 const resetForm = () => {
-  form.value = { ...originalForm.value }
+  populateForm(user.value) // Reset form from store data
 }
 
 const copyToClipboard = async (text) => {
@@ -1041,35 +992,31 @@ const generatePassword = () => {
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   const numbers = '0123456789'
   const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?'
-
   const allChars = lower + upper + numbers + symbols
-
   let password = ''
   password += lower[Math.floor(Math.random() * lower.length)]
   password += upper[Math.floor(Math.random() * upper.length)]
   password += numbers[Math.floor(Math.random() * numbers.length)]
   password += symbols[Math.floor(Math.random() * symbols.length)]
-
   for (let i = 4; i < length; i++) {
     password += allChars[Math.floor(Math.random() * allChars.length)]
   }
-
-  // Shuffle the password to avoid predictable characters at the start
   const shuffledPassword = password.split('').sort(() => 0.5 - Math.random()).join('')
-
   passwordForm.value.password = shuffledPassword
   passwordForm.value.password_confirmation = shuffledPassword
 }
 
 const refreshUserData = async () => {
-  await loadUserData()
+  // This now just calls the store action and lets the watcher handle the update
+  loading.value = true
+  await authStore.fetchUser()
+  loading.value = false
   showMessage('اطلاعات بروزرسانی شد', 'success')
 }
 
 const showMessage = (msg, type = 'success') => {
   message.value = msg
   messageType.value = type
-
   setTimeout(() => {
     clearMessage()
   }, 5000)
@@ -1084,21 +1031,6 @@ const formatDate = (dateString) => {
   if (!dateString) return 'نامشخص'
   return new Date(dateString).toLocaleDateString('fa-IR')
 }
-
-// Watchers
-watch(() => form.value.username, (newUsername) => {
-  if (newUsername !== user.value?.username && !isUsernameChangeable.value) {
-    form.value.username = user.value?.username || ''
-  }
-})
-
-// Lifecycle
-onMounted(async () => {
-  await Promise.all([
-    loadUserData(),
-    loadProvincesData()
-  ])
-})
 </script>
 
 <style scoped>
