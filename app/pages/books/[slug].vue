@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, navigateTo } from '#app'
 import { useApi } from '~/composables/useApi'
 import { useApiAuth } from '~/composables/useApiAuth'
@@ -99,6 +99,7 @@ const purchaseInProgress = ref(false)
 const fetchBook = async () => {
   try {
     const response = await api.get(`/books/${slug}`)
+    // Handle the wrapped response structure
     if (response?.success && response.data?.book) {
       book.value = response.data.book
       useHead({
@@ -152,12 +153,7 @@ const handlePurchase = async () => {
     }
   } catch (err) {
     console.error('Purchase failed:', err)
-    if (err.statusCode === 401 || err.status === 401) {
-      alert('احراز هویت نشده. لطفاً وارد شوید.')
-      await navigateTo('/auth')
-    } else {
-      alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
-    }
+    alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
   } finally {
     purchaseInProgress.value = false
   }
