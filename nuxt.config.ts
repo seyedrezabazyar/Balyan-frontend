@@ -20,6 +20,12 @@ export default defineNuxtConfig({
     }
   },
 
+  nitro: {
+    routeRules: {
+      '/api/v1/**': { cors: true },
+    },
+  },
+
   ssr: false,
 
   devServer: {

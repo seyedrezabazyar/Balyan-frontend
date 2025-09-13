@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 import { ref, watch, defineProps, defineEmits } from 'vue';
-import type { Role, Permission, CreateRolePayload } from '~/composables/useAuthApi';
+import type { Role, Permission, CreateRolePayload } from '~/types/auth';
 
 const props = defineProps<{
   show: boolean;

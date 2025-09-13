@@ -68,16 +68,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useAuthApi } from '~/composables/useAuthApi';
-import type { Role, Permission, CreateRolePayload, UpdateRolePayload } from '~/composables/useAuthApi';
+import { useApi } from '~/composables/useApi';
+import type { Role, Permission, CreateRolePayload, UpdateRolePayload } from '~/types/auth';
 import RoleModal from '~/components/admin/RoleModal.vue';
 
 definePageMeta({
-  layout: 'admin', // Assuming an admin layout exists
-  middleware: ['auth'], // Assuming an auth middleware exists
+  layout: 'admin',
+  middleware: ['auth'],
 });
 
-const api = useAuthApi();
+const { $api } = useApi();
 
 const roles = ref<Role[]>([]);
 const groupedPermissions = ref<Record<string, Permission[]>>({});
@@ -90,10 +90,8 @@ const currentRole = ref<Role | null>(null);
 async function fetchRoles() {
   try {
     isLoading.value = true;
-    // Fetch roles with their assigned permissions
-    const response = await api.getRoles(true);
-    // Handle both wrapped and direct array responses
-    roles.value = Array.isArray(response.data) ? response.data : response;
+    const response = await $api.get('/auth/roles', { params: { with_permissions: true } });
+    roles.value = response.data || [];
   } catch (e) {
     error.value = e as Error;
     console.error("Failed to fetch roles:", e);
@@ -104,16 +102,11 @@ async function fetchRoles() {
 
 async function fetchPermissions() {
   try {
-    const response = await api.getPermissions();
-    // The API likely returns pre-grouped permissions.
-    // Handle both wrapped {data: {...}} and direct {...} object responses.
-    const permissionsData = response.data && typeof response.data === 'object' && !Array.isArray(response.data)
-      ? response.data
-      : response;
-    groupedPermissions.value = permissionsData;
+    const response = await $api.get('/auth/permissions');
+    groupedPermissions.value = response.data || {};
   } catch (e) {
     console.error("Failed to fetch permissions:", e);
-    error.value = e as Error; // Also set error if permissions fail
+    error.value = e as Error;
   }
 }
 
@@ -148,18 +141,13 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
         display_name: formData.display_name,
         description: formData.description,
       };
-      await api.updateRole(roleId, updatePayload);
-      await api.updateRolePermissions(roleId, formData.permission_ids);
+      // Note: The API calls are now distinct.
+      await $api.put(`/auth/roles/${roleId}`, updatePayload);
+      await $api.put(`/auth/permissions/role/${roleId}`, { permission_ids: formData.permission_ids });
       alert('نقش با موفقیت به‌روزرسانی شد.');
     } else {
       // Create mode
-      const createPayload: CreateRolePayload = {
-        name: formData.name,
-        display_name: formData.display_name,
-        description: formData.description,
-        permission_ids: formData.permission_ids,
-      };
-      await api.createRole(createPayload);
+      await $api.post('/auth/roles', formData);
       alert('نقش با موفقیت ایجاد شد.');
     }
     closeModal();
@@ -173,7 +161,7 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
 async function handleDeleteRole(roleId: number) {
   if (confirm('آیا از حذف این نقش اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
     try {
-      await api.deleteRole(roleId);
+      await $api.delete(`/auth/roles/${roleId}`);
       alert('نقش با موفقیت حذف شد.');
       roles.value = roles.value.filter(r => r.id !== roleId);
     } catch (e) {

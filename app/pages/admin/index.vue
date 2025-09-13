@@ -7,28 +7,6 @@
         <p class="text-gray-600 mt-2">مدیریت کاربران و سیستم</p>
       </div>
 
-      <!-- Debug Section -->
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-        <h2 class="text-lg font-semibold text-yellow-800 mb-3">اطلاعات Debug</h2>
-        <div class="space-y-2 text-sm">
-          <p><strong>Token:</strong> {{ authStore.token ? 'موجود' : 'ندارد' }}</p>
-          <p><strong>Token Length:</strong> {{ authStore.token?.length || 0 }}</p>
-          <p><strong>User:</strong> {{ authStore.user?.name || 'نامشخص' }}</p>
-          <p><strong>Is Admin:</strong> {{ authStore.isAdmin ? 'بله' : 'خیر' }}</p>
-          <p><strong>API Base:</strong> {{ apiBase }}</p>
-          <p><strong>API Connection:</strong> {{ apiStatus }}</p>
-        </div>
-        <div class="mt-3 flex gap-2">
-          <button @click="runDebugTests"
-                  class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
-            اجرای تست‌های Debug
-          </button>
-          <button @click="testDirectAPI"
-                  class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-            تست مستقیم API
-          </button>
-        </div>
-      </div>
 
       <!-- Error Display -->
       <div v-if="errors.length > 0" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -118,7 +96,6 @@
 
 <script setup>
 import { useApi } from '~/composables/useApi'
-import { useApiTest } from '~/composables/useApiTest'
 import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 
@@ -128,117 +105,24 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const config = useRuntimeConfig()
-const { testApiConnection, testAuthEndpoint, testAdminEndpoint } = useApiTest()
+const { $api } = useApi()
 
 const stats = ref({})
 const errors = ref([])
-const apiStatus = ref('نامشخص')
-const apiBase = ref(config.public.apiBase)
 
 const addError = (error) => {
   errors.value.push(new Date().toLocaleTimeString() + ': ' + error)
 }
 
-// این تابع API را با token فعلی از store ایجاد می‌کند
-const createApi = () => {
-  if (!authStore.token) {
-    console.error('No token available')
-    return null
-  }
-  return useApi(authStore.token)
-}
-
 const loadStats = async () => {
   try {
-    console.log('Loading stats...')
-    console.log('Current token:', authStore.token ? 'exists' : 'missing')
-
-    const api = createApi()
-    if (!api) {
-      addError('Token موجود نیست')
-      return
-    }
-
-    const response = await api.get('/auth/users/statistics')
+    // The new useApi is self-contained and doesn't need a token passed.
+    // It will call GET /api/v1/dashboard
+    const response = await $api.get('/dashboard')
     stats.value = response.data || response
-    console.log('Stats loaded:', stats.value)
   } catch (error) {
-    console.error('خطا در دریافت آمار:', error)
-    addError(`خطا در دریافت آمار: ${error.message}`)
-  }
-}
-
-const runDebugTests = async () => {
-  errors.value = []
-  console.log('=== شروع تست‌های Debug ===')
-  console.log('Auth store token:', authStore.token)
-  console.log('Auth store user:', authStore.user)
-
-  // Test 1: API Connection
-  const connectionOk = await testApiConnection()
-  apiStatus.value = connectionOk ? 'متصل' : 'قطع'
-
-  if (!connectionOk) {
-    addError('اتصال به API برقرار نیست')
-    return
-  }
-
-  // Test 2: Authentication
-  if (!authStore.token) {
-    addError('Token موجود نیست در store')
-    return
-  }
-
-  console.log('Calling testAuthEndpoint with token:', authStore.token)
-  const authResult = await testAuthEndpoint(authStore.token)
-  if (!authResult) {
-    addError('Authentication ناموفق')
-    return
-  }
-
-  // Test 3: Admin Access
-  const adminResult = await testAdminEndpoint(authStore.token)
-  if (!adminResult) {
-    addError('دسترسی ادمین ندارید یا خطا در API')
-    return
-  }
-
-  console.log('=== همه تست‌ها موفق ===')
-  stats.value = adminResult.data || adminResult
-}
-
-const testDirectAPI = async () => {
-  try {
-    console.log('Testing direct API with token:', authStore.token)
-
-    if (!authStore.token) {
-      addError('Token موجود نیست')
-      return
-    }
-
-    const response = await $fetch('/auth/users/statistics', {
-      baseURL: 'http://localhost:8000/api',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Accept': 'application/json'
-      }
-    })
-    console.log('Direct API test success:', response)
-
-    // Handle nested response structure
-    if (response.success && response.data) {
-      if (response.data.success && response.data.data) {
-        stats.value = response.data.data
-      } else {
-        stats.value = response.data
-      }
-    } else {
-      stats.value = response
-    }
-  } catch (error) {
-    console.error('Direct API test failed:', error)
-    addError(`تست مستقیم API ناموفق: ${error.message}`)
+    console.error('Error fetching stats:', error)
+    addError(`Error fetching stats: ${error.message}`)
   }
 }
 
