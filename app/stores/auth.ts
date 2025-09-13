@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
     // This action is called from the login page
     async loginWithPassword(identifier: string, password: string) {
       const api = useApi();
-      const response = await api.post('/auth/login', { identifier, password });
+      const response = await api.post('/auth/login-password', { identifier, password });
       this.setAuth(response);
       return response;
     },

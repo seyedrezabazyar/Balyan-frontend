@@ -167,6 +167,7 @@ const handleCheckUser = async () => {
   identifierError.value = ''
   const value = formatters.toEnglishDigits(identifier.value.trim())
 
+  // --- Start: Input Validation ---
   if (value.includes('@')) {
     if (!validator.isEmail(value)) {
       identifierError.value = 'فرمت ایمیل وارد شده معتبر نیست.'
@@ -180,22 +181,33 @@ const handleCheckUser = async () => {
     }
     identifier.value = normalizedPhone
   }
+  // --- End: Input Validation ---
 
   loading.value = true
   try {
     const response = await authStore.checkUser(identifier.value)
-    checkUserResponse.value = response
+    checkUserResponse.value = response // Store for later use (e.g., in verifyOtp)
 
-    if (!response.user_exists) {
-      uiState.value = 'register'
-    } else if (response.has_password) {
-      uiState.value = 'password'
+    // Check for a successful API response before proceeding
+    if (response && response.success) {
+      if (!response.user_exists) {
+        // Scenario 3: User does not exist -> Go to registration form
+        uiState.value = 'register'
+      } else if (response.has_password) {
+        // Scenario 1: User exists and has a password -> Go to password form
+        uiState.value = 'password'
+      } else {
+        // Scenario 2: User exists but has no password -> Go to OTP flow
+        // The OTP request will handle setting the uiState to 'otp'
+        await handleRequestOtp(false)
+      }
     } else {
-      // Automatically request OTP for users without password
-      await handleRequestOtp(false)
+      // Handle cases where the API call itself fails or returns success: false
+      throw new Error(response?.message || 'پاسخ نامعتبر از سرور دریافت شد.')
     }
   } catch (err: any) {
-    error.value = err.data?.message || 'خطایی در بررسی اطلاعات رخ داده است.'
+    // Catch errors from the API call or the thrown error from above
+    error.value = err.data?.message || err.message || 'خطایی در بررسی اطلاعات رخ داده است.'
   } finally {
     loading.value = false
   }
