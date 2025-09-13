@@ -112,23 +112,18 @@ const cartStore = useCartStore()
 const router = useRouter()
 const showUserMenu = ref(false)
 
-const api = useApi(authStore.token)
-
 onMounted(() => {
-  cartStore.fetchCart()
+  // Fetch cart only if user is authenticated
+  if (authStore.isAuthenticated) {
+    cartStore.fetchCart()
+  }
 })
 
 const logout = async () => {
-  try {
-    if (authStore.token) {
-      await api.post('/auth/logout')
-    }
-  } catch (err) {
-    console.warn('خطا در خروج از سرور:', err)
-  } finally {
-    authStore.clearAuth()
-    showUserMenu.value = false
-    await router.push('/auth')
-  }
+  // The logout logic is now fully contained within the auth store.
+  // It handles the API call and clearing local state.
+  await authStore.logout()
+  showUserMenu.value = false
+  await router.push('/auth')
 }
 </script>

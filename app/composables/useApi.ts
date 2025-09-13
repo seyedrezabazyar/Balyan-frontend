@@ -7,20 +7,15 @@ export const useApi = (token: string | null = null) => {
 
   const fetchApi = (url: string, options: FetchOptions) => {
     // Get the base URL from the public runtime config.
-    // This makes the behavior consistent across dev and prod.
     const apiBase = config.public.apiBase || ''
 
     // Handle the Sanctum CSRF cookie route as a special case.
-    // It should be called at the root of the apiBase, without /v1.
     if (url === '/sanctum/csrf-cookie') {
-      return $fetch(url, {
-        ...options,
-        baseURL: apiBase
-      })
+      return $fetch(url, { ...options, baseURL: apiBase })
     }
 
-    // For all other calls, construct the full versioned URL.
-    // Example: 'http://localhost:8000/api' becomes 'http://localhost:8000/api/v1'
+    // Always construct the full versioned URL.
+    // Call sites should NOT include /v1/.
     const versionedApiBase = `${apiBase}/v1`
 
     return $fetch(url, {
