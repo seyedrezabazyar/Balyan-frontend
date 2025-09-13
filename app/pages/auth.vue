@@ -41,21 +41,24 @@
             <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
               {{ loading ? 'در حال ورود...' : 'ورود با رمز عبور' }}
             </button>
+            <!-- OTP login is not a valid flow for users who already have a password. -->
+            <!-- To use OTP, they should use a "Forgot Password" flow which would then trigger an OTP. -->
+            <!-- Removing this button prevents the "Invalid code" error from the backend. -->
           </form>
         </div>
 
         <!-- Step 2: Register (New User) -->
         <div v-if="uiState === 'register'">
-          <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+           <div class="mb-4 p-3 bg-blue-50 rounded-lg">
             <p class="text-sm text-blue-800"><strong>شناسه:</strong> {{ identifier }}</p>
             <p class="text-xs text-blue-600 mt-1">به نظر می‌رسد کاربر جدید هستید. برای تکمیل ثبت‌نام، نام خود را وارد کرده و کد تایید را دریافت کنید.</p>
           </div>
           <form @submit.prevent="handleRequestOtp()">
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">نام شما</label>
-              <input v-model="userName" type="text" placeholder="نام و نام خانوادگی" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" :class="{ 'text-right': nameDirection === 'rtl', 'text-left': nameDirection === 'ltr' }" :dir="nameDirection" required />
-              <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
-            </div>
+             <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">نام شما</label>
+                <input v-model="userName" type="text" placeholder="نام و نام خانوادگی" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" :class="{ 'text-right': nameDirection === 'rtl', 'text-left': nameDirection === 'ltr' }" :dir="nameDirection" required />
+                <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
+              </div>
             <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
               {{ loading ? 'در حال ارسال...' : 'ارسال کد تایید و ثبت‌نام' }}
             </button>
@@ -71,7 +74,7 @@
           <form @submit.prevent="handleVerifyOtp">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">کد تایید ۶ رقمی</label>
-              <p class="text-xs text-red-600 mb-2">برای تست، کد تایید: <strong>123456</strong></p>
+               <p class="text-xs text-red-600 mb-2">برای تست، کد تایید: <strong>123456</strong></p>
               <input v-model="otp" type="text" placeholder="123456" maxlength="6" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest" required @input="otp = otp.replace(/[^0-9]/g, '')" />
             </div>
             <button type="submit" :disabled="loading || otp.length !== 6" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
@@ -105,7 +108,7 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted, watch, computed } from 'vue'
-import { useRouter } from '#app' // Fixed: Use Nuxt's useRouter instead of vue-router
+import { useRouter } from 'vue-router'
 import validator from 'validator'
 import { useAuthStore } from '~/stores/auth'
 import { useFormatters } from '~/composables/useFormatters'
@@ -116,7 +119,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const router = useRouter() // Now correctly imported
+const router = useRouter()
 const formatters = useFormatters()
 
 type UiState = 'identifier' | 'register' | 'password' | 'otp'
