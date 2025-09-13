@@ -45,13 +45,11 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async checkUser(identifier: string) {
       const api = useApi();
-      // Using a more RESTful endpoint
       return await api.post('/auth/check-user', { identifier });
     },
 
     async loginWithPassword(identifier: string, password: string) {
       const api = useApi();
-      // This endpoint seems correct as login is an auth action
       const response = await api.post('/auth/login-password', { identifier, password });
       this.setAuth(response);
       return response;
@@ -59,7 +57,7 @@ export const useAuthStore = defineStore('auth', {
 
     async sendOtp(identifier: string) {
       const api = useApi();
-      return await api.post('/auth/otp/send', { identifier });
+      return await api.post('/auth/send-otp', { identifier });
     },
 
     async verifyOtp(identifier: string, otp: string, name?: string) {
@@ -68,7 +66,7 @@ export const useAuthStore = defineStore('auth', {
       if (name) {
         payload.name = name;
       }
-      const response = await api.post('/auth/otp/verify', payload);
+      const response = await api.post('/auth/verify-otp', payload);
       this.setAuth(response);
       return response;
     },
@@ -76,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       const api = useApi();
       try {
-        await api.post('/logout');
+        await api.post('/auth/logout');
       } catch (error) {
         console.error('Logout failed, but clearing auth state anyway.', error);
       } finally {
@@ -84,8 +82,49 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async logoutAll() {
+      const api = useApi();
+      try {
+        await api.post('/auth/logout-all');
+      } catch (error) {
+        console.error('Logout from all devices failed, but clearing auth state anyway.', error);
+      } finally {
+        this.clearAuth();
+      }
+    },
+
+    async updateProfile(data: any) {
+      const api = useApi();
+      const response = await api.post('/auth/profile/update', data);
+      if (response.user) {
+        this.setUser(response.user);
+      }
+      return response;
+    },
+
+    async setPassword(password: string, password_confirmation: string) {
+      const api = useApi();
+      return await api.post('/auth/password/set', { password, password_confirmation });
+    },
+
+    async updatePassword(current_password: string, password: string, password_confirmation: string) {
+      const api = useApi();
+      return await api.post('/auth/password/update', { current_password, password, password_confirmation });
+    },
+
+    async refreshToken() {
+      if (!this.refreshToken) return;
+      const api = useApi();
+      try {
+        const response = await api.post('/auth/refresh', { refresh_token: this.refreshToken });
+        this.setAuth(response);
+      } catch (error) {
+        console.error('Failed to refresh token, clearing auth state.', error);
+        this.clearAuth();
+      }
+    },
+
     setAuth(data: any) {
-      // ... (rest of the existing setAuth function)
       let payload: any = data
       if (typeof payload === 'string') {
         try {
@@ -107,7 +146,7 @@ export const useAuthStore = defineStore('auth', {
         payload = (payload as any).data
       }
 
-      this.token = payload?.tokens?.access_token || payload?.access_token || payload?.token || null
+      this.token = payload?.tokens?.access_token || payload?.access_token || null
       this.refreshToken = payload?.tokens?.refresh_token || payload?.refresh_token || null
       this.user = (payload && typeof payload === 'object') ? (payload.user ?? null) : null
       this.isAuthenticated = !!this.token
@@ -133,8 +172,7 @@ export const useAuthStore = defineStore('auth', {
       }
       const api = useApi()
       try {
-        // Using the new /user endpoint
-        const response = await api.get('/user')
+        const response = await api.get('/auth/user')
         this.user = (response && typeof response === 'object') ? (response.user || response) : null
         this.isAuthenticated = true
         if (process.client) {
