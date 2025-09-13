@@ -28,39 +28,40 @@
           </ul>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="text-2xl font-bold text-green-600">
-            <span v-if="book.sale_price" class="text-base text-gray-400 line-through mr-2">{{ formatPrice(book.price) }}</span>
-            <span>{{ formatPrice(book.sale_price || book.price) }}</span>
+        <div class="mt-6 pt-6 border-t">
+          <!-- Purchased State -->
+          <div v-if="book.is_purchased" class="text-center">
+            <p class="font-semibold text-lg text-green-600">شما این کتاب را خریداری کرده‌اید.</p>
+            <button class="mt-2 bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">
+              مشاهده کتاب
+            </button>
           </div>
 
-          <!-- 1. Purchased State -->
-          <button v-if="book.is_purchased"
-                  disabled
-                  class="bg-gray-400 text-white font-bold py-2 px-6 rounded-lg w-48 text-center cursor-not-allowed">
-            خریداری شده
-          </button>
+          <!-- Direct Purchase Flow -->
+          <div v-else class="space-y-4">
+            <h3 class="font-semibold text-lg">خرید مستقیم</h3>
 
-          <!-- 2. In Cart State -->
-          <button v-else-if="isInCart"
-                  disabled
-                  class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg w-48 text-center cursor-not-allowed">
-            رفته به سبد خرید
-          </button>
+            <!-- Coupon Section -->
+            <div class="flex items-center gap-2">
+              <input type="text" v-model="couponCode" placeholder="کد تخفیف (اختیاری)"
+                     class="flex-grow p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
+              <button @click="validateCoupon" :disabled="validatingCoupon"
+                      class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50">
+                <span v-if="validatingCoupon">...</span>
+                <span v-else>اعتبارسنجی</span>
+              </button>
+            </div>
+            <p v-if="couponMessage" :class="couponMessageClass" class="text-sm">
+              {{ couponMessage }}
+            </p>
 
-          <!-- 3. Add to Cart State -->
-          <button v-else
-                  @click="addToCartHandler"
-                  :disabled="isAddingToCart"
-                  class="text-white font-bold py-2 px-6 rounded-lg transition w-48 text-center"
-                  :class="{
-                    'bg-blue-600 hover:bg-blue-700': !isAddingToCart,
-                    'bg-blue-400 cursor-wait': isAddingToCart
-                  }">
-            <span v-if="isAddingToCart">در حال افزودن...</span>
-            <span v-else>افزودن به سبد خرید</span>
-          </button>
-
+            <!-- Purchase Button -->
+            <button @click="handlePurchase" :disabled="purchaseInProgress"
+                    class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+              <span v-if="purchaseInProgress">در حال انتقال به درگاه...</span>
+              <span v-else>خرید و پرداخت</span>
+            </button>
+          </div>
         </div>
       </div>
     </article>
@@ -69,40 +70,35 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, navigateTo } from '#app'
 import { useApi } from '~/composables/useApi'
-import { useCartStore } from '~/stores/cart'
 
 useHead({
   title: 'جزئیات کتاب',
 })
 
 const route = useRoute()
-const api = useApi()
-const cartStore = useCartStore()
+const { $api } = useApi()
 
 const book = ref(null)
 const loading = ref(true)
 const error = ref(null)
-const isAddingToCart = ref(false)
-
 const slug = route.params.slug
 
-const isInCart = computed(() => {
-  return cartStore.items.some(item => item.product.id === book.value?.id)
-})
+// State for new purchase flow
+const couponCode = ref('')
+const validatingCoupon = ref(false)
+const couponMessage = ref('')
+const couponMessageClass = ref('')
+const purchaseInProgress = ref(false)
 
 const fetchBook = async () => {
   try {
-    const response = await api.get(`/books/${slug}`)
-    if (response.success && response.data && response.data.book) {
-      book.value = response.data.book
-      useHead({
-        title: response.data.book.title,
-      })
-    } else {
-      throw new Error(response.error || 'کتاب مورد نظر یافت نشد.')
-    }
+    const response = await $api.get(`/books/${slug}`)
+    book.value = response
+    useHead({
+      title: response.title,
+    })
   } catch (err) {
     error.value = err
     console.error('Failed to fetch book details:', err)
@@ -111,26 +107,54 @@ const fetchBook = async () => {
   }
 }
 
+const validateCoupon = async () => {
+  if (!couponCode.value) {
+    couponMessage.value = 'لطفاً کد تخفیف را وارد کنید.'
+    couponMessageClass.value = 'text-red-500'
+    return
+  }
+  validatingCoupon.value = true
+  couponMessage.value = ''
+  try {
+    const response = await $api.post('/purchase/coupon/validate', { code: couponCode.value })
+    if (response.success) {
+      couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
+      couponMessageClass.value = 'text-green-600'
+    }
+  } catch (err) {
+    couponMessage.value = err.data?.data?.message || 'کد تخفیف نامعتبر است.'
+    couponMessageClass.value = 'text-red-500'
+  } finally {
+    validatingCoupon.value = false
+  }
+}
+
+const handlePurchase = async () => {
+  if (!book.value) return;
+  purchaseInProgress.value = true
+  try {
+    const response = await $api.post(`/books/${book.value.id}/buy`, {
+      payment_method: 'zarinpal',
+      coupon_code: couponCode.value || null,
+    })
+    if (response.success && response.data.payment_url) {
+      // Redirect user to the payment gateway
+      await navigateTo(response.data.payment_url, { external: true })
+    } else {
+      // Handle cases where payment URL is not returned
+      alert('خطا در ایجاد لینک پرداخت. لطفاً دوباره تلاش کنید.')
+    }
+  } catch (err) {
+    console.error('Purchase failed:', err)
+    alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
+  } finally {
+    purchaseInProgress.value = false
+  }
+}
+
 const formatPrice = (price) => {
   if (!price) return ''
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
-}
-
-const addToCartHandler = async () => {
-  if (book.value?.is_purchased || isInCart.value || isAddingToCart.value || !book.value) return
-
-  isAddingToCart.value = true
-  try {
-    await cartStore.addToCart({
-      product_id: book.value.id,
-      product_type: 'book',
-      price: book.value.sale_price || book.value.price
-    })
-  } catch (err) {
-    console.error('Failed to add to cart:', err)
-  } finally {
-    isAddingToCart.value = false
-  }
 }
 
 onMounted(fetchBook)
