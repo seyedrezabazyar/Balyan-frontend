@@ -16,8 +16,8 @@ interface User {
   created_at?: string
   preferred_method?: string
   locked_until?: string
-  password?: boolean // This might be a simplified check from older API versions
-  has_password?: boolean // More explicit check
+  password?: boolean
+  has_password?: boolean
   username_last_changed_at?: string | null
   days_until_username_change?: number | null
   province_id?: number | null
@@ -43,10 +43,40 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    setAuth(data: any) {
-      console.log('Setting auth data:', data)
+    // This action is called from the login page
+    async checkUser(identifier: string) {
+      const api = useApi();
+      return await api.post('/auth/check-user', { identifier });
+    },
 
-      // Normalize response: handle strings with non-JSON prefixes and wrapped payloads
+    // This action is called from the login page
+    async loginWithPassword(identifier: string, password: string) {
+      const api = useApi();
+      const response = await api.post('/auth/login', { identifier, password });
+      this.setAuth(response);
+      return response;
+    },
+
+    // This action is called from the login page
+    async sendOtp(identifier: string) {
+      const api = useApi();
+      return await api.post('/auth/otp/send', { identifier });
+    },
+
+    // This action is called from the login page
+    async verifyOtp(identifier: string, otp: string, name?: string) {
+      const api = useApi();
+      const payload: { identifier: string; otp: string; name?: string } = { identifier, otp };
+      if (name) {
+        payload.name = name;
+      }
+      const response = await api.post('/auth/otp/verify', payload);
+      this.setAuth(response);
+      return response;
+    },
+
+    setAuth(data: any) {
+      // ... (rest of the existing setAuth function)
       let payload: any = data
       if (typeof payload === 'string') {
         try {
@@ -59,33 +89,25 @@ export const useAuthStore = defineStore('auth', {
           if (start !== -1) {
             payload = JSON.parse(sanitized.slice(start))
           } else {
-            console.warn('Auth response string did not contain JSON; defaulting to empty object')
             payload = {}
           }
         } catch (e) {
-          console.error('Failed to parse auth response JSON:', e)
           payload = {}
         }
       } else if (payload && typeof payload === 'object' && 'data' in payload && (payload as any).data && typeof (payload as any).data === 'object') {
         payload = (payload as any).data
       }
 
-      // Handle different response structures
       this.token = payload?.tokens?.access_token || payload?.access_token || payload?.token || null
       this.refreshToken = payload?.tokens?.refresh_token || payload?.refresh_token || null
       this.user = (payload && typeof payload === 'object') ? (payload.user ?? null) : null
       this.isAuthenticated = !!this.token
 
-      console.log('Token set:', this.token ? 'exists' : 'missing')
-      console.log('User set:', this.user)
-
       if (process.client) {
         if (this.token) localStorage.setItem('token', this.token)
         if (this.refreshToken) localStorage.setItem('refreshToken', this.refreshToken)
-        // Persist user as JSON even if null to avoid "undefined" string in storage
         localStorage.setItem('user', JSON.stringify(this.user))
         localStorage.setItem('isAuthenticated', this.isAuthenticated ? 'true' : 'false')
-        console.log('Data saved to localStorage')
       }
     },
 
@@ -93,24 +115,16 @@ export const useAuthStore = defineStore('auth', {
       this.user = newUser
       if (process.client) {
         localStorage.setItem('user', JSON.stringify(this.user))
-        console.log('User data updated in store and localStorage via setUser')
       }
     },
 
     async fetchUser() {
       if (!this.token) {
-        console.error('No token available for fetchUser')
         return null
       }
-
-      console.log('Fetching user with token:', this.token.substring(0, 20) + '...')
       const api = useApi(this.token)
-
       try {
         let response: any = await api.get('/auth/user')
-        console.log('fetchUser raw response:', response)
-
-        // Normalize potential string response with preface text
         if (typeof response === 'string') {
           try {
             const sanitized = response.replace(/^\uFEFF/, '').trim()
@@ -126,65 +140,45 @@ export const useAuthStore = defineStore('auth', {
             console.error('Failed to parse user response JSON:', e)
           }
         }
-
         this.user = (response && typeof response === 'object') ? (response.user || response) : null
         this.isAuthenticated = true
-
-        // Update localStorage
         if (process.client) {
           localStorage.setItem('user', JSON.stringify(this.user))
           localStorage.setItem('isAuthenticated', 'true')
         }
-
         return this.user
       } catch (error) {
-        console.error('Error fetching user:', error)
         this.clearAuth()
         return null
       }
     },
 
     clearAuth() {
-      console.log('Clearing auth data')
       this.token = null
       this.refreshToken = null
       this.user = null
       this.isAuthenticated = false
-
       if (process.client) {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
         localStorage.removeItem('isAuthenticated')
-        console.log('Auth data cleared from localStorage')
       }
     },
 
     async initAuth() {
       if (process.client) {
-        console.log('Initializing auth from localStorage and verifying with server...');
-
         const token = localStorage.getItem('token');
         if (!token) {
-          console.log('No token found in localStorage. User is logged out.');
           this.clearAuth();
           return;
         }
-
         this.token = token;
-        this.isAuthenticated = true; // Optimistically set to true
+        this.isAuthenticated = true;
         this.refreshToken = localStorage.getItem('refreshToken');
-
-        console.log('Token found in localStorage. Attempting to fetch user data to verify session.');
-
-        // Now, verify the token by fetching the user.
-        // The fetchUser action will handle clearing auth on failure.
         const user = await this.fetchUser();
-
-        if (user) {
-          console.log('Session verified successfully. User is logged in.');
-        } else {
-          console.log('Session verification failed. Token is likely invalid or expired. User has been logged out.');
+        if (!user) {
+          // Token is invalid/expired
         }
       }
     }
