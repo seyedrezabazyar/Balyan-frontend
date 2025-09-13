@@ -43,27 +43,25 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // This action is called from the login page
     async checkUser(identifier: string) {
       const api = useApi();
-      return await api.post('/auth/check-user', { identifier });
+      // Using a more RESTful endpoint
+      return await api.post('/users/check', { identifier });
     },
 
-    // This action is called from the login page
     async loginWithPassword(identifier: string, password: string) {
       const api = useApi();
-      const response = await api.post('/auth/login-password', { identifier, password });
+      // This endpoint seems correct as login is an auth action
+      const response = await api.post('/auth/login', { identifier, password });
       this.setAuth(response);
       return response;
     },
 
-    // This action is called from the login page
     async sendOtp(identifier: string) {
       const api = useApi();
       return await api.post('/auth/otp/send', { identifier });
     },
 
-    // This action is called from the login page
     async verifyOtp(identifier: string, otp: string, name?: string) {
       const api = useApi();
       const payload: { identifier: string; otp: string; name?: string } = { identifier, otp };
@@ -76,9 +74,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const api = useApi(this.token);
+      const api = useApi();
       try {
-        await api.post('/auth/logout');
+        await api.post('/logout');
       } catch (error) {
         console.error('Logout failed, but clearing auth state anyway.', error);
       } finally {
@@ -133,24 +131,10 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) {
         return null
       }
-      const api = useApi(this.token)
+      const api = useApi()
       try {
-        let response: any = await api.get('/auth/user')
-        if (typeof response === 'string') {
-          try {
-            const sanitized = response.replace(/^\uFEFF/, '').trim()
-            const firstBrace = sanitized.indexOf('{')
-            const firstBracket = sanitized.indexOf('[')
-            const start = firstBrace === -1
-              ? firstBracket
-              : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket))
-            if (start !== -1) {
-              response = JSON.parse(sanitized.slice(start))
-            }
-          } catch (e) {
-            console.error('Failed to parse user response JSON:', e)
-          }
-        }
+        // Using the new /user endpoint
+        const response = await api.get('/user')
         this.user = (response && typeof response === 'object') ? (response.user || response) : null
         this.isAuthenticated = true
         if (process.client) {
@@ -159,6 +143,7 @@ export const useAuthStore = defineStore('auth', {
         }
         return this.user
       } catch (error) {
+        console.error('Failed to fetch user, clearing auth state.', error)
         this.clearAuth()
         return null
       }

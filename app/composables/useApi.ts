@@ -15,6 +15,7 @@ export const useApi = () => {
     $api,
     get: (url: string, opts?: any) => $api(url, { method: 'GET', ...opts }),
     post: (url: string, body?: any, opts?: any) => $api(url, { method: 'POST', body, ...opts }),
-    // ...add put, delete اگر لازم
+    put: (url: string, body?: any, opts?: any) => $api(url, { method: 'PUT', body, ...opts }),
+    delete: (url: string, opts?: any) => $api(url, { method: 'DELETE', ...opts }),
   }
 }

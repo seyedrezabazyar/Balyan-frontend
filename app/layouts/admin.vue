@@ -63,15 +63,15 @@ import { useApi } from '~/composables/useApi'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const api = useApi(authStore.token)
+const api = useApi()
 
 const logout = async () => {
   try {
     if (authStore.token) {
-      await api.post('/auth/logout')
+      await api.post('/logout')
     }
   } catch (err) {
-    console.warn('خطا در خروج از سرور:', err)
+    console.warn('Server logout failed, clearing client session anyway.', err)
   } finally {
     authStore.clearAuth()
     await router.push('/auth')

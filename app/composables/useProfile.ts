@@ -1,50 +1,49 @@
 import { useApi } from '~/composables/useApi'
-import { useAuthStore } from '~/stores/auth'
 
 export const useProfile = () => {
-  const authStore = useAuthStore()
-  const api = useApi(authStore.token)
+  const api = useApi()
 
+  // Note: The endpoints have been updated for better RESTful practices.
+  // The old /auth/user is now just /user
   const getCurrentUser = () => {
-    return api.get('/auth/user')
+    return api.get('/user')
   }
 
+  // POST /auth/profile/update is now PUT /profile
   const updateProfile = (data: any) => {
-    return api.post('/auth/profile/update', data)
+    return api.put('/profile', data)
   }
 
   const setPassword = (data: any) => {
-    return api.post('/auth/password/set', data)
+    return api.post('/password/set', data)
   }
 
   const updatePassword = (data: any) => {
-    return api.post('/auth/password/update', data)
+    return api.put('/password', data)
   }
 
   const getProvinces = () => {
-    // This call does not require auth
-    return useApi().get('/locations/provinces')
+    return api.get('/locations/provinces')
   }
 
   const getCities = (provinceId: number) => {
-    // This call does not require auth
-    return useApi().get(`/locations/provinces/${provinceId}/cities`)
+    return api.get(`/locations/provinces/${provinceId}/cities`)
   }
 
   const sendEmailVerification = (email: string) => {
-    return api.post('/auth/email/send-verification', { email })
+    return api.post('/email/send-verification', { email })
   }
 
   const verifyEmail = (email: string, code: string) => {
-    return api.post('/auth/email/verify', { email, code })
+    return api.post('/email/verify', { email, code })
   }
 
   const sendPhoneVerification = (phone: string) => {
-    return api.post('/auth/phone/send-verification', { phone })
+    return api.post('/phone/send-verification', { phone })
   }
 
   const verifyPhone = (phone: string, code: string) => {
-    return api.post('/auth/phone/verify', { phone, code })
+    return api.post('/phone/verify', { phone, code })
   }
 
   return {
