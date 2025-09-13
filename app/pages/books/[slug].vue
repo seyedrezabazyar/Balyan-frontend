@@ -71,16 +71,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, navigateTo } from '#app'
 import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 useHead({
   title: 'جزئیات کتاب',
 })
 
 const route = useRoute()
-const api = useApi()
+const api = useApi() // Public client
+const apiAuth = useApiAuth() // Authenticated client
 
 const book = ref(null)
 const loading = ref(true)
@@ -97,7 +99,6 @@ const purchaseInProgress = ref(false)
 const fetchBook = async () => {
   try {
     const response = await api.get(`/books/${slug}`)
-    // Handle the wrapped response structure
     if (response?.success && response.data?.book) {
       book.value = response.data.book
       useHead({
@@ -123,7 +124,7 @@ const validateCoupon = async () => {
   validatingCoupon.value = true
   couponMessage.value = ''
   try {
-    const response = await api.post('/purchase/coupon/validate', { code: couponCode.value })
+    const response = await apiAuth.post('/purchase/coupon/validate', { code: couponCode.value })
     if (response.success) {
       couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
       couponMessageClass.value = 'text-green-600'
@@ -140,12 +141,10 @@ const handlePurchase = async () => {
   if (!book.value) return;
   purchaseInProgress.value = true
   try {
-    // Fixed: Send without body if not needed (matches curl success); add body only if coupon valid
-    const body = couponCode.value && couponMessageClass.value === 'text-green-600'
-      ? { payment_method: 'zarinpal', coupon_code: couponCode.value }
-      : undefined // No body if no coupon, to match backend expectation
-
-    const response = await api.post(`/books/${book.value.id}/buy`, body)
+    const response = await apiAuth.post(`/books/${book.value.id}/buy`, {
+      payment_method: 'zarinpal',
+      coupon_code: couponCode.value || null,
+    })
     if (response.success && response.data.payment_url) {
       await navigateTo(response.data.payment_url, { external: true })
     } else {
@@ -153,7 +152,6 @@ const handlePurchase = async () => {
     }
   } catch (err) {
     console.error('Purchase failed:', err)
-    // Improved error handling: Check for 401 specifically
     if (err.statusCode === 401 || err.status === 401) {
       alert('احراز هویت نشده. لطفاً وارد شوید.')
       await navigateTo('/auth')

@@ -663,7 +663,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { useApi } from '~/composables/useApi' // Replaced useProfile with useApi
+import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 import { useFormatters } from '~/composables/useFormatters'
 
 definePageMeta({
@@ -673,7 +674,8 @@ definePageMeta({
 
 // Store and API
 const authStore = useAuthStore()
-const api = useApi() // Use the main API composable
+const api = useApi() // Public API client
+const apiAuth = useApiAuth() // Authenticated API client
 const formatters = useFormatters()
 
 // Use the user from the store as the single source of truth
@@ -885,12 +887,12 @@ const handlePassword = async () => {
   }
 }
 
-// These methods can remain similar, just ensuring they use the main `api` composable
+// These methods now use the authenticated `apiAuth` client
 const handleEmailVerification = async () => {
   if (!form.value.email) return
   emailVerificationSending.value = true
   try {
-    await api.post('/email/send-verification', { email: form.value.email })
+    await apiAuth.post('/email/send-verification', { email: form.value.email })
     verificationModal.value = { type: 'email', target: form.value.email }
     showVerificationModal.value = true
   } catch (error) {
@@ -904,7 +906,7 @@ const handlePhoneVerification = async () => {
   if (!form.value.phone) return
   smsVerificationSending.value = true
   try {
-    await api.post('/phone/send-verification', { phone: form.value.phone })
+    await apiAuth.post('/phone/send-verification', { phone: form.value.phone })
     verificationModal.value = { type: 'phone', target: form.value.phone }
     showVerificationModal.value = true
   } catch (error) {
@@ -920,10 +922,10 @@ const verifyCode = async () => {
   try {
     let response;
     if (verificationModal.value.type === 'email') {
-      response = await api.post('/email/verify', { email: verificationModal.value.target, otp: verificationCode.value })
+      response = await apiAuth.post('/email/verify', { email: verificationModal.value.target, otp: verificationCode.value })
       showMessage('ایمیل با موفقیت تایید شد', 'success')
     } else {
-      response = await api.post('/phone/verify', { phone: verificationModal.value.target, otp: verificationCode.value })
+      response = await apiAuth.post('/phone/verify', { phone: verificationModal.value.target, otp: verificationCode.value })
       showMessage('شماره موبایل با موفقیت تایید شد', 'success')
     }
     if (response) {

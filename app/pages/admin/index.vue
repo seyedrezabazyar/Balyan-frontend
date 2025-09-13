@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { useApi } from '~/composables/useApi'
+import { useApiAuth } from '~/composables/useApiAuth'
 import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 
@@ -105,7 +105,7 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
-const api = useApi()
+const api = useApiAuth()
 
 const stats = ref({})
 const errors = ref([])
