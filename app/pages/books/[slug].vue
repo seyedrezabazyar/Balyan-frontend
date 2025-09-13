@@ -94,7 +94,7 @@ const isInCart = computed(() => {
 
 const fetchBook = async () => {
   try {
-    const response = await api.get(`/v1/books/${slug}`)
+    const response = await api.get(`/books/${slug}`)
     if (response.success && response.data && response.data.book) {
       book.value = response.data.book
       useHead({

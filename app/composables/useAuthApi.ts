@@ -41,7 +41,7 @@ export const useAuthApi = () => {
   }
 
   const api = useApi(token)
-  const AUTH_PREFIX = '/auth';
+  const AUTH_PREFIX = '/auth'; // Keep this for namespacing within this composable
 
   return {
     // ====== Role Management ======

@@ -42,7 +42,7 @@ export const useCartStore = defineStore('cart', {
       const api = useApi(authStore.token)
       this.loading = true
       try {
-        const response = await api.get('/v1/cart')
+        const response = await api.get('/cart')
         this.items = response.data?.items || []
         this.total = response.data?.total || 0
         this.coupon = response.coupon
@@ -59,7 +59,7 @@ export const useCartStore = defineStore('cart', {
       const authStore = useAuthStore()
       const api = useApi(authStore.token)
       try {
-        await api.post('/v1/cart/add', item)
+        await api.post('/cart/add', item)
       } catch (error: any) {
         // If the error is 409 Conflict, it means the item is already in the cart.
         // This is not a real error for the user, so we can suppress it.
@@ -77,7 +77,7 @@ export const useCartStore = defineStore('cart', {
       const authStore = useAuthStore()
       const api = useApi(authStore.token)
       try {
-        await api.delete(`/v1/cart/remove/${itemId}`)
+        await api.delete(`/cart/remove/${itemId}`)
         await this.fetchCart()
       } catch (error) {
         throw error
@@ -88,7 +88,7 @@ export const useCartStore = defineStore('cart', {
       const authStore = useAuthStore()
       const api = useApi(authStore.token)
       try {
-        await api.delete('/v1/cart/clear')
+        await api.delete('/cart/clear')
         this.items = []
         this.total = 0
         this.coupon = null
@@ -106,7 +106,7 @@ export const useCartStore = defineStore('cart', {
       this.paymentLoading = true
       try {
         // As per backend instructions, only the guest_cart_id is needed.
-        const response = await api.post('/v1/purchase/payment/initiate', {
+        const response = await api.post('/purchase/payment/initiate', {
           guest_cart_id: this.cartId
         })
 
