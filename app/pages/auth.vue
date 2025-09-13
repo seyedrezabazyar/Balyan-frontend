@@ -41,9 +41,9 @@
             <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
               {{ loading ? 'در حال ورود...' : 'ورود با رمز عبور' }}
             </button>
-            <button type="button" @click="handleRequestOtp(false)" class="w-full text-blue-600 hover:text-blue-700 text-sm border border-blue-300 py-2 rounded-lg">
-              ورود با کد یکبار مصرف
-            </button>
+            <!-- OTP login is not a valid flow for users who already have a password. -->
+            <!-- To use OTP, they should use a "Forgot Password" flow which would then trigger an OTP. -->
+            <!-- Removing this button prevents the "Invalid code" error from the backend. -->
           </form>
         </div>
 
