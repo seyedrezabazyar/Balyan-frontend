@@ -78,7 +78,7 @@ useHead({
 })
 
 const route = useRoute()
-const { $api } = useApi()
+const api = useApi() // Corrected: instantiate the whole composable object
 
 const book = ref(null)
 const loading = ref(true)
@@ -94,7 +94,7 @@ const purchaseInProgress = ref(false)
 
 const fetchBook = async () => {
   try {
-    const response = await $api.get(`/books/${slug}`)
+    const response = await api.get(`/books/${slug}`) // Corrected: use api.get
     book.value = response
     useHead({
       title: response.title,
@@ -116,7 +116,7 @@ const validateCoupon = async () => {
   validatingCoupon.value = true
   couponMessage.value = ''
   try {
-    const response = await $api.post('/purchase/coupon/validate', { code: couponCode.value })
+    const response = await api.post('/purchase/coupon/validate', { code: couponCode.value }) // Corrected: use api.post
     if (response.success) {
       couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
       couponMessageClass.value = 'text-green-600'
@@ -133,15 +133,13 @@ const handlePurchase = async () => {
   if (!book.value) return;
   purchaseInProgress.value = true
   try {
-    const response = await $api.post(`/books/${book.value.id}/buy`, {
+    const response = await api.post(`/books/${book.value.id}/buy`, { // Corrected: use api.post
       payment_method: 'zarinpal',
       coupon_code: couponCode.value || null,
     })
     if (response.success && response.data.payment_url) {
-      // Redirect user to the payment gateway
       await navigateTo(response.data.payment_url, { external: true })
     } else {
-      // Handle cases where payment URL is not returned
       alert('خطا در ایجاد لینک پرداخت. لطفاً دوباره تلاش کنید.')
     }
   } catch (err) {
