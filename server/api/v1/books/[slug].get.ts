@@ -1,5 +1,3 @@
-import { db } from '~/server/utils/db'
-
 export default defineEventHandler((event) => {
   const slug = getRouterParam(event, 'slug')
   const user = event.context.auth?.user

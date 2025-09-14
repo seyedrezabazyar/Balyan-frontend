@@ -1,5 +1,4 @@
 import { H3Event } from 'h3'
-import { db } from '~/server/utils/db'
 
 // Mock function to get book details. In a real app, this would query a database.
 const getBookDetails = (slug: string) => {
