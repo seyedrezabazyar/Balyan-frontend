@@ -140,7 +140,7 @@ const handleBuyClick = async () => {
     // Authenticated user logic
     purchaseInProgress.value = true
     try {
-      const response = await apiAuth.post(`/books/${book.value.slug}/buy`)
+      const response = await apiAuth.post(`/books/${book.value.id}/buy`)
 
       // As per docs, a 200 OK is success
       purchaseMessage.value = response.message || 'خرید شما با موفقیت انجام شد.'
