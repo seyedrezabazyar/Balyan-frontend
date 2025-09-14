@@ -73,7 +73,7 @@ useHead({
 })
 
 const route = useRoute()
-const apiAuth = useApiAuth() // Use authenticated client for all book data fetching
+const apiAuth = useApiAuth()
 
 const book = ref(null)
 const loading = ref(true)
@@ -81,18 +81,14 @@ const error = ref(null)
 const purchaseInProgress = ref(false)
 const slug = route.params.slug
 
-// A computed property to reactively get the purchase status
 const purchaseStatus = computed(() => book.value?.purchase_status || 'none')
 
-// Re-usable function to fetch/refresh book data
 const fetchBook = async () => {
-  // Set loading to true only if it's the initial fetch
   if (!book.value) {
     loading.value = true
   }
 
   try {
-    // We use apiAuth to fetch details, as it will correctly determine the purchase status for the logged-in user
     const response = await apiAuth.get(`/books/${slug}`)
     if (response.success && response.data?.book) {
       book.value = response.data.book
@@ -110,23 +106,17 @@ const fetchBook = async () => {
   }
 }
 
-// Handler for the purchase/re-purchase button
 const handlePurchase = async () => {
   if (!book.value) return
   purchaseInProgress.value = true
 
   try {
     const response = await apiAuth.post(`/books/${slug}/buy`)
-
-    // On success, show the dynamic message from the API
     alert(response.message || 'عملیات با موفقیت انجام شد.');
-
-    // IMPORTANT: Refresh the book data to get the new purchase_status
     await fetchBook();
 
   } catch (err) {
     console.error('Purchase failed:', err)
-    // Display the specific error message from the API (e.g., for 409 Conflict)
     const errorMessage = err.data?.message || 'خطا در پردازش درخواست شما. لطفاً دوباره تلاش کنید.'
     alert(errorMessage)
   } finally {
@@ -134,6 +124,5 @@ const handlePurchase = async () => {
   }
 }
 
-// Fetch initial data when the component mounts
 onMounted(fetchBook)
 </script>
