@@ -37,472 +37,402 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Main Content -->
       <div class="lg:col-span-3 space-y-6">
-        <!-- Tab Navigation -->
+
+        <!-- Basic Information -->
         <div class="bg-white rounded-lg shadow-sm">
-          <div class="border-b border-gray-200">
-            <nav class="-mb-px flex gap-6 px-6" aria-label="Tabs">
-              <button @click="currentTab = 'profile'"
-                      :class="[currentTab === 'profile' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']"
-                      class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                اطلاعات شخصی
-              </button>
-              <button @click="currentTab = 'my-books'"
-                      :class="[currentTab === 'my-books' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300']"
-                      class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                کتاب‌های من
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        <!-- Tab Content -->
-        <div v-if="currentTab === 'profile'" class="space-y-6">
-          <!-- Basic Information -->
-          <div class="bg-white rounded-lg shadow-sm">
-            <div class="p-6 border-b border-gray-200">
-              <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                اطلاعات شخصی
-              </h2>
-            </div>
-
-            <div class="p-6">
-              <form @submit.prevent="updateProfile" class="space-y-6">
-                <!-- Name and Username Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                      نام و نام خانوادگی <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                      v-model="form.name"
-                      type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      placeholder="نام کامل خود را وارد کنید"
-                      required
-                    />
-                    <p class="text-xs text-gray-500">این نام در سراسر سایت نمایش داده خواهد شد</p>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      نام کاربری
-                      <svg v-if="!isUsernameChangeable" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                      </svg>
-                    </label>
-                    <div class="relative">
-                      <input
-                        v-model="form.username"
-                        type="text"
-                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors"
-                        :class="{
-                          'border-gray-300 focus:border-blue-500 focus:ring-blue-500': !usernameError,
-                          'bg-gray-100 cursor-not-allowed': !isUsernameChangeable,
-                          'border-red-500 focus:border-red-500 focus:ring-red-500': usernameError,
-                          'pr-10': form.username !== user?.username && isUsernameChangeable
-                        }"
-                        :disabled="!isUsernameChangeable"
-                        placeholder="نام کاربری منحصر به فرد"
-                      />
-                      <div v-if="form.username !== user?.username && isUsernameChangeable"
-                           class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                        <button type="button" @click="showUsernameWarning = true"
-                                class="text-amber-500 hover:text-amber-600">
-                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <p v-if="usernameError" class="text-xs text-red-600 mt-1">{{ usernameError }}</p>
-                    <p v-else-if="user && user.days_until_username_change > 0" class="text-xs text-red-600 mt-1">
-                      شما فقط هر ۳۶۵ روز یک بار می‌توانید نام کاربری خود را تغییر دهید. {{ user.days_until_username_change }} روز تا تغییر بعدی باقی مانده است.
-                    </p>
-                    <p v-else class="text-xs text-gray-500 mt-1">
-                      نام کاربری فقط هر ۳۶۵ روز یکبار قابل تغییر است.
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Contact Information -->
-                <div class="space-y-4">
-                  <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">اطلاعات تماس</h3>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Email -->
-                    <div class="space-y-2">
-                      <label class="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                        آدرس ایمیل
-                        <span v-if="user?.email_verified_at" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                          </svg>
-                          تایید شده
-                        </span>
-                        <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          تایید نشده
-                        </span>
-                      </label>
-                      <div class="relative">
-                        <input
-                          v-model="form.email"
-                          type="email"
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          :class="{
-                            'bg-gray-100 cursor-not-allowed': !!user?.email_verified_at,
-                            'pl-10': user?.email_verified_at
-                          }"
-                          :disabled="!!user?.email_verified_at"
-                          placeholder="example@domain.com"
-                        />
-                        <div v-if="user?.email_verified_at" class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                          <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div v-if="!user?.email_verified_at && form.email && form.email !== user?.email"
-                           class="flex justify-end">
-                        <button
-                          type="button"
-                          @click="handleEmailVerification"
-                          :disabled="emailVerificationSending"
-                          class="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                          {{ emailVerificationSending ? 'در حال ارسال...' : 'ارسال کد تایید' }}
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Phone -->
-                    <div class="space-y-2">
-                      <label class="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                        شماره موبایل
-                        <span v-if="user?.phone_verified_at" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                          </svg>
-                          تایید شده
-                        </span>
-                        <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          تایید نشده
-                        </span>
-                      </label>
-                      <div class="relative">
-                        <input
-                          v-model="form.phone"
-                          type="tel"
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          :class="{
-                            'bg-gray-100 cursor-not-allowed': !!user?.phone_verified_at,
-                            'pl-10': user?.phone_verified_at
-                          }"
-                          :disabled="!!user?.phone_verified_at"
-                          placeholder="09123456789"
-                          maxlength="11"
-                          @input="form.phone = formatters.normalizePhone($event.target.value)"
-                        />
-                        <div v-if="user?.phone_verified_at" class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                          <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div v-if="!user?.phone_verified_at && form.phone && form.phone !== user?.phone"
-                           class="flex justify-end">
-                        <button
-                          type="button"
-                          @click="handlePhoneVerification"
-                          :disabled="smsVerificationSending"
-                          class="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                          {{ smsVerificationSending ? 'در حال ارسال...' : 'ارسال کد تایید' }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Address Information -->
-                <div class="space-y-4">
-                  <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    آدرس و موقعیت مکانی
-                  </h3>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                      <label class="block text-sm font-medium text-gray-700">استان</label>
-                      <select
-                        v-model="form.province_id"
-                        @change="onProvinceChange"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      >
-                        <option value="">انتخاب استان</option>
-                        <option v-for="province in provinces" :key="province.id" :value="province.id">
-                          {{ province.name }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <div class="space-y-2">
-                      <label class="block text-sm font-medium text-gray-700">شهر</label>
-                      <select
-                        v-model="form.city_id"
-                        :disabled="!form.province_id || loadingCities"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <option value="">{{ loadingCities ? 'در حال بارگذاری...' : 'انتخاب شهر' }}</option>
-                        <option v-for="city in cities" :key="city.id" :value="city.id">
-                          {{ city.name }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">آدرس کامل</label>
-                    <textarea
-                      v-model="form.address"
-                      rows="4"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                      placeholder="آدرس کامل و دقیق خود را وارد کنید..."
-                    ></textarea>
-                  </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-                  <button
-                    type="submit"
-                    :disabled="loading || !hasFormChanges"
-                    class="flex-1 sm:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {{ loading ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}
-                  </button>
-
-                  <button
-                    v-if="hasFormChanges"
-                    type="button"
-                    @click="resetForm"
-                    class="flex-1 sm:flex-none bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors"
-                  >
-                    بازگردانی تغییرات
-                  </button>
-                </div>
-              </form>
-            </div>
+          <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              اطلاعات شخصی
+            </h2>
           </div>
 
-          <!-- Password Management -->
-          <div class="bg-white rounded-lg shadow-sm">
-            <div class="p-6 border-b border-gray-200">
-              <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                مدیریت رمز عبور
-              </h2>
-            </div>
-
-            <div class="p-6">
-              <!-- Password Status -->
-              <div v-if="!hasPassword" class="mb-6">
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-amber-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    <div class="flex-1">
-                      <h3 class="text-sm font-medium text-amber-800">رمز عبور تنظیم نشده</h3>
-                      <p class="text-sm text-amber-700 mt-1">
-                        در حال حاضر فقط با کد یکبار مصرف وارد می‌شوید. با تنظیم رمز عبور امنیت حساب خود را افزایش دهید.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else class="mb-6">
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <div class="flex-1">
-                      <h3 class="text-sm font-medium text-green-800">رمز عبور فعال است</h3>
-                      <p class="text-sm text-green-700 mt-1">
-                        می‌توانید با رمز عبور یا کد یکبار مصرف وارد شوید.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Password Form Toggle -->
-              <div v-if="!showPasswordForm" class="text-center">
-                <button
-                  @click="showPasswordForm = true"
-                  class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
-                  :class="hasPassword
-       ? 'bg-amber-600 text-white hover:bg-amber-700'
-       : 'bg-green-600 text-white hover:bg-green-700'"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  {{ hasPassword ? 'تغییر رمز عبور' : 'تنظیم رمز عبور' }}
-                </button>
-              </div>
-
-              <!-- Password Form -->
-              <form v-if="showPasswordForm" @submit.prevent="handlePassword" class="space-y-6">
-                <div v-if="hasPassword" class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">رمز عبور فعلی *</label>
+          <div class="p-6">
+            <form @submit.prevent="updateProfile" class="space-y-6">
+              <!-- Name and Username Row -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700">
+                    نام و نام خانوادگی <span class="text-red-500">*</span>
+                  </label>
                   <input
-                    v-model="passwordForm.current_password"
-                    type="password"
+                    v-model="form.name"
+                    type="text"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="رمز عبور فعلی خود را وارد کنید"
+                    placeholder="نام کامل خود را وارد کنید"
                     required
                   />
+                  <p class="text-xs text-gray-500">این نام در سراسر سایت نمایش داده خواهد شد</p>
                 </div>
 
                 <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <label class="block text-sm font-medium text-gray-700">رمز عبور جدید *</label>
-                    <button
-                      type="button"
-                      @click="generatePassword"
-                      class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      ایجاد رمز
-                    </button>
-                  </div>
+                  <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                    نام کاربری
+                    <svg v-if="!isUsernameChangeable" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                  </label>
                   <div class="relative">
                     <input
-                      v-model="passwordForm.password"
+                      v-model="form.username"
                       type="text"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      :class="{ 'pr-10': passwordForm.password }"
-                      placeholder="رمز عبور جدید"
-                      minlength="8"
-                      required
+                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 transition-colors"
+                      :class="{
+                        'border-gray-300 focus:border-blue-500 focus:ring-blue-500': !usernameError,
+                        'bg-gray-100 cursor-not-allowed': !isUsernameChangeable,
+                        'border-red-500 focus:border-red-500 focus:ring-red-500': usernameError,
+                        'pr-10': form.username !== user?.username && isUsernameChangeable
+                      }"
+                      :disabled="!isUsernameChangeable"
+                      placeholder="نام کاربری منحصر به فرد"
                     />
-                    <div v-if="passwordForm.password" class="absolute left-3 top-1/2 -translate-y-1/2">
-                      <button type="button" @click="copyToClipboard(passwordForm.password)" class="text-gray-400 hover:text-gray-600">
-                        <svg v-if="!passwordCopied" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        <svg v-else class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <div v-if="form.username !== user?.username && isUsernameChangeable"
+                         class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <button type="button" @click="showUsernameWarning = true"
+                              class="text-amber-500 hover:text-amber-600">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
                       </button>
                     </div>
                   </div>
-                  <div class="text-xs text-gray-500 space-y-1">
-                    <p>رمز عبور باید حداقل 8 کاراکتر باشد</p>
-                    <p>ترکیبی از حروف کوچک، بزرگ و اعداد توصیه می‌شود</p>
+                  <p v-if="usernameError" class="text-xs text-red-600 mt-1">{{ usernameError }}</p>
+                  <p v-else-if="user && user.days_until_username_change > 0" class="text-xs text-red-600 mt-1">
+                    شما فقط هر ۳۶۵ روز یک بار می‌توانید نام کاربری خود را تغییر دهید. {{ user.days_until_username_change }} روز تا تغییر بعدی باقی مانده است.
+                  </p>
+                  <p v-else class="text-xs text-gray-500 mt-1">
+                    نام کاربری فقط هر ۳۶۵ روز یکبار قابل تغییر است.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Contact Information -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">اطلاعات تماس</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Email -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                      آدرس ایمیل
+                      <span v-if="user?.email_verified_at" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        تایید شده
+                      </span>
+                      <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        تایید نشده
+                      </span>
+                    </label>
+                    <div class="relative">
+                      <input
+                        v-model="form.email"
+                        type="email"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        :class="{
+                          'bg-gray-100 cursor-not-allowed': !!user?.email_verified_at,
+                          'pl-10': user?.email_verified_at
+                        }"
+                        :disabled="!!user?.email_verified_at"
+                        placeholder="example@domain.com"
+                      />
+                      <div v-if="user?.email_verified_at" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div v-if="!user?.email_verified_at && form.email && form.email !== user?.email"
+                         class="flex justify-end">
+                      <button
+                        type="button"
+                        @click="handleEmailVerification"
+                        :disabled="emailVerificationSending"
+                        class="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      >
+                        {{ emailVerificationSending ? 'در حال ارسال...' : 'ارسال کد تایید' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Phone -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                      شماره موبایل
+                      <span v-if="user?.phone_verified_at" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        تایید شده
+                      </span>
+                      <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        تایید نشده
+                      </span>
+                    </label>
+                    <div class="relative">
+                      <input
+                        v-model="form.phone"
+                        type="tel"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        :class="{
+                          'bg-gray-100 cursor-not-allowed': !!user?.phone_verified_at,
+                          'pl-10': user?.phone_verified_at
+                        }"
+                        :disabled="!!user?.phone_verified_at"
+                        placeholder="09123456789"
+                        maxlength="11"
+                        @input="form.phone = formatters.normalizePhone($event.target.value)"
+                      />
+                      <div v-if="user?.phone_verified_at" class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div v-if="!user?.phone_verified_at && form.phone && form.phone !== user?.phone"
+                         class="flex justify-end">
+                      <button
+                        type="button"
+                        @click="handlePhoneVerification"
+                        :disabled="smsVerificationSending"
+                        class="text-xs bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      >
+                        {{ smsVerificationSending ? 'در حال ارسال...' : 'ارسال کد تایید' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Address Information -->
+              <div class="space-y-4">
+                <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  آدرس و موقعیت مکانی
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">استان</label>
+                    <select
+                      v-model="form.province_id"
+                      @change="onProvinceChange"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">انتخاب استان</option>
+                      <option v-for="province in provinces" :key="province.id" :value="province.id">
+                        {{ province.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">شهر</label>
+                    <select
+                      v-model="form.city_id"
+                      :disabled="!form.province_id || loadingCities"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <option value="">{{ loadingCities ? 'در حال بارگذاری...' : 'انتخاب شهر' }}</option>
+                      <option v-for="city in cities" :key="city.id" :value="city.id">
+                        {{ city.name }}
+                      </option>
+                    </select>
                   </div>
                 </div>
 
                 <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">تکرار رمز عبور جدید *</label>
-                  <input
-                    v-model="passwordForm.password_confirmation"
-                    type="password"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    :class="{
-         'border-red-300 focus:border-red-500 focus:ring-red-500': passwordForm.password_confirmation && passwordForm.password !== passwordForm.password_confirmation
-       }"
-                    placeholder="تکرار رمز عبور جدید"
-                    minlength="8"
-                    required
-                  />
-                  <p v-if="passwordForm.password_confirmation && passwordForm.password !== passwordForm.password_confirmation"
-                     class="text-xs text-red-600">
-                    رمز عبور و تکرار آن باید یکسان باشند
-                  </p>
+                  <label class="block text-sm font-medium text-gray-700">آدرس کامل</label>
+                  <textarea
+                    v-model="form.address"
+                    rows="4"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    placeholder="آدرس کامل و دقیق خود را وارد کنید..."
+                  ></textarea>
                 </div>
+              </div>
 
-                <div class="flex flex-col sm:flex-row gap-4 pt-4">
-                  <button
-                    type="submit"
-                    :disabled="loading || (passwordForm.password !== passwordForm.password_confirmation)"
-                    class="flex-1 sm:flex-none bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg v-if="loading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {{ loading ? 'در حال ذخیره...' : 'ذخیره رمز عبور' }}
-                  </button>
-                  <button
-                    type="button"
-                    @click="cancelPasswordForm"
-                    class="flex-1 sm:flex-none bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors"
-                  >
-                    انصراف
-                  </button>
-                </div>
-              </form>
-            </div>
+              <!-- Action Buttons -->
+              <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                <button
+                  type="submit"
+                  :disabled="loading || !hasFormChanges"
+                  class="flex-1 sm:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ loading ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}
+                </button>
+
+                <button
+                  v-if="hasFormChanges"
+                  type="button"
+                  @click="resetForm"
+                  class="flex-1 sm:flex-none bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                >
+                  بازگردانی تغییرات
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
-        <div v-if="currentTab === 'my-books'" class="bg-white rounded-lg shadow-sm">
+        <!-- Password Management -->
+        <div class="bg-white rounded-lg shadow-sm">
           <div class="p-6 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              کتاب‌های خریداری شده
+              مدیریت رمز عبور
             </h2>
           </div>
+
           <div class="p-6">
-            <div v-if="myBooksLoading" class="text-center py-8">
-              <p>در حال بارگذاری کتاب‌ها...</p>
+            <!-- Password Status -->
+            <div v-if="!hasPassword" class="mb-6">
+              <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                  <svg class="w-5 h-5 text-amber-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                  <div class="flex-1">
+                    <h3 class="text-sm font-medium text-amber-800">رمز عبور تنظیم نشده</h3>
+                    <p class="text-sm text-amber-700 mt-1">
+                      در حال حاضر فقط با کد یکبار مصرف وارد می‌شوید. با تنظیم رمز عبور امنیت حساب خود را افزایش دهید.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div v-else-if="myBooksError" class="text-center py-8 text-red-500">
-              <p>{{ myBooksError }}</p>
+
+            <div v-else class="mb-6">
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                  <svg class="w-5 h-5 text-green-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                  <div class="flex-1">
+                    <h3 class="text-sm font-medium text-green-800">رمز عبور فعال است</h3>
+                    <p class="text-sm text-green-700 mt-1">
+                      می‌توانید با رمز عبور یا کد یکبار مصرف وارد شوید.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div v-else-if="myBooks.length === 0" class="text-center py-8 text-gray-500">
-              <p>شما هنوز هیچ کتابی خریداری نکرده‌اید.</p>
+
+            <!-- Password Form Toggle -->
+            <div v-if="!showPasswordForm" class="text-center">
+              <button
+                @click="showPasswordForm = true"
+                class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
+                :class="hasPassword
+     ? 'bg-amber-600 text-white hover:bg-amber-700'
+     : 'bg-green-600 text-white hover:bg-green-700'"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                {{ hasPassword ? 'تغییر رمز عبور' : 'تنظیم رمز عبور' }}
+              </button>
             </div>
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">عنوان کتاب</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاریخ خرید</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تعداد دانلود</th>
-                    <th scope="col" class="relative px-6 py-3">
-                      <span class="sr-only">دانلود</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="item in myBooks" :key="item.id">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.book.title }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(item.expires_at, -90) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.download_count }} / {{ item.max_downloads }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                      <a v-if="item.is_active" :href="`/api/v1/downloads/${item.download_token}`"
-                         class="text-blue-600 hover:text-blue-800 font-semibold">
-                        دانلود
-                      </a>
-                      <span v-else class="text-red-500">منقضی شده</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+
+            <!-- Password Form -->
+            <form v-if="showPasswordForm" @submit.prevent="handlePassword" class="space-y-6">
+              <div v-if="hasPassword" class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">رمز عبور فعلی *</label>
+                <input
+                  v-model="passwordForm.current_password"
+                  type="password"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="رمز عبور فعلی خود را وارد کنید"
+                  required
+                />
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium text-gray-700">رمز عبور جدید *</label>
+                  <button
+                    type="button"
+                    @click="generatePassword"
+                    class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    ایجاد رمز
+                  </button>
+                </div>
+                <div class="relative">
+                  <input
+                    v-model="passwordForm.password"
+                    type="text"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    :class="{ 'pr-10': passwordForm.password }"
+                    placeholder="رمز عبور جدید"
+                    minlength="8"
+                    required
+                  />
+                  <div v-if="passwordForm.password" class="absolute left-3 top-1/2 -translate-y-1/2">
+                    <button type="button" @click="copyToClipboard(passwordForm.password)" class="text-gray-400 hover:text-gray-600">
+                      <svg v-if="!passwordCopied" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                      <svg v-else class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="text-xs text-gray-500 space-y-1">
+                  <p>رمز عبور باید حداقل 8 کاراکتر باشد</p>
+                  <p>ترکیبی از حروف کوچک، بزرگ و اعداد توصیه می‌شود</p>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">تکرار رمز عبور جدید *</label>
+                <input
+                  v-model="passwordForm.password_confirmation"
+                  type="password"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  :class="{
+       'border-red-300 focus:border-red-500 focus:ring-red-500': passwordForm.password_confirmation && passwordForm.password !== passwordForm.password_confirmation
+     }"
+                  placeholder="تکرار رمز عبور جدید"
+                  minlength="8"
+                  required
+                />
+                <p v-if="passwordForm.password_confirmation && passwordForm.password !== passwordForm.password_confirmation"
+                   class="text-xs text-red-600">
+                  رمز عبور و تکرار آن باید یکسان باشند
+                </p>
+              </div>
+
+              <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button
+                  type="submit"
+                  :disabled="loading || (passwordForm.password !== passwordForm.password_confirmation)"
+                  class="flex-1 sm:flex-none bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg v-if="loading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ loading ? 'در حال ذخیره...' : 'ذخیره رمز عبور' }}
+                </button>
+                <button
+                  type="button"
+                  @click="cancelPasswordForm"
+                  class="flex-1 sm:flex-none bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                >
+                  انصراف
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -752,7 +682,6 @@ const formatters = useFormatters()
 const user = computed(() => authStore.currentUser)
 
 // Reactive state
-const currentTab = ref('profile') // 'profile' or 'my-books'
 const loading = ref(false)
 const message = ref('')
 const messageType = ref('success')
@@ -793,11 +722,6 @@ const passwordForm = ref({
   password: '',
   password_confirmation: ''
 })
-
-// "My Books" state
-const myBooks = ref([])
-const myBooksLoading = ref(false)
-const myBooksError = ref('')
 
 // --- Refactored Logic ---
 
@@ -873,28 +797,6 @@ const hasFormChanges = computed(() => {
 
 
 // --- API Methods (now using `authStore` and `api`) ---
-
-const fetchMyBooks = async () => {
-  if (myBooks.value.length > 0) return // Avoid re-fetching
-  myBooksLoading.value = true
-  myBooksError.value = ''
-  try {
-    const response = await apiAuth.get('/downloads')
-    myBooks.value = response.data?.data || []
-  } catch (error) {
-    myBooksError.value = 'خطا در دریافت لیست کتاب‌ها.'
-    console.error('Failed to fetch my books:', error)
-  } finally {
-    myBooksLoading.value = false
-  }
-}
-
-watch(currentTab, (newTab) => {
-  if (newTab === 'my-books') {
-    fetchMyBooks()
-  }
-}, { immediate: true })
-
 
 const loadProvincesData = async () => {
   try {
@@ -1127,13 +1029,9 @@ const clearMessage = () => {
   messageType.value = 'success'
 }
 
-const formatDate = (dateString, addDays = 0) => {
+const formatDate = (dateString) => {
   if (!dateString) return 'نامشخص'
-  const date = new Date(dateString)
-  if (addDays) {
-    date.setDate(date.getDate() + addDays)
-  }
-  return date.toLocaleDateString('fa-IR')
+  return new Date(dateString).toLocaleDateString('fa-IR')
 }
 </script>
 
