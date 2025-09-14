@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 const route = useRoute();
@@ -86,7 +86,6 @@ const notification = ref({ show: false, message: '', type: 'success' });
 
 const isLoggedIn = computed(() => !!authStore.token);
 
-// Fetching data only on the client-side to ensure auth state is available
 async function fetchBook() {
   loading.value = true;
   error.value = null;
@@ -109,9 +108,18 @@ async function fetchBook() {
   }
 }
 
-onMounted(() => {
-  fetchBook();
-});
+// Watch the token from the auth store.
+// When it's available (or changes), re-fetch the book data.
+// `immediate: true` runs this on component load, ensuring the fetch happens
+// as soon as the initial auth state is known.
+watch(
+  () => authStore.token,
+  () => {
+    fetchBook();
+  },
+  { immediate: true }
+);
+
 
 function handlePurchaseClick() {
   if (isLoggedIn.value) {
