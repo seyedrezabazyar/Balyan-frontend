@@ -59,23 +59,13 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
-import { useApi } from '~/composables/useApi'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const api = useApi()
 
 const logout = async () => {
-  try {
-    if (authStore.token) {
-      await api.post('/logout')
-    }
-  } catch (err) {
-    console.warn('Server logout failed, clearing client session anyway.', err)
-  } finally {
-    authStore.clearAuth()
-    await router.push('/auth')
-  }
+  await authStore.logout()
+  await router.push('/auth')
 }
 
 // Set document title based on route meta

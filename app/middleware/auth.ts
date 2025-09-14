@@ -14,9 +14,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   })
 
   // بارگذاری اطلاعات از localStorage اگر هنوز بارگذاری نشده
-  if (!authStore.isAuthenticated || !authStore.token) {
-    console.log('🔄 Auth not initialized, calling initAuth...')
-    authStore.initAuth()
+  if (process.client && (!authStore.isAuthenticated || !authStore.token)) {
+    console.log('🔄 Auth not initialized on client, calling initAuth...')
+    await authStore.initAuth()
   }
 
   console.log('📊 After initAuth:', {
