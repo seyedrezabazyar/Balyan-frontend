@@ -19,32 +19,38 @@ export default defineEventHandler(async (event: H3Event) => {
     })
   }
 
-  // Step 3: Check if the book has already been purchased
-  if (db.hasPurchased(user.id, slug)) {
+  // Step 3: Check the current purchase status
+  const currentStatus = db.getPurchaseStatus(user.id, slug);
+
+  if (currentStatus === 'active') {
     throw createError({
       statusCode: 409, // Conflict
-      statusMessage: 'شما قبلاً این کتاب را خریداری کرده‌اید.',
-    })
+      statusMessage: 'شما در حال حاضر یک نسخه فعال و قابل دانلود از این کتاب دارید.',
+    });
   }
 
+  // Step 4: Process the purchase for 'none' or 'expired' statuses
   try {
-    // Step 4: Process the direct purchase by adding it to our mock DB
-    const newPurchase = db.addPurchase(user.id, slug)
+    const { purchase, isNew } = db.addPurchase(user.id, slug);
 
-    // Step 5: Return the success response
+    // Step 5: Return a dynamic success message based on the purchase type
+    const message = isNew
+      ? 'خرید شما با موفقیت انجام شد.'
+      : 'کتاب با موفقیت برای شما فعال شد.';
+
     return {
       success: true,
-      message: 'خرید شما با موفقیت انجام شد.',
+      message: message,
       data: {
-        order_id: newPurchase.purchaseId,
+        order_id: purchase.purchaseId,
       },
-    }
+    };
   } catch (error: any) {
     // Step 6: Handle any other unexpected errors
-    console.error(`Error processing purchase for book '${slug}':`, error)
+    console.error(`Error processing purchase for book '${slug}':`, error);
     throw createError({
       statusCode: 500,
       message: 'خطا در پردازش خرید شما. لطفاً دوباره تلاش کنید.',
-    })
+    });
   }
-})
+});
