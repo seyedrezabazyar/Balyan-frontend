@@ -60,8 +60,8 @@
             <!-- Purchase Button -->
             <button @click="handlePurchase" :disabled="purchaseInProgress"
                     class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-              <span v-if="purchaseInProgress">در حال انتقال به درگاه...</span>
-              <span v-else>خرید و پرداخت</span>
+              <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
+              <span v-else>خرید آنی</span>
             </button>
           </div>
         </div>
@@ -139,21 +139,34 @@ const validateCoupon = async () => {
 }
 
 const handlePurchase = async () => {
-  if (!book.value) return;
+  if (!book.value) return
   purchaseInProgress.value = true
+
   try {
-    const response = await apiAuth.post(`/books/${slug}/buy`, {
-      payment_method: 'zarinpal',
-      coupon_code: couponCode.value || null,
-    })
-    if (response.success && response.data.payment_url) {
-      await navigateTo(response.data.payment_url, { external: true })
-    } else {
-      alert('خطا در ایجاد لینک پرداخت. لطفاً دوباره تلاش کنید.')
+    // The new API for direct purchase requires a POST request with no body.
+    const response = await apiAuth.post(`/books/${slug}/buy`)
+
+    if (response.success) {
+      // The purchase was successful.
+      console.log('Purchase successful:', response.data)
+      alert(response.message || 'خرید شما با موفقیت انجام شد.')
+      // Update the UI to reflect the purchased state.
+      book.value.is_purchased = true
     }
   } catch (err) {
+    // Handle errors based on the API documentation
     console.error('Purchase failed:', err)
-    alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
+    const errorMessage = err.data?.message || 'خطا در پردازش خرید شما. لطفاً دوباره تلاش کنید.'
+
+    if (err.statusCode === 401) {
+      // Unauthorized
+      alert('لطفا برای خرید کتاب ابتدا وارد حساب کاربری خود شوید.')
+      // Optionally, redirect to login page
+      // navigateTo('/login')
+    } else {
+      // Other errors (404, 500, etc.)
+      alert(errorMessage)
+    }
   } finally {
     purchaseInProgress.value = false
   }
