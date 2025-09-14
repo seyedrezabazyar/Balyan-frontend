@@ -1,6 +1,14 @@
+import { db } from '~/server/utils/db'
+
 export default defineEventHandler((event) => {
   const slug = getRouterParam(event, 'slug')
+  const user = event.context.auth?.user
 
+  // Determine if the book is purchased by the current user.
+  // If there is no user, it's considered not purchased for this session.
+  const isPurchased = user ? db.hasPurchased(user.id, slug) : false
+
+  // Mock book data - in a real app, this would be fetched from a database.
   const book = {
     id: 1,
     slug: slug,
@@ -14,7 +22,7 @@ export default defineEventHandler((event) => {
     isbn: '978-1234567890',
     price: 50000,
     sale_price: 45000,
-    is_purchased: false,
+    is_purchased: isPurchased, // The dynamically set value
     image: {
       url: 'https://via.placeholder.com/400x600',
       thumbnail_url: 'https://via.placeholder.com/150x225'

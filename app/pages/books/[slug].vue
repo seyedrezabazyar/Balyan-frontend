@@ -34,9 +34,9 @@
           <!-- Purchased State -->
           <div v-if="book.is_purchased" class="text-center">
             <p class="font-semibold text-lg text-green-600">شما این کتاب را خریداری کرده‌اید.</p>
-            <button class="mt-2 bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">
-              مشاهده کتاب
-            </button>
+            <NuxtLink to="/my-books" class="mt-2 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+              مشاهده در کتابخانه
+            </NuxtLink>
           </div>
 
           <!-- Direct Purchase Flow -->
