@@ -64,6 +64,12 @@
      <div v-else class="text-center text-gray-500">
       <p>اطلاعات کتاب یافت نشد.</p>
     </div>
+
+    <!-- Temporary Debugging Block -->
+    <div v-if="debugInfo" class="mt-8 p-4 bg-gray-800 text-white rounded-lg font-mono text-left text-sm" dir="ltr">
+      <h3 class="font-bold text-lg mb-2">DEBUG INFORMATION</h3>
+      <pre>{{ JSON.stringify(debugInfo, null, 2) }}</pre>
+    </div>
   </div>
 </template>
 
@@ -83,16 +89,25 @@ const error = ref(null);
 const purchaseInProgress = ref(false);
 const showLoginPrompt = ref(false);
 const notification = ref({ show: false, message: '', type: 'success' });
+const debugInfo = ref(null);
 
 const isLoggedIn = computed(() => !!authStore.token);
 
 async function fetchBook() {
   loading.value = true;
   error.value = null;
+  debugInfo.value = null;
   try {
     const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
+
+    debugInfo.value = {
+      timestamp: new Date().toISOString(),
+      tokenUsed: authStore.token ? `Bearer ${authStore.token.substring(0, 10)}...` : 'No Token',
+      apiResponse: response
+    };
+
     if (response.success && response.data?.book) {
       book.value = response.data.book;
       isPurchased.value = response.data.book.is_purchased;
@@ -102,6 +117,11 @@ async function fetchBook() {
     }
   } catch (err) {
     error.value = err.data?.message || 'Failed to fetch book details.';
+    debugInfo.value = {
+      timestamp: new Date().toISOString(),
+      tokenUsed: authStore.token ? `Bearer ${authStore.token.substring(0, 10)}...` : 'No Token',
+      errorResponse: err.response?._data || err
+    };
     console.error('Failed to fetch book details:', err);
   } finally {
     loading.value = false;
