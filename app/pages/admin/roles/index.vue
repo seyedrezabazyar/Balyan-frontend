@@ -101,13 +101,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useApiAuth } from '~/composables/useApiAuth'
+import { useApi } from '~/composables/useApi'
 
 definePageMeta({
   middleware: 'admin'
 })
 
-const apiAuth = useApiAuth()
+const api = useApi()
 
 const roles = ref([])
 const permissions = ref([])
@@ -124,7 +124,7 @@ const availablePermissions = computed(() => {
 
 const loadRoles = async () => {
   try {
-    const response = await apiAuth.get('/auth/roles')
+    const response = await api.get('/auth/roles')
     roles.value = response.data || []
   } catch (error) {
     console.error('Error fetching roles:', error)
@@ -133,7 +133,7 @@ const loadRoles = async () => {
 
 const loadPermissions = async () => {
   try {
-    const response = await apiAuth.get('/auth/permissions')
+    const response = await api.get('/auth/permissions')
     // Assuming permissions are not grouped in this view
     const permissionsData = response.data || {}
     permissions.value = Object.values(permissionsData).flat()
@@ -145,7 +145,7 @@ const loadPermissions = async () => {
 const selectRole = async (role) => {
   selectedRole.value = role
   try {
-    const response = await apiAuth.get(`/auth/roles/${role.id}/permissions`)
+    const response = await api.get(`/auth/roles/${role.id}/permissions`)
     rolePermissions.value = response.data || []
   } catch (error) {
     console.error('Error fetching role permissions:', error)
@@ -160,7 +160,7 @@ const addPermission = async () => {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = [...currentPermissionIds, selectedPermission.value]
 
-    await apiAuth.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
+    await api.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
 
     selectedPermission.value = ''
     await selectRole(selectedRole.value) // Refresh permissions for the role
@@ -176,7 +176,7 @@ const removePermission = async (permissionId) => {
     const currentPermissionIds = rolePermissions.value.map(p => p.id)
     const newPermissions = currentPermissionIds.filter(id => id !== permissionId)
 
-    await apiAuth.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
+    await api.put(`/auth/permissions/role/${selectedRole.value.id}`, { permission_ids: newPermissions })
 
     await selectRole(selectedRole.value) // Refresh
     alert('Permission removed successfully')

@@ -37,12 +37,12 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { useApiAuth } from '~/composables/useApiAuth'
+import { useApi } from '~/composables/useApi'
 
 definePageMeta({ middleware: 'auth' })
 
 const authStore = useAuthStore()
-const apiAuth = useApiAuth()
+const api = useApi()
 
 onMounted(async () => {
   if (authStore.isLoggedIn && !authStore.currentUser) {
@@ -56,7 +56,7 @@ const performAdminAction = async () => {
   try {
     // The new structure has a /dashboard/index.get.ts. A DELETE endpoint for cache
     // would logically be /dashboard/cache.delete.ts. I'll assume this or create it.
-    await apiAuth.delete('/dashboard/cache')
+    await api.delete('/dashboard/cache')
     alert('عملیات ادمین با موفقیت انجام شد!')
   } catch (error) {
     console.error('خطا در عملیات ادمین:', error)

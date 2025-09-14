@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useApiAuth } from '~/composables/useApiAuth';
+import { useApi } from '~/composables/useApi';
 import type { Role, Permission, CreateRolePayload, UpdateRolePayload } from '~/types/auth';
 import RoleModal from '~/components/admin/RoleModal.vue';
 
@@ -77,7 +77,7 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-const apiAuth = useApiAuth();
+const api = useApi();
 
 const roles = ref<Role[]>([]);
 const groupedPermissions = ref<Record<string, Permission[]>>({});
@@ -90,7 +90,7 @@ const currentRole = ref<Role | null>(null);
 async function fetchRoles() {
   try {
     isLoading.value = true;
-    const response = await apiAuth.get('/auth/roles', { params: { with_permissions: true } });
+    const response = await api.get('/auth/roles', { params: { with_permissions: true } });
     roles.value = response.data || [];
   } catch (e) {
     error.value = e as Error;
@@ -102,7 +102,7 @@ async function fetchRoles() {
 
 async function fetchPermissions() {
   try {
-    const response = await apiAuth.get('/auth/permissions');
+    const response = await api.get('/auth/permissions');
     groupedPermissions.value = response.data || {};
   } catch (e) {
     console.error("Failed to fetch permissions:", e);
@@ -141,12 +141,12 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
         display_name: formData.display_name,
         description: formData.description,
       };
-      await apiAuth.put(`/auth/roles/${roleId}`, updatePayload);
-      await apiAuth.put(`/auth/permissions/role/${roleId}`, { permission_ids: formData.permission_ids });
+      await api.put(`/auth/roles/${roleId}`, updatePayload);
+      await api.put(`/auth/permissions/role/${roleId}`, { permission_ids: formData.permission_ids });
       alert('نقش با موفقیت به‌روزرسانی شد.');
     } else {
       // Create mode
-      await apiAuth.post('/auth/roles', formData);
+      await api.post('/auth/roles', formData);
       alert('نقش با موفقیت ایجاد شد.');
     }
     closeModal();
@@ -160,7 +160,7 @@ async function handleSaveRole(formData: CreateRolePayload & { permission_ids: nu
 async function handleDeleteRole(roleId: number) {
   if (confirm('آیا از حذف این نقش اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
     try {
-      await apiAuth.delete(`/auth/roles/${roleId}`);
+      await api.delete(`/auth/roles/${roleId}`);
       alert('نقش با موفقیت حذف شد.');
       roles.value = roles.value.filter(r => r.id !== roleId);
     } catch (e) {
