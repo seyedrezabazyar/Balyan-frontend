@@ -31,37 +31,31 @@
         </div>
 
         <div class="mt-6 pt-6 border-t">
-          <!-- Purchased State -->
-          <div v-if="book.is_purchased" class="text-center">
-            <p class="font-semibold text-lg text-green-600">شما این کتاب را خریداری کرده‌اید.</p>
-            <NuxtLink to="/my-books" class="mt-2 inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+          <!-- Purchase Status: Active -->
+          <div v-if="purchaseStatus === 'active'" class="text-center">
+            <p class="font-semibold text-lg text-green-600 mb-2">شما این کتاب را در کتابخانه خود دارید.</p>
+            <NuxtLink to="/my-books" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
               مشاهده در کتابخانه
             </NuxtLink>
           </div>
 
-          <!-- Direct Purchase Flow -->
+          <!-- Purchase Status: Expired -->
+          <div v-else-if="purchaseStatus === 'expired'" class="p-4 bg-yellow-100 border-r-4 border-yellow-500 text-yellow-700 rounded-lg">
+            <h3 class="font-bold text-lg mb-2">دسترسی شما منقضی شده</h3>
+            <p class="mb-4">دسترسی شما به این کتاب به پایان رسیده است. برای دریافت مجدد، می‌توانید آن را دوباره تهیه کنید.</p>
+            <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-yellow-700 transition disabled:opacity-50">
+              <span v-if="purchaseInProgress">در حال فعال‌سازی...</span>
+              <span v-else>خرید مجدد و فعال‌سازی</span>
+            </button>
+          </div>
+
+          <!-- Purchase Status: None (or any other case) -->
           <div v-else class="space-y-4">
             <h3 class="font-semibold text-lg">خرید مستقیم</h3>
-
-            <!-- Coupon Section -->
-            <div class="flex items-center gap-2">
-              <input type="text" v-model="couponCode" placeholder="کد تخفیف (اختیاری)"
-                     class="flex-grow p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-              <button @click="validateCoupon" :disabled="validatingCoupon"
-                      class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-                <span v-if="validatingCoupon">...</span>
-                <span v-else>اعتبارسنجی</span>
-              </button>
-            </div>
-            <p v-if="couponMessage" :class="couponMessageClass" class="text-sm">
-              {{ couponMessage }}
-            </p>
-
-            <!-- Purchase Button -->
-            <button @click="handlePurchase" :disabled="purchaseInProgress"
-                    class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+            <!-- The coupon section could be re-added here if needed in the future -->
+            <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
               <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
-              <span v-else>خرید آنی</span>
+              <span v-else>خرید آنی کتاب</span>
             </button>
           </div>
         </div>
@@ -72,8 +66,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, navigateTo } from '#app'
-import { useApi } from '~/composables/useApi'
+import { useRoute } from '#app'
 import { useApiAuth } from '~/composables/useApiAuth'
 
 useHead({
@@ -81,26 +74,28 @@ useHead({
 })
 
 const route = useRoute()
-const api = useApi() // Public client
-const apiAuth = useApiAuth() // Authenticated client
+const apiAuth = useApiAuth() // Use authenticated client for all book data fetching
 
 const book = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const purchaseInProgress = ref(false)
 const slug = route.params.slug
 
-// State for new purchase flow
-const couponCode = ref('')
-const validatingCoupon = ref(false)
-const couponMessage = ref('')
-const couponMessageClass = ref('')
-const purchaseInProgress = ref(false)
+// A computed property to reactively get the purchase status
+const purchaseStatus = computed(() => book.value?.purchase_status || 'none')
 
+// Re-usable function to fetch/refresh book data
 const fetchBook = async () => {
+  // Set loading to true only if it's the initial fetch
+  if (!book.value) {
+    loading.value = true
+  }
+
   try {
-    const response = await api.get(`/books/${slug}`)
-    // Handle the wrapped response structure
-    if (response?.success && response.data?.book) {
+    // We use apiAuth to fetch details, as it will correctly determine the purchase status for the logged-in user
+    const response = await apiAuth.get(`/books/${slug}`)
+    if (response.success && response.data?.book) {
       book.value = response.data.book
       useHead({
         title: response.data.book.title,
@@ -116,66 +111,30 @@ const fetchBook = async () => {
   }
 }
 
-const validateCoupon = async () => {
-  if (!couponCode.value) {
-    couponMessage.value = 'لطفاً کد تخفیف را وارد کنید.'
-    couponMessageClass.value = 'text-red-500'
-    return
-  }
-  validatingCoupon.value = true
-  couponMessage.value = ''
-  try {
-    const response = await apiAuth.post('/purchase/coupon/validate', { code: couponCode.value })
-    if (response.success) {
-      couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
-      couponMessageClass.value = 'text-green-600'
-    }
-  } catch (err) {
-    couponMessage.value = err.data?.data?.message || 'کد تخفیف نامعتبر است.'
-    couponMessageClass.value = 'text-red-500'
-  } finally {
-    validatingCoupon.value = false
-  }
-}
-
+// Handler for the purchase/re-purchase button
 const handlePurchase = async () => {
   if (!book.value) return
   purchaseInProgress.value = true
 
   try {
-    // The new API for direct purchase requires a POST request with no body.
     const response = await apiAuth.post(`/books/${slug}/buy`)
 
-    if (response.success) {
-      // The purchase was successful.
-      console.log('Purchase successful:', response.data)
-      alert(response.message || 'خرید شما با موفقیت انجام شد.')
-      // Update the UI to reflect the purchased state.
-      book.value.is_purchased = true
-    }
-  } catch (err) {
-    // Handle errors based on the API documentation
-    console.error('Purchase failed:', err)
-    const errorMessage = err.data?.message || 'خطا در پردازش خرید شما. لطفاً دوباره تلاش کنید.'
+    // On success, show the dynamic message from the API
+    alert(response.message || 'عملیات با موفقیت انجام شد.');
 
-    if (err.statusCode === 401) {
-      // Unauthorized
-      alert('لطفا برای خرید کتاب ابتدا وارد حساب کاربری خود شوید.')
-      // Optionally, redirect to login page
-      // navigateTo('/login')
-    } else {
-      // Other errors (404, 500, etc.)
-      alert(errorMessage)
-    }
+    // IMPORTANT: Refresh the book data to get the new purchase_status
+    await fetchBook();
+
+  } catch (err) {
+    console.error('Purchase failed:', err)
+    // Display the specific error message from the API (e.g., for 409 Conflict)
+    const errorMessage = err.data?.message || 'خطا در پردازش درخواست شما. لطفاً دوباره تلاش کنید.'
+    alert(errorMessage)
   } finally {
     purchaseInProgress.value = false
   }
 }
 
-const formatPrice = (price) => {
-  if (!price) return ''
-  return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
-}
-
+// Fetch initial data when the component mounts
 onMounted(fetchBook)
 </script>
