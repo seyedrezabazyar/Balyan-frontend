@@ -112,6 +112,7 @@ import { useRouter } from 'vue-router'
 import validator from 'validator'
 import { useAuthStore } from '~/stores/auth'
 import { useFormatters } from '~/composables/useFormatters'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
   layout: false,
@@ -213,11 +214,29 @@ const handleCheckUser = async () => {
   }
 }
 
+const handleGuestCart = async () => {
+  const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
+  if (guestCart.length > 0) {
+    const apiAuth = useApiAuth()
+    const purchasePromises = guestCart.map(slug => apiAuth.post(`/books/${slug}/buy`))
+    try {
+      // We run the purchases but don't need to halt execution if one fails.
+      await Promise.allSettled(purchasePromises)
+    } catch (err) {
+      console.error("An error occurred while processing the guest cart:", err)
+    } finally {
+      // Always clear the cart after attempting to process.
+      localStorage.removeItem('guestCart')
+    }
+  }
+}
+
 const handleLoginWithPassword = async () => {
   error.value = ''
   loading.value = true
   try {
     await authStore.loginWithPassword(identifier.value, password.value)
+    await handleGuestCart() // Process guest cart after successful login
     await router.push('/dashboard')
   } catch (err: any) {
     error.value = err.data?.message || 'شناسه یا رمز عبور اشتباه است.'
@@ -253,6 +272,7 @@ const handleVerifyOtp = async () => {
   try {
     const nameToSend = checkUserResponse.value?.user_exists ? undefined : userName.value
     await authStore.verifyOtp(identifier.value, otp.value, nameToSend)
+    await handleGuestCart() // Process guest cart after successful login
     await router.push('/dashboard')
   } catch (err: any) {
     error.value = err.data?.message || 'کد تایید اشتباه است.'

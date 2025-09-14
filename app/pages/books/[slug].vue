@@ -31,37 +31,42 @@
         </div>
 
         <div class="mt-6 pt-6 border-t">
+          <!-- Purchase Message Area -->
+          <div v-if="purchaseMessage"
+               :class="purchaseMessageType === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'"
+               class="border text-center p-4 rounded-lg mb-4"
+               role="alert">
+            <p>{{ purchaseMessage }}</p>
+          </div>
+
+          <!-- Guest Prompt -->
+          <div v-if="showLoginPrompt" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-4" role="alert">
+            <p class="font-bold">لطفا وارد شوید</p>
+            <p>برای تکمیل خرید، ابتدا باید وارد حساب کاربری خود شوید یا یک حساب جدید بسازید.</p>
+            <div class="mt-4">
+              <button @click="router.push('/auth')" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded hover:bg-yellow-600">
+                ورود یا ثبت‌نام
+              </button>
+            </div>
+          </div>
+
           <!-- Purchased State -->
           <div v-if="book.is_purchased" class="text-center">
             <p class="font-semibold text-lg text-green-600">شما این کتاب را خریداری کرده‌اید.</p>
-            <button class="mt-2 bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">
-              مشاهده کتاب
+            <button @click="router.push('/profile')" class="mt-2 bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600">
+              مشاهده در پروفایل
             </button>
           </div>
 
-          <!-- Direct Purchase Flow -->
-          <div v-else class="space-y-4">
-            <h3 class="font-semibold text-lg">خرید مستقیم</h3>
-
-            <!-- Coupon Section -->
-            <div class="flex items-center gap-2">
-              <input type="text" v-model="couponCode" placeholder="کد تخفیف (اختیاری)"
-                     class="flex-grow p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500">
-              <button @click="validateCoupon" :disabled="validatingCoupon"
-                      class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50">
-                <span v-if="validatingCoupon">...</span>
-                <span v-else>اعتبارسنجی</span>
-              </button>
-            </div>
-            <p v-if="couponMessage" :class="couponMessageClass" class="text-sm">
-              {{ couponMessage }}
-            </p>
-
-            <!-- Purchase Button -->
-            <button @click="handlePurchase" :disabled="purchaseInProgress"
-                    class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-              <span v-if="purchaseInProgress">در حال انتقال به درگاه...</span>
-              <span v-else>خرید و پرداخت</span>
+          <!-- Purchase Button -->
+          <div v-else>
+            <button @click="handleBuyClick" :disabled="purchaseInProgress"
+                    class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center">
+              <svg v-if="purchaseInProgress" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ purchaseInProgress ? 'در حال پردازش...' : 'خرید کتاب' }}</span>
             </button>
           </div>
         </div>
@@ -71,30 +76,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, navigateTo } from '#app'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from '#app'
 import { useApi } from '~/composables/useApi'
 import { useApiAuth } from '~/composables/useApiAuth'
+import { useAuthStore } from '~/stores/auth'
 
 useHead({
   title: 'جزئیات کتاب',
 })
 
 const route = useRoute()
-const api = useApi() // Public client
-const apiAuth = useApiAuth() // Authenticated client
+const router = useRouter()
+const api = useApi()
+const apiAuth = useApiAuth()
+const authStore = useAuthStore()
 
 const book = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const slug = route.params.slug
 
-// State for new purchase flow
-const couponCode = ref('')
-const validatingCoupon = ref(false)
-const couponMessage = ref('')
-const couponMessageClass = ref('')
+// New state for purchase flow
 const purchaseInProgress = ref(false)
+const purchaseMessage = ref('')
+const purchaseMessageType = ref('') // 'success' or 'error'
+const showLoginPrompt = ref(false)
 
 const fetchBook = async () => {
   try {
@@ -116,52 +123,51 @@ const fetchBook = async () => {
   }
 }
 
-const validateCoupon = async () => {
-  if (!couponCode.value) {
-    couponMessage.value = 'لطفاً کد تخفیف را وارد کنید.'
-    couponMessageClass.value = 'text-red-500'
-    return
-  }
-  validatingCoupon.value = true
-  couponMessage.value = ''
-  try {
-    const response = await apiAuth.post('/purchase/coupon/validate', { code: couponCode.value })
-    if (response.success) {
-      couponMessage.value = `کد تخفیف معتبر است: ${response.data.percentage}%`
-      couponMessageClass.value = 'text-green-600'
-    }
-  } catch (err) {
-    couponMessage.value = err.data?.data?.message || 'کد تخفیف نامعتبر است.'
-    couponMessageClass.value = 'text-red-500'
-  } finally {
-    validatingCoupon.value = false
-  }
-}
+const handleBuyClick = async () => {
+  // Reset previous messages
+  purchaseMessage.value = ''
+  showLoginPrompt.value = false
 
-const handlePurchase = async () => {
-  if (!book.value) return;
-  purchaseInProgress.value = true
-  try {
-    const response = await apiAuth.post(`/books/${book.value.id}/buy`, {
-      payment_method: 'zarinpal',
-      coupon_code: couponCode.value || null,
-    })
-    if (response.success && response.data.payment_url) {
-      await navigateTo(response.data.payment_url, { external: true })
-    } else {
-      alert('خطا در ایجاد لینک پرداخت. لطفاً دوباره تلاش کنید.')
+  if (!authStore.isLoggedIn) {
+    // Guest user logic
+    const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]')
+    if (!guestCart.includes(book.value.slug)) {
+      guestCart.push(book.value.slug)
+      localStorage.setItem('guestCart', JSON.stringify(guestCart))
     }
-  } catch (err) {
-    console.error('Purchase failed:', err)
-    alert(err.data?.message || 'فرآیند خرید با خطا مواجه شد.')
-  } finally {
-    purchaseInProgress.value = false
-  }
-}
+    showLoginPrompt.value = true
+  } else {
+    // Authenticated user logic
+    purchaseInProgress.value = true
+    try {
+      const response = await apiAuth.post(`/books/${book.value.slug}/buy`)
 
-const formatPrice = (price) => {
-  if (!price) return ''
-  return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
+      // As per docs, a 200 OK is success
+      purchaseMessage.value = response.message || 'خرید شما با موفقیت انجام شد.'
+      purchaseMessageType.value = 'success'
+
+      // Update book state and redirect
+      if (book.value) {
+        book.value.is_purchased = true
+      }
+      setTimeout(() => {
+        router.push('/profile') // Or wherever "My Books" is
+      }, 2000)
+
+    } catch (err) {
+      if (err.statusCode === 401) {
+        // The useApiAuth composable already handles logout and redirect
+        // but we can show a message here if we want.
+        purchaseMessage.value = 'نشست شما منقضی شده. در حال انتقال به صفحه ورود...'
+      } else {
+        // Handle other errors, e.g., 500
+        purchaseMessage.value = err.data?.message || 'خطا در پردازش خرید شما. لطفاً دوباره تلاش کنید.'
+      }
+      purchaseMessageType.value = 'error'
+    } finally {
+      purchaseInProgress.value = false
+    }
+  }
 }
 
 onMounted(fetchBook)

@@ -1,7 +1,7 @@
-import { useApiAuth } from '~/composables/useApiAuth'
+import { useApi } from '~/composables/useApi'
 
 export const useProfile = () => {
-  const api = useApiAuth()
+  const api = useApi()
 
   // Note: The endpoints have been updated for better RESTful practices.
   // The old /auth/user is now just /user
