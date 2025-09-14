@@ -1,32 +1,32 @@
 <template>
   <div class="container mx-auto p-4 md:p-8">
-    <div v-if="pending" class="text-center">
+    <div v-if="loading" class="text-center">
       <p>در حال بارگذاری اطلاعات کتاب...</p>
     </div>
     <div v-else-if="error" class="text-center text-red-500">
-      <p>خطا در دریافت اطلاعات کتاب: {{ error.message }}</p>
+      <p>خطا در دریافت اطلاعات کتاب: {{ error }}</p>
     </div>
-    <article v-else-if="bookDetails && bookDetails.data && bookDetails.data.book" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <article v-else-if="book" class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div class="md:col-span-1">
-        <img v-if="bookDetails.data.book.image?.url" :src="bookDetails.data.book.image.url" :alt="bookDetails.data.book.title" class="w-full rounded-lg shadow-lg">
+        <img v-if="book.image?.url" :src="book.image.url" :alt="book.title" class="w-full rounded-lg shadow-lg">
       </div>
       <div class="md:col-span-2">
-        <h1 v-if="bookDetails.data.book.title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ bookDetails.data.book.title }}</h1>
+        <h1 v-if="book.title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ book.title }}</h1>
         <div class="flex items-center mb-4">
-          <p v-if="bookDetails.data.book.authors && Array.isArray(bookDetails.data.book.authors) && bookDetails.data.book.authors.length" class="text-lg text-gray-600 ml-4">
-            {{ bookDetails.data.book.authors.map(a => a.name).join(', ') }}
+          <p v-if="book.authors && Array.isArray(book.authors) && book.authors.length" class="text-lg text-gray-600 ml-4">
+            {{ book.authors.map(a => a.name).join(', ') }}
           </p>
-          <span v-if="bookDetails.data.book.category?.name" class="text-sm text-gray-500">{{ bookDetails.data.book.category.name }}</span>
+          <span v-if="book.category?.name" class="text-sm text-gray-500">{{ book.category.name }}</span>
         </div>
-        <p v-if="bookDetails.data.book.excerpt" class="text-gray-700 leading-relaxed mb-6">{{ bookDetails.data.book.excerpt }}</p>
+        <p v-if="book.excerpt" class="text-gray-700 leading-relaxed mb-6">{{ book.excerpt }}</p>
 
-        <div v-if="bookDetails.data.book.language || bookDetails.data.book.publication_year || bookDetails.data.book.pages_count || bookDetails.data.book.isbn" class="bg-gray-100 p-4 rounded-lg mb-6">
+        <div v-if="book.language || book.publication_year || book.pages_count || book.isbn" class="bg-gray-100 p-4 rounded-lg mb-6">
           <h3 class="font-semibold text-lg mb-2">مشخصات کتاب</h3>
           <ul class="grid grid-cols-2 gap-4 text-sm">
-            <li v-if="bookDetails.data.book.language"><strong>زبان:</strong> {{ bookDetails.data.book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
-            <li v-if="bookDetails.data.book.publication_year"><strong>سال انتشار:</strong> {{ bookDetails.data.book.publication_year }}</li>
-            <li v-if="bookDetails.data.book.pages_count"><strong>تعداد صفحات:</strong> {{ bookDetails.data.book.pages_count }}</li>
-            <li v-if="bookDetails.data.book.isbn"><strong>شابک (ISBN):</strong> {{ bookDetails.data.book.isbn }}</li>
+            <li v-if="book.language"><strong>زبان:</strong> {{ book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
+            <li v-if="book.publication_year"><strong>سال انتشار:</strong> {{ book.publication_year }}</li>
+            <li v-if="book.pages_count"><strong>تعداد صفحات:</strong> {{ book.pages_count }}</li>
+            <li v-if="book.isbn"><strong>شابک (ISBN):</strong> {{ book.isbn }}</li>
           </ul>
         </div>
 
@@ -68,35 +68,50 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 const route = useRoute();
 const slug = route.params.slug;
 const authStore = useAuthStore();
+
+// State for the component
+const book = ref(null);
+const isPurchased = ref(false);
+const loading = ref(true);
+const error = ref(null);
 const purchaseInProgress = ref(false);
 const showLoginPrompt = ref(false);
 const notification = ref({ show: false, message: '', type: 'success' });
 
 const isLoggedIn = computed(() => !!authStore.token);
 
-// The `useFetch` is kept for the initial data load.
-const { data: bookDetails, pending, error } = await useFetch(
-  () => `/api/v1/books/${slug}`,
-  {
-    baseURL: 'http://localhost:8000',
-    headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
+// Fetching data only on the client-side to ensure auth state is available
+async function fetchBook() {
+  loading.value = true;
+  error.value = null;
+  try {
+    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
+    });
+    if (response.success && response.data?.book) {
+      book.value = response.data.book;
+      isPurchased.value = response.data.book.is_purchased;
+      useHead({ title: response.data.book.title });
+    } else {
+      throw new Error('Invalid book data received from API.');
+    }
+  } catch (err) {
+    error.value = err.data?.message || 'Failed to fetch book details.';
+    console.error('Failed to fetch book details:', err);
+  } finally {
+    loading.value = false;
   }
-);
+}
 
-const isPurchased = ref(bookDetails.value?.data?.book?.is_purchased || false);
-
-watch(bookDetails, (newDetails) => {
-  isPurchased.value = newDetails?.data?.book?.is_purchased || false;
-  if (newDetails?.data?.book?.title) {
-    useHead({ title: newDetails.data.book.title });
-  }
-}, { immediate: true });
+onMounted(() => {
+  fetchBook();
+});
 
 function handlePurchaseClick() {
   if (isLoggedIn.value) {
