@@ -31,22 +31,27 @@
         </div>
 
         <div class="mt-6 pt-6 border-t">
-          <!-- If user is logged in -->
-          <div v-if="isLoggedIn">
-              <button v-if="!isPurchased" @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-                  <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
-                  <span v-else>خرید آنی کتاب</span>
-              </button>
-              <NuxtLink v-else to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
-                  رفتن به صفحه دانلود
-              </NuxtLink>
+          <!-- Case 1: Book has been purchased (user must be logged in) -->
+          <div v-if="isPurchased">
+            <NuxtLink to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+              رفتن به صفحه دانلود
+            </NuxtLink>
           </div>
-          <!-- If user is a guest -->
-          <div v-else class="text-center p-4 bg-gray-100 rounded-lg">
-              <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
-              <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-                  ورود یا ثبت‌نام
-              </NuxtLink>
+
+          <!-- Case 2: Guest clicked "Buy" -->
+          <div v-else-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
+            <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
+            <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
+              ورود یا ثبت‌نام
+            </NuxtLink>
+          </div>
+
+          <!-- Case 3: Book not purchased, initial state -> Show the Buy button -->
+          <div v-else>
+            <button @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+              <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
+              <span v-else>خرید آنی کتاب</span>
+            </button>
           </div>
         </div>
       </div>
@@ -65,6 +70,7 @@ const route = useRoute();
 const slug = route.params.slug;
 const authStore = useAuthStore();
 const purchaseInProgress = ref(false);
+const showLoginPrompt = ref(false);
 
 const isLoggedIn = computed(() => !!authStore.token);
 
@@ -92,6 +98,14 @@ watch(bookDetails, (newDetails) => {
     });
   }
 }, { immediate: true }); // immediate: true ensures this runs on initial load
+
+function handlePurchaseClick() {
+  if (isLoggedIn.value) {
+    handlePurchase();
+  } else {
+    showLoginPrompt.value = true;
+  }
+}
 
 async function handlePurchase() {
   purchaseInProgress.value = true;
