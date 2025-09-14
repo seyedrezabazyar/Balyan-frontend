@@ -142,7 +142,7 @@ const handlePurchase = async () => {
   if (!book.value) return;
   purchaseInProgress.value = true
   try {
-    const response = await apiAuth.post(`/books/${book.value.id}/buy`, {
+    const response = await apiAuth.post(`/books/${slug}/buy`, {
       payment_method: 'zarinpal',
       coupon_code: couponCode.value || null,
     })
