@@ -46,6 +46,11 @@
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                 پروفایل
               </NuxtLink>
+              <NuxtLink to="/my-books"
+                        @click="showUserMenu = false"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                کتاب‌های من
+              </NuxtLink>
 
               <!-- Admin Menu -->
               <div v-if="authStore.isAdmin">
