@@ -1,5 +1,4 @@
 import { H3Event } from 'h3'
-import { db } from '~/server/utils/db'
 
 export default defineEventHandler(async (event: H3Event) => {
   const token = getRouterParam(event, 'token');
