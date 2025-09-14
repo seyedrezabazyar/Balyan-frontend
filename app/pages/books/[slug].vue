@@ -31,25 +31,15 @@
         </div>
 
         <div class="mt-6 pt-6 border-t">
-          <!-- Purchase Status: Active -->
-          <div v-if="purchaseStatus === 'active'" class="text-center">
+          <!-- If book is purchased -->
+          <div v-if="book.is_purchased" class="text-center">
             <p class="font-semibold text-lg text-green-600 mb-2">شما این کتاب را در کتابخانه خود دارید.</p>
-            <NuxtLink to="/my-books" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
-              مشاهده در کتابخانه
+            <NuxtLink to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+              رفتن به صفحه دانلود
             </NuxtLink>
           </div>
 
-          <!-- Purchase Status: Expired -->
-          <div v-else-if="purchaseStatus === 'expired'" class="p-4 bg-yellow-100 border-r-4 border-yellow-500 text-yellow-700 rounded-lg text-center">
-            <h3 class="font-bold text-lg mb-2">دسترسی شما منقضی شده</h3>
-            <p class="mb-4">دسترسی شما به این کتاب به پایان رسیده است. برای دریافت مجدد، می‌توانید آن را دوباره تهیه کنید.</p>
-            <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-yellow-700 transition disabled:opacity-50">
-              <span v-if="purchaseInProgress">در حال فعال‌سازی...</span>
-              <span v-else>خرید مجدد و فعال‌سازی</span>
-            </button>
-          </div>
-
-          <!-- Purchase Status: None -->
+          <!-- If book is not purchased -->
           <div v-else class="space-y-4">
             <h3 class="font-semibold text-lg">خرید مستقیم</h3>
             <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
@@ -64,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from '#app'
 import { useApiAuth } from '~/composables/useApiAuth'
 
@@ -80,8 +70,6 @@ const loading = ref(true)
 const error = ref(null)
 const purchaseInProgress = ref(false)
 const slug = route.params.slug
-
-const purchaseStatus = computed(() => book.value?.purchase_status || 'none')
 
 const fetchBook = async () => {
   if (!book.value) {
@@ -107,20 +95,27 @@ const fetchBook = async () => {
 }
 
 const handlePurchase = async () => {
-  if (!book.value) return
-  purchaseInProgress.value = true
+  if (!book.value) return;
+  purchaseInProgress.value = true;
+
+  const originalPurchaseStatus = book.value.is_purchased;
+  book.value.is_purchased = true; // Optimistic update for instant UI feedback
 
   try {
-    const response = await apiAuth.post(`/books/${slug}/buy`)
+    const response = await apiAuth.post(`/books/${slug}/buy`);
     alert(response.message || 'عملیات با موفقیت انجام شد.');
+    // Re-fetch in the background to get the full, updated book object from the server.
+    // This ensures data consistency if the user navigates away and back.
     await fetchBook();
-
   } catch (err) {
-    console.error('Purchase failed:', err)
-    const errorMessage = err.data?.message || 'خطا در پردازش درخواست شما. لطفاً دوباره تلاش کنید.'
-    alert(errorMessage)
+    // Revert the optimistic update if the purchase fails
+    book.value.is_purchased = originalPurchaseStatus;
+
+    console.error('Purchase failed:', err);
+    const errorMessage = err.data?.message || 'خطا در پردازش درخواست شما. لطفاً دوباره تلاش کنید.';
+    alert(errorMessage);
   } finally {
-    purchaseInProgress.value = false
+    purchaseInProgress.value = false;
   }
 }
 
