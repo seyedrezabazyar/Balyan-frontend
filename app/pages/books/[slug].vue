@@ -95,7 +95,7 @@ const fetchBook = async () => {
 }
 
 const handlePurchase = async () => {
-  if (!book.value) return;
+  if (!book.value || book.value.is_purchased) return;
   purchaseInProgress.value = true;
 
   const originalPurchaseStatus = book.value.is_purchased;
@@ -104,9 +104,8 @@ const handlePurchase = async () => {
   try {
     const response = await apiAuth.post(`/books/${slug}/buy`);
     alert(response.message || 'عملیات با موفقیت انجام شد.');
-    // Re-fetch in the background to get the full, updated book object from the server.
-    // This ensures data consistency if the user navigates away and back.
-    await fetchBook();
+    // Do NOT re-fetch here, to avoid getting a cached response from the GET endpoint.
+    // The optimistic update is now the source of truth for the UI for this session.
   } catch (err) {
     // Revert the optimistic update if the purchase fails
     book.value.is_purchased = originalPurchaseStatus;
