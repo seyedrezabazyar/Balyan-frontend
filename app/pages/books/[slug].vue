@@ -31,8 +31,13 @@
         </div>
 
         <div class="mt-6 pt-6 border-t">
-          <!-- Case 1: Book has been purchased (user must be logged in) -->
-          <div v-if="isPurchased">
+          <!-- Notification Area -->
+          <div v-if="notification.show" class="p-4 mb-4 rounded-lg text-center" :class="{ 'bg-green-100 text-green-700': notification.type === 'success', 'bg-red-100 text-red-700': notification.type === 'error' }">
+            {{ notification.message }}
+          </div>
+
+          <!-- Case 1: Book has been purchased -->
+          <div v-if="isPurchased" class="text-center">
             <NuxtLink to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
               رفتن به صفحه دانلود
             </NuxtLink>
@@ -71,68 +76,55 @@ const slug = route.params.slug;
 const authStore = useAuthStore();
 const purchaseInProgress = ref(false);
 const showLoginPrompt = ref(false);
+const notification = ref({ show: false, message: '', type: 'success' });
 
 const isLoggedIn = computed(() => !!authStore.token);
 
-const { data: bookDetails, pending, error, refresh } = await useFetch(
+// The `useFetch` is kept for the initial data load.
+const { data: bookDetails, pending, error } = await useFetch(
   () => `/api/v1/books/${slug}`,
   {
     baseURL: 'http://localhost:8000',
-    // We need to pass the token to get the correct `is_purchased` status
-    headers: {
-      'Authorization': `Bearer ${authStore.token}`,
-      'Accept': 'application/json'
-    }
+    headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
   }
 );
 
-// Create a local reactive state for the purchase status
 const isPurchased = ref(bookDetails.value?.data?.book?.is_purchased || false);
 
-// Watch for changes in the fetched data and update the local state and page title
 watch(bookDetails, (newDetails) => {
   isPurchased.value = newDetails?.data?.book?.is_purchased || false;
   if (newDetails?.data?.book?.title) {
-    useHead({
-      title: newDetails.data.book.title,
-    });
+    useHead({ title: newDetails.data.book.title });
   }
-}, { immediate: true }); // immediate: true ensures this runs on initial load
+}, { immediate: true });
 
 function handlePurchaseClick() {
   if (isLoggedIn.value) {
-    handlePurchase();
+    processPurchase();
   } else {
     showLoginPrompt.value = true;
   }
 }
 
-async function handlePurchase() {
+async function processPurchase() {
   purchaseInProgress.value = true;
+  notification.value = { show: false, message: '', type: 'success' };
+
+  // This is the optimistic update. We immediately set the state to purchased.
+  const originalPurchaseStatus = isPurchased.value;
+  isPurchased.value = true;
+
   try {
-    await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
+    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Accept': 'application/json'
-      }
+      headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
-
-    // The key to the solution: refresh the data from the server.
-    // The backend clears the cache, so this will fetch the new state.
-    await refresh();
-
-    alert('خرید با موفقیت انجام شد!');
-
+    // On success, show a nice notification. We don't need to do anything else.
+    notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
   } catch (err) {
-    if (err.response?.status === 409) {
-      alert(err.response._data.message);
-      // Even on a 409 conflict, refresh the data to sync the UI with the server state.
-      await refresh();
-    } else {
-      console.error('Purchase failed:', err);
-      alert('خطایی در هنگام خرید رخ داد.');
-    }
+    // If the purchase fails, we revert the optimistic update.
+    isPurchased.value = originalPurchaseStatus;
+    notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام خرید رخ داد.', type: 'error' };
   } finally {
     purchaseInProgress.value = false;
   }
