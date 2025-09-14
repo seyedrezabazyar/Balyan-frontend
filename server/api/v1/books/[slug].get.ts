@@ -1,12 +1,6 @@
 export default defineEventHandler((event) => {
   const slug = getRouterParam(event, 'slug')
-  const user = event.context.auth?.user
 
-  // Get the purchase status for the current user.
-  // If no user, status is 'none'.
-  const purchaseStatus = user ? db.getPurchaseStatus(user.id, slug) : 'none'
-
-  // Mock book data - in a real app, this would be fetched from a database.
   const book = {
     id: 1,
     slug: slug,
@@ -18,21 +12,20 @@ export default defineEventHandler((event) => {
     publication_year: 2023,
     pages_count: 250,
     isbn: '978-1234567890',
-    price: 20000,
-    // The new dynamic status field, replacing is_purchased
-    purchase_status: purchaseStatus,
+    price: 50000,
+    sale_price: 45000,
+    is_purchased: false,
     image: {
       url: 'https://via.placeholder.com/400x600',
       thumbnail_url: 'https://via.placeholder.com/150x225'
     }
   }
 
-  // Returning a wrapped response for consistency, as expected by the frontend
+  // Returning a wrapped response for consistency
   return {
     success: true,
     data: {
-      book: book,
-      related: [] // Added for consistency with the user's new documentation
+      book: book
     }
   }
 })

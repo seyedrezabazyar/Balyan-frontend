@@ -40,7 +40,7 @@
           </div>
 
           <!-- Purchase Status: Expired -->
-          <div v-else-if="purchaseStatus === 'expired'" class="p-4 bg-yellow-100 border-r-4 border-yellow-500 text-yellow-700 rounded-lg">
+          <div v-else-if="purchaseStatus === 'expired'" class="p-4 bg-yellow-100 border-r-4 border-yellow-500 text-yellow-700 rounded-lg text-center">
             <h3 class="font-bold text-lg mb-2">دسترسی شما منقضی شده</h3>
             <p class="mb-4">دسترسی شما به این کتاب به پایان رسیده است. برای دریافت مجدد، می‌توانید آن را دوباره تهیه کنید.</p>
             <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-yellow-700 transition disabled:opacity-50">
@@ -49,10 +49,9 @@
             </button>
           </div>
 
-          <!-- Purchase Status: None (or any other case) -->
+          <!-- Purchase Status: None -->
           <div v-else class="space-y-4">
             <h3 class="font-semibold text-lg">خرید مستقیم</h3>
-            <!-- The coupon section could be re-added here if needed in the future -->
             <button @click="handlePurchase" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
               <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
               <span v-else>خرید آنی کتاب</span>
