@@ -57,7 +57,7 @@
                   <img class="h-10 w-10 rounded-full object-cover" :src="purchase.cover_image_url || '/placeholder.png'" :alt="purchase.title">
                 </div>
                 <div class="mr-4">
-                  <NuxtLink :to="purchase.book && purchase.book.slug ? `/books/${purchase.book.slug}` : '#'" class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors" :class="{'pointer-events-none': !purchase.book || !purchase.book.slug}">
+                  <NuxtLink :to="purchase.book && purchase.book.slug ? `/book/${purchase.book.slug}` : '#'" class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors" :class="{'pointer-events-none': !purchase.book || !purchase.book.slug}">
                     {{ purchase.title }}
                   </NuxtLink>
                 </div>

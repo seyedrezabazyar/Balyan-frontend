@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white rounded-lg shadow hover:shadow-lg transition h-full flex flex-col">
-    <NuxtLink :to="`/books/${book.slug}`" class="block">
+    <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
         <img :src="book.image && book.image.thumbnail_url ? book.image.thumbnail_url : '/placeholder-book.jpg'"
              :alt="book.title"
@@ -12,7 +12,7 @@
       </div>
     </NuxtLink>
     <div class="p-4 flex flex-col flex-grow">
-      <NuxtLink :to="`/books/${book.slug}`" class="block">
+      <NuxtLink :to="`/book/${book.slug}`" class="block">
         <h3 class="font-semibold text-gray-800 mb-1 line-clamp-1 hover:text-blue-600">{{ book.title }}</h3>
       </NuxtLink>
       <p class="text-sm text-gray-600 mb-2">{{ book.authors && book.authors.length > 0 ? book.authors[0].name : 'ناشناس' }}</p>
