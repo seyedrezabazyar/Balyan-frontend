@@ -117,7 +117,7 @@ async function fetchBook() {
   error.value = null;
   debugInfo.value = null;
   try {
-    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}`, {
+    const response = await $fetch(`http://localhost:8000/api/v1/book/${slug}`, {
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
 
@@ -173,7 +173,7 @@ async function processPurchase() {
   notification.value = { show: false, message: '', type: 'success' };
 
   try {
-    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
+    const response = await $fetch(`http://localhost:8000/api/v1/book/${slug}/buy`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
