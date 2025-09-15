@@ -23,7 +23,7 @@
           <NuxtLink to="/dashboard" class="block w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
             رفتن به داشبورد
           </NuxtLink>
-          <NuxtLink v-if="bookSlug" :to="`/books/${bookSlug}`" class="block w-full px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200">
+          <NuxtLink v-if="bookSlug" :to="`/book/${bookSlug}`" class="block w-full px-4 py-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200">
             بازگشت به صفحه کتاب
           </NuxtLink>
         </div>
