@@ -174,8 +174,8 @@ async function processPurchase() {
   purchaseInProgress.value = true;
   notification.value = { show: false, message: '', type: 'success' };
   try {
-    // Use book.id for the purchase request, which is more reliable than slug.
-    const response = await $fetch(`http://localhost:8000/api/v1/books/${book.value.id}/buy`, {
+    // The backend endpoint for purchasing expects the book's slug, not its ID.
+    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
