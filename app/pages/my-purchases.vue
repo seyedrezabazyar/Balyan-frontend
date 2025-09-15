@@ -50,7 +50,7 @@
             class="transition-colors duration-200"
           >
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ index + 1 }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ purchase.order_number || purchase.order_id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ purchase.order_number }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
