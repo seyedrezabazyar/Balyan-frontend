@@ -84,7 +84,9 @@
                   {{ downloadStatuses[purchase.id]?.message || 'دانلود' }}
                 </button>
               </div>
-              <NuxtLink v-else :to="purchase.renew_url" class="text-blue-600 hover:text-blue-900">تمدید خرید</NuxtLink>
+              <NuxtLink v-else :to="`/book/${purchase.book.slug}`" class="text-orange-600 hover:text-orange-800 font-semibold">
+                خرید مجدد
+              </NuxtLink>
             </td>
           </tr>
         </tbody>
