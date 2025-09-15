@@ -96,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+// Trivial change to force a re-sync.
 import { storeToRefs } from 'pinia';
 import { usePurchaseStore } from '~/app/stores/purchase';
 
