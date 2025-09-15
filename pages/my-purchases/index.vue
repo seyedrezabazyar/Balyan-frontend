@@ -4,6 +4,24 @@
       کتاب‌های خریداری شده من
     </h1>
 
+    <!-- Debug Section -->
+    <div class="bg-gray-100 border-2 border-dashed border-gray-400 p-4 rounded-lg mb-8">
+      <h2 class="text-xl font-bold text-gray-700 mb-2">--- بخش دیباگ ---</h2>
+      <div class="space-y-2 text-sm font-mono">
+        <p><strong>Pending (درحال بارگذاری):</strong> {{ pending }}</p>
+        <div>
+          <p><strong>Error (خطا):</strong></p>
+          <pre class="bg-red-50 p-2 rounded text-red-700 whitespace-pre-wrap">{{ error || 'هیچ خطایی وجود ندارد' }}</pre>
+        </div>
+        <div>
+          <p><strong>Response (پاسخ کامل API):</strong></p>
+          <pre class="bg-blue-50 p-2 rounded text-blue-800 whitespace-pre-wrap">{{ response || 'هنوز پاسخی دریافت نشده' }}</pre>
+        </div>
+      </div>
+       <p class="text-xs text-gray-500 mt-4">این بخش فقط برای خطایابی است و بعداً حذف خواهد شد.</p>
+    </div>
+    <!-- End Debug Section -->
+
     <!-- 1. Loading State -->
     <div v-if="pending">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
