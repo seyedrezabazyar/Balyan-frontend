@@ -82,6 +82,12 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Debug View -->
+    <div v-if="purchases.length > 0" class="mt-12 p-4 bg-gray-800 text-white rounded-lg" dir="ltr">
+      <h3 class="text-lg font-bold mb-2 text-right">Debug View: Raw API Data</h3>
+      <pre class="text-xs whitespace-pre-wrap break-all">{{ JSON.stringify(purchases, null, 2) }}</pre>
+    </div>
   </div>
 </template>
 
