@@ -50,14 +50,14 @@
             class="transition-colors duration-200"
           >
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ index + 1 }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ purchase.order_id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ purchase.order_number || purchase.order_id }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10">
                   <img class="h-10 w-10 rounded-full object-cover" :src="purchase.cover_image_url || '/placeholder.png'" :alt="purchase.title">
                 </div>
                 <div class="mr-4">
-                  <NuxtLink :to="purchase.renew_url" class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                  <NuxtLink :to="purchase.book && purchase.book.slug ? `/books/${purchase.book.slug}` : '#'" class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors" :class="{'pointer-events-none': !purchase.book || !purchase.book.slug}">
                     {{ purchase.title }}
                   </NuxtLink>
                 </div>
@@ -75,7 +75,15 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ purchase.remaining_downloads }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <a v-if="!purchase.is_expired" :href="purchase.download_url" class="text-indigo-600 hover:text-indigo-900">دانلود</a>
+              <div v-if="!purchase.is_expired">
+                <button
+                  @click="handleDownload(purchase)"
+                  :disabled="downloadStatuses[purchase.id]?.status === 'loading'"
+                  class="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  {{ downloadStatuses[purchase.id]?.message || 'دانلود' }}
+                </button>
+              </div>
               <NuxtLink v-else :to="purchase.renew_url" class="text-blue-600 hover:text-blue-900">تمدید خرید</NuxtLink>
             </td>
           </tr>
@@ -92,10 +100,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { usePurchaseStore } from '~/stores/purchase'
 import { useFormatters } from '~/composables/useFormatters'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
   middleware: 'auth',
@@ -105,6 +114,40 @@ definePageMeta({
 const authStore = useAuthStore()
 const purchaseStore = usePurchaseStore()
 const formatters = useFormatters()
+const api = useApiAuth()
+
+const downloadStatuses = ref({})
+
+const handleDownload = async (purchase) => {
+  const purchaseId = purchase.id;
+  const bookId = purchase.book.id;
+
+  try {
+    downloadStatuses.value[purchaseId] = { status: 'loading', message: 'در حال بررسی...' };
+
+    const response = await api.get(`/books/${bookId}/download-link`);
+
+    if (response && response.success && response.download_url) {
+      downloadStatuses.value[purchaseId] = { status: 'success', message: 'در حال دانلود...' };
+      window.location.href = response.download_url;
+      // Reset status after a delay
+      setTimeout(() => {
+        downloadStatuses.value[purchaseId] = { status: 'idle', message: 'دانلود' };
+      }, 3000);
+    } else {
+      // This handles cases where success is false, e.g., file is preparing
+      downloadStatuses.value[purchaseId] = { status: 'preparing', message: response.message || 'فایل در حال آماده سازی است' };
+    }
+  } catch (error) {
+    const errorMessage = error.response?._data?.message || 'خطا در برقراری ارتباط';
+    downloadStatuses.value[purchaseId] = { status: 'error', message: errorMessage };
+    console.error(`Failed to get download link for book ${bookId}:`, error);
+    // Reset status after showing the error for a few seconds
+    setTimeout(() => {
+      downloadStatuses.value[purchaseId] = { status: 'idle', message: 'دانلود' };
+    }, 5000);
+  }
+}
 
 // Computed properties to reactively get data from the store
 const purchases = computed(() => purchaseStore.purchases)
