@@ -129,7 +129,7 @@ async function fetchBook() {
 
     if (response.success && response.data?.book) {
       book.value = response.data.book;
-      purchaseStatus.value = response.data.book.user_purchase_status;
+      purchaseStatus.value = response.data.user_purchase_status;
       useHead({ title: response.data.book.title });
     } else {
       throw new Error('Invalid book data received from API.');
