@@ -25,9 +25,9 @@ export const usePurchaseStore = defineStore('purchase', {
 
       try {
         const response = await api.get('/downloads');
-        // The API returns a paginated response, so the book list is in `response.data.data`
-        if (response.success && response.data && Array.isArray(response.data.data)) {
-          this.purchasedBooks = response.data.data;
+        // The API returns a paginated response, so the book list is in `response.data`
+        if (response && Array.isArray(response.data)) {
+          this.purchasedBooks = response.data;
         } else {
           this.purchasedBooks = [];
           console.warn('API response for downloads was not in the expected paginated format.', response);
