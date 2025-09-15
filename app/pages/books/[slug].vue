@@ -36,27 +36,46 @@
             {{ notification.message }}
           </div>
 
-          <!-- Case 1: Book has been purchased -->
-          <div v-if="isPurchased" class="text-center">
-            <NuxtLink to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
-              رفتن به صفحه دانلود
-            </NuxtLink>
-          </div>
+          <!-- Purchase Status Logic -->
+          <div class="actions text-center">
+            <!-- Scenario 1: Purchase is valid and active -->
+            <div v-if="purchaseStatus && purchaseStatus.is_purchased && !purchaseStatus.is_expired">
+              <NuxtLink to="/dashboard" class="btn-primary inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+                مشاهده در کتابخانه
+              </NuxtLink>
+              <p class="purchase-info mt-2 text-sm text-gray-600">
+                شما این کتاب را خریده‌اید و به آن دسترسی دارید.
+              </p>
+            </div>
 
-          <!-- Case 2: Guest clicked "Buy" -->
-          <div v-else-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
-            <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
-            <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-              ورود یا ثبت‌نام
-            </NuxtLink>
-          </div>
+            <!-- Scenario 2: Purchase has expired -->
+            <div v-else-if="purchaseStatus && purchaseStatus.is_purchased && purchaseStatus.is_expired" class="p-4 bg-yellow-100 rounded-lg">
+              <p class="font-semibold mb-3">مهلت دسترسی شما به این کتاب تمام شده است.</p>
+              <button v-if="purchaseStatus.renewal_offer" class="btn-renew w-full bg-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-orange-600 transition">
+                تمدید با {{ purchaseStatus.renewal_offer.discount_percentage }}٪ تخفیف
+              </button>
+              <p v-if="purchaseStatus.renewal_offer" class="price-info mt-2 text-sm text-gray-600">
+                قیمت جدید: {{ purchaseStatus.renewal_offer.new_price }} تومان
+              </p>
+            </div>
 
-          <!-- Case 3: Book not purchased, initial state -> Show the Buy button -->
-          <div v-else>
-            <button @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-              <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
-              <span v-else>خرید آنی کتاب</span>
-            </button>
+            <!-- Scenario 3: Not purchased or not logged in -->
+            <div v-else>
+              <!-- Sub-case: Guest clicked "Buy", show login prompt -->
+              <div v-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
+                <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
+                <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
+                  ورود یا ثبت‌نام
+                </NuxtLink>
+              </div>
+              <!-- Sub-case: Initial state, show buy button -->
+              <div v-else>
+                <button @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                  <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
+                  <span v-else>خرید آنی کتاب</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -83,7 +102,7 @@ const authStore = useAuthStore();
 
 // State for the component
 const book = ref(null);
-const isPurchased = ref(false);
+const purchaseStatus = ref(null); // Will hold the user_purchase_status object
 const loading = ref(true);
 const error = ref(null);
 const purchaseInProgress = ref(false);
@@ -110,7 +129,7 @@ async function fetchBook() {
 
     if (response.success && response.data?.book) {
       book.value = response.data.book;
-      isPurchased.value = response.data.book.is_purchased;
+      purchaseStatus.value = response.data.book.user_purchase_status;
       useHead({ title: response.data.book.title });
     } else {
       throw new Error('Invalid book data received from API.');
@@ -153,23 +172,46 @@ async function processPurchase() {
   purchaseInProgress.value = true;
   notification.value = { show: false, message: '', type: 'success' };
 
-  // This is the optimistic update. We immediately set the state to purchased.
-  const originalPurchaseStatus = isPurchased.value;
-  isPurchased.value = true;
-
   try {
     const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
-    // On success, show a nice notification. We don't need to do anything else.
+    // On success, show a notification and refetch the book data to update the state.
     notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
+    await fetchBook(); // Refetch data to get the new purchase status
   } catch (err) {
-    // If the purchase fails, we revert the optimistic update.
-    isPurchased.value = originalPurchaseStatus;
     notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام خرید رخ داد.', type: 'error' };
   } finally {
     purchaseInProgress.value = false;
   }
 }
 </script>
+
+<style scoped>
+/* Styles from the task description for consistency */
+.btn-primary {
+  display: inline-block;
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.btn-renew {
+  /* The template uses Tailwind classes, but we add this for completeness */
+  color: white;
+}
+
+.purchase-info, .price-info {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+/* Overriding Tailwind if needed, but the template uses utility classes directly */
+.bg-blue-600 { background-color: #2563eb; }
+.bg-green-500 { background-color: #22c55e; }
+.bg-orange-500 { background-color: #f97316; }
+</style>
