@@ -16,24 +16,41 @@
         <h3 class="font-semibold text-gray-800 mb-1 line-clamp-1 hover:text-blue-600">{{ book.title }}</h3>
       </NuxtLink>
       <p class="text-sm text-gray-600 mb-2">{{ book.authors && book.authors.length > 0 ? book.authors[0].name : 'ناشناس' }}</p>
-      <div class="mt-auto flex items-center justify-between">
-        <div>
-          <p v-if="book.sale_price" class="text-xs text-gray-400 line-through">
-            {{ formatPrice(book.price) }}
-          </p>
-          <p class="text-lg font-bold text-green-600">
-            {{ formatPrice(book.sale_price || book.price) }}
-          </p>
+      <div class="mt-auto">
+        <!-- Download Links Section -->
+        <div v-if="showDownloadLinks" class="pt-4 border-t mt-4">
+          <h4 class="font-semibold text-sm mb-2 text-gray-700">دانلود کتاب:</h4>
+          <div v-if="book.downloads && book.downloads.length > 0" class="flex flex-wrap gap-2">
+            <a v-for="download in book.downloads"
+               :key="download.format"
+               :href="`/api/v1/downloads/${download.token}`"
+               download
+               class="bg-blue-600 text-white text-xs font-bold py-2 px-3 rounded hover:bg-blue-700 transition-colors">
+              {{ download.format.toUpperCase() }}
+            </a>
+          </div>
+          <div v-else>
+            <p class="text-xs text-gray-500">لینک‌های دانلود به زودی در دسترس خواهند بود.</p>
+          </div>
         </div>
 
-        <!-- Button Logic (to be replaced with Direct Purchase on book page) -->
-        <div class="relative">
-          <button v-if="book.is_purchased"
-                  disabled
-                  class="bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded cursor-not-allowed">
-            خریداری شده
-          </button>
-          <!-- The "Add to cart" and "View cart" states have been removed. -->
+        <!-- Price/Purchase Section -->
+        <div v-else class="flex items-center justify-between pt-4">
+          <div>
+            <p v-if="book.sale_price" class="text-xs text-gray-400 line-through">
+              {{ formatPrice(book.price) }}
+            </p>
+            <p class="text-lg font-bold text-green-600">
+              {{ formatPrice(book.sale_price || book.price) }}
+            </p>
+          </div>
+          <div class="relative">
+            <button v-if="book.is_purchased"
+                    disabled
+                    class="bg-gray-400 text-white text-xs font-bold py-2 px-3 rounded cursor-not-allowed">
+              خریداری شده
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -45,6 +62,10 @@ const props = defineProps({
   book: {
     type: Object,
     required: true
+  },
+  showDownloadLinks: {
+    type: Boolean,
+    default: false
   }
 });
 
