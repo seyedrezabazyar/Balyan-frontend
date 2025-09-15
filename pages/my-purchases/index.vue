@@ -71,6 +71,7 @@
                 </div>
               </td>
               <td class="px-5 py-5 text-sm">
+                <!-- Download button for active links -->
                 <a
                   v-if="!purchase.is_expired"
                   :href="purchase.download_url"
@@ -79,13 +80,14 @@
                 >
                   دانلود
                 </a>
-                <a
+                <!-- Repurchase button for expired links -->
+                <NuxtLink
                   v-else
-                  :href="purchase.renew_url"
+                  :to="`/book/${purchase.slug}`"
                   class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded transition-colors"
                 >
                   خرید مجدد
-                </a>
+                </NuxtLink>
               </td>
             </tr>
           </tbody>
