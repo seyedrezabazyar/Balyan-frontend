@@ -24,7 +24,9 @@ export const usePurchaseStore = defineStore('purchase', {
       const api = useApiAuth();
 
       try {
-        const response = await api.get('/downloads');
+        // By adding `?include=order`, we ask the API to include the full order details
+        // with each purchase item. This is a common pattern in JSON:API or similar APIs.
+        const response = await api.get('/downloads?include=order');
         // The API returns a paginated response, so the list is in `response.data`
         if (response && Array.isArray(response.data)) {
           this.purchases = response.data;
