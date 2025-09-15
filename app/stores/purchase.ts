@@ -24,14 +24,13 @@ export const usePurchaseStore = defineStore('purchase', {
       const api = useApiAuth();
 
       try {
-        // Switched to /downloads as /purchase/purchases returned a 500 error.
         const response = await api.get('/downloads');
-        if (response.success && Array.isArray(response.data)) {
-          this.purchasedBooks = response.data;
+        // The API returns a paginated response, so the book list is in `response.data.data`
+        if (response.success && response.data && Array.isArray(response.data.data)) {
+          this.purchasedBooks = response.data.data;
         } else {
-          // Handle cases where response.data is not as expected
           this.purchasedBooks = [];
-          console.warn('API response for my-purchases was not in the expected format.', response);
+          console.warn('API response for downloads was not in the expected paginated format.', response);
         }
       } catch (error) {
         console.error('Failed to fetch purchased books:', error);
