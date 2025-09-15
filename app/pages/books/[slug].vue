@@ -40,7 +40,7 @@
           <div class="actions text-center">
             <!-- Scenario 1: Purchase is valid and active -->
             <div v-if="purchaseStatus && purchaseStatus.is_purchased && !purchaseStatus.is_expired">
-              <NuxtLink to="/dashboard" class="btn-primary inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
+              <NuxtLink to="/my-purchases" class="btn-primary inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
                 مشاهده در کتابخانه
               </NuxtLink>
               <p class="purchase-info mt-2 text-sm text-gray-600">
