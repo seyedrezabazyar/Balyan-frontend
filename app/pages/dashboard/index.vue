@@ -1,61 +1,66 @@
 <template>
-  <div class="container mx-auto p-4 md:p-8">
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-800">کتابخانه من</h1>
-      <p class="text-gray-600 mt-2">کتاب‌هایی که خریداری کرده‌اید در اینجا نمایش داده می‌شوند.</p>
-    </header>
+  <div class="p-6" v-if="authStore.isLoggedIn && authStore.currentUser">
+    <h1 class="text-2xl font-bold mb-4">داشبورد</h1>
+    <p class="text-gray-600 mb-6">به داشبورد خوش آمدید!</p>
 
-    <div v-if="loading" class="text-center text-gray-500">
-      <p>در حال بارگذاری کتاب‌ها...</p>
+    <!-- دکمه فقط برای ادمین -->
+    <div v-if="authStore.isAdmin" class="mb-4">
+      <button
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        @click="performAdminAction"
+      >
+        مدیریت سیستم (فقط ادمین)
+      </button>
     </div>
 
-    <div v-else-if="error" class="text-center text-red-500 p-4 bg-red-100 rounded-lg">
-      <p>خطا در دریافت اطلاعات: {{ error }}</p>
+    <!-- بقیه محتوا -->
+    <div>
+      <p>محتوای داشبورد برای همه کاربران...</p>
     </div>
 
-    <div v-else-if="!purchaseStore.hasPurchases" class="text-center text-gray-500 p-8 border-2 border-dashed rounded-lg">
-      <h2 class="text-xl font-semibold">کتابی یافت نشد</h2>
-      <p class="mt-2">شما هنوز هیچ کتابی خریداری نکرده‌اید.</p>
-      <NuxtLink to="/books" class="mt-4 inline-block bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-        مشاهده فروشگاه کتاب
-      </NuxtLink>
+    <!-- نمایش JSON کاربر برای دیباگ -->
+    <div class="mt-6 bg-gray-100 p-4 rounded-lg">
+      <h2 class="text-xl font-semibold mb-2">اطلاعات کاربر وارد شده (برای دیباگ):</h2>
+      <pre class="whitespace-pre-wrap text-sm">{{ userInfo }}</pre>
+      <p class="text-red-600 mt-2">
+        وضعیت ادمین: {{ authStore.isAdmin ? 'بله (ادمین است)' : 'خیر (ادمین نیست)' }}
+      </p>
     </div>
+  </div>
 
-    <!-- The book list will be rendered here -->
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <BookCard
-        v-for="book in purchasedBooks"
-        :key="book.id"
-        :book="book"
-        :show-download-links="true"
-      />
-    </div>
+  <!-- نمایش پیام در حال بارگذاری یا لاگین نشده -->
+  <div v-else class="p-6 text-gray-500">
+    در حال بارگذاری اطلاعات کاربر یا شما لاگین نکرده‌اید...
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { usePurchaseStore } from '~/stores/purchase'
-import BookCard from '~/components/BookCard.vue'
+import { useApi } from '~/composables/useApi'
 
 definePageMeta({ middleware: 'auth' })
 
 const authStore = useAuthStore()
-const purchaseStore = usePurchaseStore()
+const api = useApi()
 
-// Computed properties to reactively get data from the store
-const purchasedBooks = computed(() => purchaseStore.purchasedBooks)
-const loading = computed(() => purchaseStore.loading)
-const error = computed(() => purchaseStore.error)
-
-// Fetch user data and purchased books when the component mounts
 onMounted(async () => {
-  // Ensure user is fetched first, as their auth state is needed for the next call
   if (authStore.isLoggedIn && !authStore.currentUser) {
     await authStore.fetchUser()
   }
-  // Now fetch the purchased books
-  await purchaseStore.fetchPurchasedBooks()
 })
+
+const userInfo = computed(() => JSON.stringify(authStore.currentUser, null, 2) || 'هیچ اطلاعاتی موجود نیست')
+
+const performAdminAction = async () => {
+  try {
+    // The new structure has a /dashboard/index.get.ts. A DELETE endpoint for cache
+    // would logically be /dashboard/cache.delete.ts. I'll assume this or create it.
+    await api.delete('/dashboard/cache')
+    alert('عملیات ادمین با موفقیت انجام شد!')
+  } catch (error) {
+    console.error('خطا در عملیات ادمین:', error)
+    alert('خطایی رخ داد!')
+  }
+}
 </script>
