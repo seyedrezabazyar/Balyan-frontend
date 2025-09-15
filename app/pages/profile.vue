@@ -725,6 +725,32 @@ const passwordForm = ref({
 
 // --- Refactored Logic ---
 
+const loadProvincesData = async () => {
+  try {
+    // Assuming a public endpoint for locations
+    const response = await api.get('/locations/provinces')
+    provinces.value = response.data || response
+  } catch (error) {
+    // console.error('خطا در دریافت استان‌ها:', error)
+  }
+}
+
+const loadCitiesData = async (provinceId) => {
+  if (!provinceId) {
+    cities.value = []
+    return
+  }
+  loadingCities.value = true
+  try {
+    const response = await api.get(`/locations/provinces/${provinceId}/cities`)
+    cities.value = response.data || response
+  } catch (error) {
+    // console.error('خطا در دریافت شهرها:', error)
+  } finally {
+    loadingCities.value = false
+  }
+}
+
 // This function now populates the form from the store's user data
 const populateForm = (userData) => {
   if (!userData) return
@@ -797,32 +823,6 @@ const hasFormChanges = computed(() => {
 
 
 // --- API Methods (now using `authStore` and `api`) ---
-
-const loadProvincesData = async () => {
-  try {
-    // Assuming a public endpoint for locations
-    const response = await api.get('/locations/provinces')
-    provinces.value = response.data || response
-  } catch (error) {
-    // console.error('خطا در دریافت استان‌ها:', error)
-  }
-}
-
-const loadCitiesData = async (provinceId) => {
-  if (!provinceId) {
-    cities.value = []
-    return
-  }
-  loadingCities.value = true
-  try {
-    const response = await api.get(`/locations/provinces/${provinceId}/cities`)
-    cities.value = response.data || response
-  } catch (error) {
-    // console.error('خطا در دریافت شهرها:', error)
-  } finally {
-    loadingCities.value = false
-  }
-}
 
 const onProvinceChange = async () => {
   form.value.city_id = ''
