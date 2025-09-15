@@ -36,28 +36,44 @@
             {{ notification.message }}
           </div>
 
-          <!-- Case 1: Book has been purchased -->
-          <div v-if="isPurchased" class="text-center">
-            <NuxtLink to="/dashboard" class="inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
-              رفتن به صفحه دانلود
-            </NuxtLink>
-          </div>
+          <!--  Start of New Button Logic -->
+          <div class="actions">
+            <!-- Scenario 1: User has not purchased or is a guest -->
+            <div v-if="!purchaseStatus || !purchaseStatus.is_purchased">
+               <div v-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
+                <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
+                <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
+                  ورود یا ثبت‌نام
+                </NuxtLink>
+              </div>
+              <button v-else @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                <span v-if="purchaseInProgress">در حال پردازش...</span>
+                <span v-else>خرید کتاب با قیمت {{ book.price }} تومان</span>
+              </button>
+            </div>
 
-          <!-- Case 2: Guest clicked "Buy" -->
-          <div v-else-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
-            <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
-            <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-              ورود یا ثبت‌نام
-            </NuxtLink>
-          </div>
+            <!-- Scenario 2: Purchase is valid -->
+            <div v-else-if="purchaseStatus.is_purchased && !purchaseStatus.is_expired" class="text-center">
+              <button disabled class="w-full bg-gray-300 text-gray-600 font-bold py-3 px-6 rounded-lg cursor-not-allowed">شما این کتاب را خریده‌اید</button>
+              <p class="mt-4 text-sm text-gray-600">
+                {{ purchaseStatus.days_remaining }} روز و
+                {{ purchaseStatus.downloads_remaining }} دانلود باقی‌مانده است.
+              </p>
+              <NuxtLink to="/dashboard" class="inline-block mt-2 text-blue-600 hover:underline">مشاهده در کتابخانه</NuxtLink>
+            </div>
 
-          <!-- Case 3: Book not purchased, initial state -> Show the Buy button -->
-          <div v-else>
-            <button @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
-              <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
-              <span v-else>خرید آنی کتاب</span>
-            </button>
+            <!-- Scenario 3: Purchase has expired -->
+            <div v-else-if="purchaseStatus.is_purchased && purchaseStatus.is_expired" class="text-center">
+              <button @click="handleRenewClick" :disabled="purchaseInProgress" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition disabled:opacity-50 renew-button">
+                <span v-if="purchaseInProgress">در حال پردازش...</span>
+                <span v-else>تمدید با {{ purchaseStatus.renewal_offer.discount_percentage }}٪ تخفیف</span>
+              </button>
+              <p class="mt-4 text-gray-700">
+                قیمت جدید: {{ purchaseStatus.renewal_offer.new_price }} تومان
+              </p>
+            </div>
           </div>
+          <!--  End of New Button Logic -->
         </div>
       </div>
     </article>
@@ -82,8 +98,7 @@ const slug = route.params.slug;
 const authStore = useAuthStore();
 
 // State for the component
-const book = ref(null);
-const isPurchased = ref(false);
+const apiData = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const purchaseInProgress = ref(false);
@@ -91,6 +106,9 @@ const showLoginPrompt = ref(false);
 const notification = ref({ show: false, message: '', type: 'success' });
 const debugInfo = ref(null);
 
+// Computed properties
+const book = computed(() => apiData.value?.book);
+const purchaseStatus = computed(() => apiData.value?.user_purchase_status);
 const isLoggedIn = computed(() => !!authStore.token);
 
 async function fetchBook() {
@@ -108,12 +126,20 @@ async function fetchBook() {
       apiResponse: response
     };
 
-    if (response.success && response.data?.book) {
-      book.value = response.data.book;
-      isPurchased.value = response.data.book.is_purchased;
-      useHead({ title: response.data.book.title });
+    if (response.success && response.data) {
+      apiData.value = response.data;
+      if (response.data.book) {
+        useHead({ title: response.data.book.title });
+      }
     } else {
-      throw new Error('Invalid book data received from API.');
+      // Handle cases where the API response structure is not as expected,
+      // but might still contain the required data directly (as per task description).
+      if(response.book) {
+        apiData.value = response;
+        useHead({ title: response.book.title });
+      } else {
+        throw new Error('Invalid data structure received from API.');
+      }
     }
   } catch (err) {
     error.value = err.data?.message || 'Failed to fetch book details.';
@@ -128,10 +154,6 @@ async function fetchBook() {
   }
 }
 
-// Watch the token from the auth store.
-// When it's available (or changes), re-fetch the book data.
-// `immediate: true` runs this on component load, ensuring the fetch happens
-// as soon as the initial auth state is known.
 watch(
   () => authStore.token,
   () => {
@@ -139,7 +161,6 @@ watch(
   },
   { immediate: true }
 );
-
 
 function handlePurchaseClick() {
   if (isLoggedIn.value) {
@@ -152,24 +173,48 @@ function handlePurchaseClick() {
 async function processPurchase() {
   purchaseInProgress.value = true;
   notification.value = { show: false, message: '', type: 'success' };
-
-  // This is the optimistic update. We immediately set the state to purchased.
-  const originalPurchaseStatus = isPurchased.value;
-  isPurchased.value = true;
-
   try {
-    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
+    // Use book.id for the purchase request, which is more reliable than slug.
+    const response = await $fetch(`http://localhost:8000/api/v1/books/${book.value.id}/buy`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
     });
-    // On success, show a nice notification. We don't need to do anything else.
     notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
+    await fetchBook(); // Re-fetch data to update UI with the latest purchase status
   } catch (err) {
-    // If the purchase fails, we revert the optimistic update.
-    isPurchased.value = originalPurchaseStatus;
     notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام خرید رخ داد.', type: 'error' };
   } finally {
     purchaseInProgress.value = false;
   }
 }
+
+async function handleRenewClick() {
+  purchaseInProgress.value = true;
+  notification.value = { show: false, message: '', type: 'success' };
+  try {
+    // Assuming a renewal endpoint as suggested in the task description.
+    const response = await $fetch(`http://localhost:8000/api/v1/orders/renew`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' },
+      body: { book_id: book.value.id }
+    });
+    notification.value = { show: true, message: response.message || 'کتاب با موفقیت تمدید شد!', type: 'success' };
+    await fetchBook(); // Re-fetch data to update UI with the latest purchase status
+  } catch (err) {
+    notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام تمدید رخ داد.', type: 'error' };
+  } finally {
+    purchaseInProgress.value = false;
+  }
+}
 </script>
+
+<style scoped>
+.actions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+.renew-button {
+  background-color: #28a745; /*  رنگ سبز برای تمدید */
+  color: white;
+}
+</style>
