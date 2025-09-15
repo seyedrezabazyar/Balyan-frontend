@@ -57,7 +57,9 @@
                   <img class="h-10 w-10 rounded-full object-cover" :src="purchase.cover_image_url || '/placeholder.png'" :alt="purchase.title">
                 </div>
                 <div class="mr-4">
-                  <div class="text-sm font-medium text-gray-900">{{ purchase.title }}</div>
+                  <NuxtLink :to="purchase.renew_url" class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                    {{ purchase.title }}
+                  </NuxtLink>
                 </div>
               </div>
             </td>
@@ -68,7 +70,7 @@
                 :class="purchase.is_expired ? 'text-red-800' : 'text-green-800'"
                 class="font-semibold"
               >
-                {{ purchase.is_expired ? 'منقضی شده' : `${purchase.days_until_expiration} روز باقی‌مانده` }}
+                {{ purchase.is_expired ? 'منقضی شده' : `${Math.floor(purchase.days_until_expiration)} روز باقی‌مانده` }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ purchase.remaining_downloads }}</td>
