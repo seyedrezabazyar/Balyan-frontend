@@ -40,5 +40,9 @@ export const usePurchaseStore = defineStore('purchase', {
         this.loading = false;
       }
     },
+
+    clearPurchases() {
+      this.purchases = [];
+    },
   },
 })

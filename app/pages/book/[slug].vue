@@ -95,10 +95,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '~/stores/auth';
+import { usePurchaseStore } from '~/stores/purchase';
 
 const route = useRoute();
 const slug = route.params.slug;
 const authStore = useAuthStore();
+const purchaseStore = usePurchaseStore();
 
 // State for the component
 const book = ref(null);
@@ -179,6 +181,7 @@ async function processPurchase() {
     });
     // On success, show a notification and refetch the book data to update the state.
     notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
+    purchaseStore.clearPurchases(); // Invalidate the purchases list
     await fetchBook(); // Refetch data to get the new purchase status
   } catch (err) {
     notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام خرید رخ داد.', type: 'error' };
