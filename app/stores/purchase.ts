@@ -3,17 +3,17 @@ import { useApiAuth } from '~/composables/useApiAuth'
 
 export const usePurchaseStore = defineStore('purchase', {
   state: () => ({
-    purchasedBooks: [],
+    purchases: [], // Renamed from purchasedBooks
     loading: false,
     error: null,
   }),
 
   getters: {
-    hasPurchases: (state) => state.purchasedBooks.length > 0,
+    hasPurchases: (state) => state.purchases.length > 0,
   },
 
   actions: {
-    async fetchPurchasedBooks() {
+    async fetchPurchases() { // Renamed from fetchPurchasedBooks
       if (this.hasPurchases) {
         // Data is already loaded
         return;
@@ -25,17 +25,17 @@ export const usePurchaseStore = defineStore('purchase', {
 
       try {
         const response = await api.get('/downloads');
-        // The API returns a paginated response, so the book list is in `response.data`
+        // The API returns a paginated response, so the list is in `response.data`
         if (response && Array.isArray(response.data)) {
-          this.purchasedBooks = response.data;
+          this.purchases = response.data;
         } else {
-          this.purchasedBooks = [];
+          this.purchases = [];
           console.warn('API response for downloads was not in the expected paginated format.', response);
         }
       } catch (error) {
-        console.error('Failed to fetch purchased books:', error);
+        console.error('Failed to fetch purchases:', error);
         this.error = error.response?._data?.message || 'An unexpected error occurred.';
-        this.purchasedBooks = []; // Clear data on error
+        this.purchases = []; // Clear data on error
       } finally {
         this.loading = false;
       }
