@@ -48,15 +48,15 @@
               </p>
             </div>
 
-            <!-- Scenario 2: Purchase has expired -->
-            <div v-else-if="purchaseStatus && purchaseStatus.is_purchased && purchaseStatus.is_expired" class="p-4 bg-yellow-100 rounded-lg">
-              <p class="font-semibold mb-3">مهلت دسترسی شما به این کتاب تمام شده است.</p>
-              <button v-if="purchaseStatus.renewal_offer" class="btn-renew w-full bg-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-orange-600 transition">
-                تمدید با {{ purchaseStatus.renewal_offer.discount_percentage }}٪ تخفیف
-              </button>
-              <p v-if="purchaseStatus.renewal_offer" class="price-info mt-2 text-sm text-gray-600">
-                قیمت جدید: {{ purchaseStatus.renewal_offer.new_price }} تومان
+            <!-- Scenario 2: Purchase has expired, user needs to repurchase -->
+            <div v-else-if="purchaseStatus && purchaseStatus.is_purchased && purchaseStatus.is_expired">
+              <p class="mb-4 text-center text-gray-700">
+                مهلت دسترسی شما به این کتاب تمام شده است. برای دسترسی مجدد، لطفاً آن را دوباره خریداری کنید.
               </p>
+              <button @click="handlePurchaseClick" :disabled="purchaseInProgress" class="w-full bg-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-orange-600 transition disabled:opacity-50">
+                <span v-if="purchaseInProgress">در حال پردازش خرید...</span>
+                <span v-else>خرید مجدد</span>
+              </button>
             </div>
 
             <!-- Scenario 3: Not purchased or not logged in -->
