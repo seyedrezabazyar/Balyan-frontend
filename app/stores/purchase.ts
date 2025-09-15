@@ -24,7 +24,8 @@ export const usePurchaseStore = defineStore('purchase', {
       const api = useApiAuth();
 
       try {
-        const response = await api.get('/books/my-purchases');
+        // Switched to the alternative endpoint as /books/my-purchases returned 404
+        const response = await api.get('/purchase/purchases');
         if (response.success && Array.isArray(response.data)) {
           this.purchasedBooks = response.data;
         } else {
