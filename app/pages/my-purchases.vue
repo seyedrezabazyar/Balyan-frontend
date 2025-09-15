@@ -29,6 +29,18 @@
         :show-download-links="true"
       />
     </div>
+
+    <!-- Debug Information Block -->
+    <div class="mt-8 p-4 bg-gray-800 text-white rounded-lg font-mono text-left text-sm" dir="ltr">
+      <h3 class="font-bold text-lg mb-2">DEBUG INFORMATION (Purchase Store)</h3>
+      <pre>{{ {
+        loading: purchaseStore.loading,
+        error: purchaseStore.error,
+        hasPurchases: purchaseStore.hasPurchases,
+        purchasedBooksCount: purchaseStore.purchasedBooks.length,
+        purchasedBooks: purchaseStore.purchasedBooks
+      } }}</pre>
+    </div>
   </div>
 </template>
 
