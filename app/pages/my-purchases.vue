@@ -75,14 +75,16 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ purchase.remaining_downloads }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div v-if="!purchase.is_expired">
-                <button
-                  @click="handleDownload(purchase)"
-                  :disabled="downloadStatuses[purchase.id]?.status === 'loading'"
-                  class="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+              <div v-if="!purchase.is_expired && purchase.download_token">
+                <NuxtLink
+                  :to="`/book/download/${purchase.download_token}`"
+                  class="text-indigo-600 hover:text-indigo-900"
                 >
-                  {{ downloadStatuses[purchase.id]?.message || 'دانلود' }}
-                </button>
+                  دانلود
+                </NuxtLink>
+              </div>
+              <div v-else-if="!purchase.is_expired">
+                <span class="text-gray-400">ناموجود</span>
               </div>
               <NuxtLink v-else :to="`/book/${purchase.book.slug}`" class="text-orange-600 hover:text-orange-800 font-semibold">
                 خرید مجدد
@@ -116,40 +118,6 @@ definePageMeta({
 const authStore = useAuthStore()
 const purchaseStore = usePurchaseStore()
 const formatters = useFormatters()
-const api = useApiAuth()
-
-const downloadStatuses = ref({})
-
-const handleDownload = async (purchase) => {
-  const purchaseId = purchase.id;
-  const bookId = purchase.book.id;
-
-  try {
-    downloadStatuses.value[purchaseId] = { status: 'loading', message: 'در حال بررسی...' };
-
-    const response = await api.get(`/books/${bookId}/download-link`);
-
-    if (response && response.success && response.download_url) {
-      downloadStatuses.value[purchaseId] = { status: 'success', message: 'در حال دانلود...' };
-      window.location.href = response.download_url;
-      // Reset status after a delay
-      setTimeout(() => {
-        downloadStatuses.value[purchaseId] = { status: 'idle', message: 'دانلود' };
-      }, 3000);
-    } else {
-      // This handles cases where success is false, e.g., file is preparing
-      downloadStatuses.value[purchaseId] = { status: 'preparing', message: response.message || 'فایل در حال آماده سازی است' };
-    }
-  } catch (error) {
-    const errorMessage = error.response?._data?.message || 'خطا در برقراری ارتباط';
-    downloadStatuses.value[purchaseId] = { status: 'error', message: errorMessage };
-    console.error(`Failed to get download link for book ${bookId}:`, error);
-    // Reset status after showing the error for a few seconds
-    setTimeout(() => {
-      downloadStatuses.value[purchaseId] = { status: 'idle', message: 'دانلود' };
-    }, 5000);
-  }
-}
 
 // Computed properties to reactively get data from the store
 const purchases = computed(() => purchaseStore.purchases)
