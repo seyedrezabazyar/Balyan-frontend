@@ -29,6 +29,12 @@
           </p>
         </div>
         <p class="text-sm text-blue-600 mt-2">این صفحه به صورت خودکار به‌روزرسانی می‌شود.</p>
+
+        <!-- Temporary Debug View -->
+        <div class="mt-4 p-2 bg-blue-100 border border-blue-300 text-left text-xs" dir="ltr">
+          <h4 class="font-bold text-blue-800">Debug Info (API Response):</h4>
+          <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(downloadInfo, null, 2) }}</pre>
+        </div>
       </div>
 
       <!-- Available State -->
