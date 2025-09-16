@@ -139,7 +139,7 @@ const handleMerge = async ({ master_id, slave_ids }) => {
   mergeLoading.value = true;
   mergeError.value = null;
   try {
-    await api.post('/api/admin/merge', {
+    await api.post('/admin/merge', {
       master_id,
       slave_ids,
       type: 'book'
