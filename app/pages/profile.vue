@@ -145,7 +145,7 @@
                         </svg>
                       </div>
                     </div>
-                    <div v-if="!user?.email_verified_at && form.email && form.email !== user?.email"
+                    <div v-if="!user?.email_verified_at && form.email"
                          class="flex justify-end">
                       <button
                         type="button"
@@ -192,7 +192,7 @@
                         </svg>
                       </div>
                     </div>
-                    <div v-if="!user?.phone_verified_at && form.phone && form.phone !== user?.phone"
+                    <div v-if="!user?.phone_verified_at && form.phone"
                          class="flex justify-end">
                       <button
                         type="button"
@@ -892,11 +892,14 @@ const handleEmailVerification = async () => {
   if (!form.value.email) return
   emailVerificationSending.value = true
   try {
-    await apiAuth.post('/email/send-verification', { email: form.value.email })
+    // First, save the new email to the profile
+    await updateProfile()
+    // Then, send the verification code
+    await apiAuth.post('/auth/send-otp', { identifier: form.value.email })
     verificationModal.value = { type: 'email', target: form.value.email }
     showVerificationModal.value = true
   } catch (error) {
-    showMessage('خطا در ارسال کد تایید ایمیل', 'error')
+    showMessage(error.data?.message || 'خطا در ارسال کد تایید ایمیل', 'error')
   } finally {
     emailVerificationSending.value = false
   }
@@ -906,11 +909,14 @@ const handlePhoneVerification = async () => {
   if (!form.value.phone) return
   smsVerificationSending.value = true
   try {
-    await apiAuth.post('/phone/send-verification', { phone: form.value.phone })
+    // First, save the new phone number to the profile
+    await updateProfile()
+    // Then, send the verification code
+    await apiAuth.post('/auth/send-otp', { identifier: form.value.phone })
     verificationModal.value = { type: 'phone', target: form.value.phone }
     showVerificationModal.value = true
   } catch (error) {
-    showMessage('خطا در ارسال کد تایید موبایل', 'error')
+    showMessage(error.data?.message || 'خطا در ارسال کد تایید موبایل', 'error')
   } finally {
     smsVerificationSending.value = false
   }
