@@ -892,14 +892,11 @@ const handleEmailVerification = async () => {
   if (!form.value.email) return
   emailVerificationSending.value = true
   try {
-    // First, save the new email to the profile
-    await updateProfile()
-    // Then, send the verification code
     await apiAuth.post('/email/send-verification', { email: form.value.email })
     verificationModal.value = { type: 'email', target: form.value.email }
     showVerificationModal.value = true
   } catch (error) {
-    showMessage(error.data?.message || 'خطا در ارسال کد تایید ایمیل', 'error')
+    showMessage('خطا در ارسال کد تایید ایمیل', 'error')
   } finally {
     emailVerificationSending.value = false
   }
@@ -909,14 +906,11 @@ const handlePhoneVerification = async () => {
   if (!form.value.phone) return
   smsVerificationSending.value = true
   try {
-    // First, save the new phone number to the profile
-    await updateProfile()
-    // Then, send the verification code
     await apiAuth.post('/phone/send-verification', { phone: form.value.phone })
     verificationModal.value = { type: 'phone', target: form.value.phone }
     showVerificationModal.value = true
   } catch (error) {
-    showMessage(error.data?.message || 'خطا در ارسال کد تایید موبایل', 'error')
+    showMessage('خطا در ارسال کد تایید موبایل', 'error')
   } finally {
     smsVerificationSending.value = false
   }
