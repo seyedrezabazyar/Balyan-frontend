@@ -33,12 +33,17 @@
 
       <!-- Available State -->
       <div v-else-if="canDownload && isFileAvailable" class="text-center">
-        <a
-          :href="downloadLink"
-          class="inline-block w-full font-bold py-3 px-6 rounded-lg transition-colors duration-300 text-lg bg-green-600 hover:bg-green-700 text-white"
+        <button
+          @click="handleDownload"
+          :disabled="isDownloading"
+          class="inline-flex items-center justify-center w-full font-bold py-3 px-6 rounded-lg transition-colors duration-300 text-lg bg-green-600 hover:bg-green-700 text-white disabled:bg-green-300 disabled:cursor-not-allowed"
         >
-          دانلود کتاب با لینک مستقیم
-        </a>
+          <svg v-if="isDownloading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isDownloading ? 'در حال دانلود...' : 'دانلود کتاب با لینک مستقیم' }}</span>
+        </button>
         <div class="text-sm text-gray-600 mt-4 border-t pt-4">
           <div class="flex justify-between mb-2">
             <span>تعداد دانلود باقی‌مانده:</span>
@@ -96,6 +101,7 @@ const token = route.params.token;
 const downloadInfo = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const isDownloading = ref(false);
 let pollingInterval = null;
 
 const stopPolling = () => {
@@ -110,9 +116,8 @@ const fetchStatus = async () => {
     const response = await api.get(`/books/download/${token}/status`);
     if (response && response.success) {
       downloadInfo.value = response.data;
-      error.value = null; // Clear previous errors
+      error.value = null;
 
-      // If the file is not in a processing state, stop polling
       if (downloadInfo.value.file_status !== 'processing') {
         stopPolling();
       }
@@ -121,20 +126,54 @@ const fetchStatus = async () => {
     }
   } catch (err) {
     error.value = err.response?._data?.message || err.message || 'An unknown error occurred.';
-    stopPolling(); // Stop polling on any error
+    stopPolling();
   } finally {
     loading.value = false;
   }
 };
 
+const handleDownload = async () => {
+  if (!downloadLink.value || downloadLink.value === '#') return;
+  isDownloading.value = true;
+  error.value = null;
+
+  try {
+    const response = await api.$api(downloadLink.value, {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+
+    // Create a generic filename for now. A better approach would be to get it from Content-Disposition header.
+    const fileName = downloadInfo.value?.book?.slug || 'book';
+    const fileExtension = blob.type.split('/')[1] || 'pdf';
+    link.setAttribute('download', `${fileName}.${fileExtension}`);
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    // Refresh status to update download count
+    await fetchStatus();
+
+  } catch (err) {
+    error.value = 'خطا در دانلود فایل. لطفا دوباره تلاش کنید.';
+    console.error('Download error:', err);
+  } finally {
+    isDownloading.value = false;
+  }
+};
+
 const startPolling = () => {
-  // Poll every 5 seconds
   pollingInterval = setInterval(fetchStatus, 5000);
 };
 
 onMounted(async () => {
   await fetchStatus();
-  // If the initial status is 'processing', start polling
   if (downloadInfo.value?.file_status === 'processing') {
     startPolling();
   }
@@ -144,7 +183,6 @@ onUnmounted(() => {
   stopPolling();
 });
 
-// Computed Properties based on the new API structure
 const isProcessing = computed(() => downloadInfo.value?.file_status === 'processing');
 const isFileAvailable = computed(() => downloadInfo.value?.file_status === 'available');
 const canDownload = computed(() => downloadInfo.value?.purchase?.can_download === true);
