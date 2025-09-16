@@ -75,6 +75,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Debug View -->
+    <div v-if="true" class="mt-12 p-4 bg-gray-800 text-white rounded-lg" dir="ltr">
+      <h3 class="text-lg font-bold mb-2 text-right">Debug View</h3>
+      <pre class="text-xs whitespace-pre-wrap break-all">{{
+        JSON.stringify({
+          token,
+          loading,
+          error,
+          downloadInfo,
+          computed: {
+            status: status,
+            canDownload: canDownload,
+            isPending: isPending,
+            downloadLink: downloadLink
+          }
+        }, (key, value) => typeof value === 'bigint' ? value.toString() : value, 2)
+      }}</pre>
+    </div>
   </div>
 </template>
 
