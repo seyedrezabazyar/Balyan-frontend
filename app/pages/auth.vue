@@ -41,9 +41,9 @@
             <button type="submit" :disabled="loading" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 mb-3">
               {{ loading ? 'در حال ورود...' : 'ورود با رمز عبور' }}
             </button>
-            <!-- OTP login is not a valid flow for users who already have a password. -->
-            <!-- To use OTP, they should use a "Forgot Password" flow which would then trigger an OTP. -->
-            <!-- Removing this button prevents the "Invalid code" error from the backend. -->
+            <button type="button" @click="handleRequestOtp" :disabled="loading" class="w-full text-center text-sm text-blue-600 hover:text-blue-700 disabled:text-gray-400">
+              ورود با کد یکبار مصرف
+            </button>
           </form>
         </div>
 
@@ -250,18 +250,9 @@ const handleRequestOtp = async (showLoading = true) => {
 const handleVerifyOtp = async () => {
   error.value = ''
   loading.value = true
-  const isNewUser = !checkUserResponse.value?.user_exists
-
   try {
-    // Always call verifyOtp without the name.
-    // The backend test OTP '123456' likely only works on this endpoint signature.
-    await authStore.verifyOtp(identifier.value, otp.value)
-
-    // If it was a new user, update their name now that they are logged in.
-    if (isNewUser && userName.value) {
-      await authStore.updateProfile({ name: userName.value })
-    }
-
+    const nameToSend = checkUserResponse.value?.user_exists ? undefined : userName.value
+    await authStore.verifyOtp(identifier.value, otp.value, nameToSend)
     await router.push('/dashboard')
   } catch (err: any) {
     error.value = err.data?.message || 'کد تایید اشتباه است.'
