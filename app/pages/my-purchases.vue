@@ -75,9 +75,9 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ purchase.remaining_downloads }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div v-if="!purchase.is_expired && purchase.download_token">
+              <div v-if="!purchase.is_expired && purchase.download_url">
                 <NuxtLink
-                  :to="`/book/download/${purchase.download_token}`"
+                  :to="`/book/download/${getDownloadTokenFromUrl(purchase.download_url)}`"
                   class="text-indigo-600 hover:text-indigo-900"
                 >
                   دانلود
@@ -118,6 +118,18 @@ definePageMeta({
 const authStore = useAuthStore()
 const purchaseStore = usePurchaseStore()
 const formatters = useFormatters()
+
+const getDownloadTokenFromUrl = (url) => {
+  if (!url) return ''
+  try {
+    const urlObject = new URL(url)
+    const pathSegments = urlObject.pathname.split('/')
+    return pathSegments.pop() || ''
+  } catch (e) {
+    console.error('Invalid download URL:', url, e)
+    return ''
+  }
+}
 
 // Computed properties to reactively get data from the store
 const purchases = computed(() => purchaseStore.purchases)
