@@ -925,20 +925,14 @@ const handlePhoneVerification = async () => {
 const verifyCode = async () => {
   if (!verificationCode.value || verificationCode.value.length !== 6) return
   loading.value = true
+  clearMessage()
   try {
-    let response;
-    if (verificationModal.value.type === 'email') {
-      response = await apiAuth.post('/email/verify', { email: verificationModal.value.target, otp: verificationCode.value })
-      showMessage('ایمیل با موفقیت تایید شد', 'success')
-    } else {
-      response = await apiAuth.post('/phone/verify', { phone: verificationModal.value.target, otp: verificationCode.value })
-      showMessage('شماره موبایل با موفقیت تایید شد', 'success')
-    }
-    if (response) {
-      authStore.setUser(response.user || response)
-      populateForm(response.user || response) // Repopulate form with new data
-    }
+    // Use the central auth store action, which handles the API call and state update
+    await authStore.verifyOtp(verificationModal.value.target, verificationCode.value)
+
+    showMessage('تایید با موفقیت انجام شد.', 'success')
     closeVerificationModal()
+    // The user object in the store is now updated, and the page will be reactive.
   } catch (error) {
     showMessage(error.data?.message || 'کد تایید اشتباه است', 'error')
   } finally {
