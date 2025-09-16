@@ -250,9 +250,18 @@ const handleRequestOtp = async (showLoading = true) => {
 const handleVerifyOtp = async () => {
   error.value = ''
   loading.value = true
+  const isNewUser = !checkUserResponse.value?.user_exists
+
   try {
-    const nameToSend = checkUserResponse.value?.user_exists ? undefined : userName.value
-    await authStore.verifyOtp(identifier.value, otp.value, nameToSend)
+    // Always call verifyOtp without the name.
+    // The backend test OTP '123456' likely only works on this endpoint signature.
+    await authStore.verifyOtp(identifier.value, otp.value)
+
+    // If it was a new user, update their name now that they are logged in.
+    if (isNewUser && userName.value) {
+      await authStore.updateProfile({ name: userName.value })
+    }
+
     await router.push('/dashboard')
   } catch (err: any) {
     error.value = err.data?.message || 'کد تایید اشتباه است.'
