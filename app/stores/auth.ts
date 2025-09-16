@@ -60,12 +60,9 @@ export const useAuthStore = defineStore('auth', {
       return await api.post('/auth/send-otp', { identifier });
     },
 
-    async verifyOtp(identifier: string, otp: string, name?: string) {
+    async verifyOtp(identifier: string, otp: string) {
       const api = useApiAuth();
-      const payload: { identifier: string; otp: string; name?: string } = { identifier, otp };
-      if (name) {
-        payload.name = name;
-      }
+      const payload = { identifier, otp };
       const response = await api.post('/auth/verify-otp', payload);
       this.setAuth(response);
       return response;
