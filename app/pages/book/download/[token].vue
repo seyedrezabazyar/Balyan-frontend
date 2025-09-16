@@ -118,7 +118,8 @@ const fetchStatus = async () => {
       downloadInfo.value = response.data;
       error.value = null;
 
-      if (downloadInfo.value.file_status !== 'processing') {
+      // Stop polling only on terminal states (available or failed)
+      if (['available', 'failed'].includes(downloadInfo.value.file_status)) {
         stopPolling();
       }
     } else {
@@ -147,7 +148,6 @@ const handleDownload = async () => {
     const link = document.createElement('a');
     link.href = url;
 
-    // Create a generic filename for now. A better approach would be to get it from Content-Disposition header.
     const fileName = downloadInfo.value?.book?.slug || 'book';
     const fileExtension = blob.type.split('/')[1] || 'pdf';
     link.setAttribute('download', `${fileName}.${fileExtension}`);
@@ -157,7 +157,6 @@ const handleDownload = async () => {
     link.remove();
     window.URL.revokeObjectURL(url);
 
-    // Refresh status to update download count
     await fetchStatus();
 
   } catch (err) {
@@ -174,7 +173,7 @@ const startPolling = () => {
 
 onMounted(async () => {
   await fetchStatus();
-  if (downloadInfo.value?.file_status === 'processing') {
+  if (isProcessing.value) {
     startPolling();
   }
 });
@@ -183,7 +182,10 @@ onUnmounted(() => {
   stopPolling();
 });
 
-const isProcessing = computed(() => downloadInfo.value?.file_status === 'processing');
+const isProcessing = computed(() => {
+  const status = downloadInfo.value?.file_status;
+  return status === 'processing' || status === 'unavailable';
+});
 const isFileAvailable = computed(() => downloadInfo.value?.file_status === 'available');
 const canDownload = computed(() => downloadInfo.value?.purchase?.can_download === true);
 const downloadLink = computed(() => isFileAvailable.value && canDownload.value ? downloadInfo.value.download_link : '#');
