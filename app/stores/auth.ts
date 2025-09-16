@@ -104,12 +104,16 @@ export const useAuthStore = defineStore('auth', {
 
     async setPassword(password: string, password_confirmation: string) {
       const api = useApiAuth();
-      return await api.post('/auth/password/set', { password, password_confirmation });
+      const response = await api.post('/auth/password/set', { password, password_confirmation });
+      await this.fetchUser();
+      return response;
     },
 
     async updatePassword(current_password: string, password: string, password_confirmation: string) {
       const api = useApiAuth();
-      return await api.post('/auth/password/update', { current_password, password, password_confirmation });
+      const response = await api.post('/auth/password/update', { current_password, password, password_confirmation });
+      await this.fetchUser();
+      return response;
     },
 
     async refreshToken() {
