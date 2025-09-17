@@ -269,8 +269,8 @@ const fetchBooks = async (page = 1) => {
     }
 
     const response = await api.get(`/admin/books?${params.toString()}`);
-    // Based on the logs, the response is nested: response.data.data contains the pagination object
-    const paginationData = response.data.data;
+    // The pagination object is at response.data
+    const paginationData = response.data;
 
     const fetchedBooks = paginationData.data || [];
     books.value = fetchedBooks;
