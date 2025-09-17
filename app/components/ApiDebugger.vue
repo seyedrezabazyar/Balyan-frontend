@@ -44,7 +44,7 @@ import { ref } from 'vue'
 import { useApiDebugger } from '~/composables/useApiDebugger'
 
 const { apiLogs, clearLogs } = useApiDebugger()
-const isVisible = ref(false)
+const isVisible = ref(true)
 
 const toggleVisibility = () => {
   isVisible.value = !isVisible.value
