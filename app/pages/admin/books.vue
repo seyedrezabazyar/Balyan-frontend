@@ -23,6 +23,50 @@
 
     <!-- Books Table -->
     <div v-else class="bg-white shadow-md rounded-lg overflow-hidden">
+      <!-- Filter and Search Controls -->
+      <div class="p-4 bg-gray-50 border-b border-gray-200">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-grow">
+            <label for="search" class="sr-only">جستجو</label>
+            <input
+              type="text"
+              id="search"
+              v-model="searchQuery"
+              placeholder="جستجو در عنوان، شابک، نویسندگان..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              @keyup.enter="applyFilters"
+            />
+          </div>
+          <div>
+            <label for="status" class="sr-only">وضعیت</label>
+            <select
+              id="status"
+              v-model="statusFilter"
+              class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">همه وضعیت‌ها</option>
+              <option value="published">منتشر شده</option>
+              <option value="draft">پیش‌نویس</option>
+              <option value="archived">بایگانی شده</option>
+            </select>
+          </div>
+          <div>
+            <button
+              @click="applyFilters"
+              class="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 transition-colors"
+            >
+              اعمال فیلتر
+            </button>
+            <button
+              @click="clearFilters"
+              class="w-full sm:w-auto mt-2 sm:mt-0 sm:ml-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              پاک کردن
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- <div class="p-4 flex justify-between items-center">
         <button
           @click="openMergeModal"
@@ -48,9 +92,6 @@
             </th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
               وضعیت
-            </th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              سطح مخفی
             </th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
               عملیات
@@ -82,15 +123,12 @@
               </span>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <input type="number" class="w-16 text-center border rounded" v-model="book.hidden_level" @change="updateHiddenLevel(book.id, book.hidden_level)" />
-            </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <button @click="editBook(book.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">ویرایش</button>
               <button @click="deleteBook(book.id)" class="text-red-600 hover:text-red-900 mr-2">حذف</button>
               <button @click="toggleVisibility(book.id)" class="text-gray-600 hover:text-gray-900">
                 {{ book.is_hidden ? 'نمایش' : 'مخفی' }}
               </button>
-              <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book.id)" class="text-yellow-600 hover:text-yellow-900 ml-2">
+              <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="text-yellow-600 hover:text-yellow-900 ml-2">
                 لغو ادغام
               </button>
             </td>
@@ -148,6 +186,8 @@ const books = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const selectedBooks = ref([]);
+const searchQuery = ref('');
+const statusFilter = ref('');
 const pagination = ref({
   currentPage: 1,
   lastPage: 1,
@@ -219,15 +259,21 @@ const fetchBooks = async (page = 1) => {
   error.value = null;
   selectedBooks.value = []; // Reset selection on fetch
   try {
-    const response = await api.get(`/admin/books?page=${page}`);
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    if (searchQuery.value) {
+      params.append('search', searchQuery.value);
+    }
+    if (statusFilter.value) {
+      params.append('status', statusFilter.value);
+    }
+
+    const response = await api.get(`/admin/books?${params.toString()}`);
     // Based on the logs, the response is nested: response.data.data contains the pagination object
     const paginationData = response.data.data;
 
     const fetchedBooks = paginationData.data || [];
-    books.value = fetchedBooks.map(book => ({
-      ...book,
-      hidden_level: book.hidden_level ?? 1 // Default to 1
-    }));
+    books.value = fetchedBooks;
 
     pagination.value = {
       currentPage: paginationData.current_page,
@@ -242,6 +288,16 @@ const fetchBooks = async (page = 1) => {
   } finally {
     loading.value = false;
   }
+};
+
+const applyFilters = () => {
+  fetchBooks(1);
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  statusFilter.value = '';
+  fetchBooks(1);
 };
 
 onMounted(() => fetchBooks(1));
@@ -275,27 +331,18 @@ const toggleVisibility = async (id) => {
     error.value = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
   }
 };
-const unmergeBook = async (id) => {
-  if (confirm(`آیا از لغو ادغام کتاب با شناسه ${id} اطمینان دارید؟`)) {
+const unmergeBook = async (book) => {
+  if (confirm(`آیا از لغو ادغام کتاب "${book.title}" از کتاب اصلی اطمینان دارید؟`)) {
     try {
-      await api.post('/admin/unmerge', { book_id: id });
+      await api.post(`/admin/books/${book.master_book_id}/unmerge`, {
+        variant_ids: [book.id]
+      });
       successMessage.value = 'ادغام کتاب با موفقیت لغو شد.';
       await fetchBooks(); // Refresh list
     } catch (err)      {
-      console.error(`Failed to unmerge book ${id}:`, err);
+      console.error(`Failed to unmerge book ${book.id}:`, err);
       error.value = err.data?.message || 'لغو ادغام کتاب با خطا مواجه شد.';
     }
-  }
-};
-const updateHiddenLevel = async (id, level) => {
-  try {
-    await api.put(`/admin/books/${id}`, { hidden_level: level });
-    successMessage.value = 'سطح مخفی کتاب به‌روزرسانی شد.';
-    // Optimistic update, no need to re-fetch unless there is an error.
-  } catch (err) {
-    console.error(`Failed to update hidden level for book ${id}:`, err);
-    error.value = err.data?.message || 'به‌روزرسانی سطح مخفی با خطا مواجه شد.';
-    await fetchBooks(); // Re-fetch to revert optimistic update on error
   }
 };
 </script>
