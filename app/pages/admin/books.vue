@@ -160,7 +160,7 @@ const fetchBooks = async () => {
   error.value = null;
   selectedBooks.value = []; // Reset selection on fetch
   try {
-    const response = await api.get('/books');
+    const response = await api.get('/admin/books');
     books.value = response.data || response;
   } catch (err) {
     console.error("Failed to fetch books:", err);
