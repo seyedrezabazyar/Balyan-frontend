@@ -177,7 +177,7 @@ import { useApiAuth } from '~/composables/useApiAuth';
 
 definePageMeta({
   middleware: 'admin',
-  layout: 'default'
+  layout: 'admin'
 });
 
 const api = useApiAuth();
