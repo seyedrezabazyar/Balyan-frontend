@@ -1,5 +1,11 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- Temporary Debug Block -->
+    <div v-if="debugInfo" class="mt-4 p-2 bg-gray-800 text-white rounded-lg font-mono text-left text-xs" dir="ltr">
+      <h4 class="font-bold text-lg mb-2">DEBUG INFORMATION</h4>
+      <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(debugInfo, null, 2) }}</pre>
+    </div>
+
     <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">مدیریت کتاب‌ها</h1>
 
     <!-- Success Message -->
@@ -147,6 +153,7 @@ const router = useRouter();
 const books = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const debugInfo = ref(null);
 const selectedBooks = ref([]);
 const pagination = ref({
   currentPage: 1,
@@ -220,20 +227,22 @@ const fetchBooks = async (page = 1) => {
   selectedBooks.value = []; // Reset selection on fetch
   try {
     const response = await api.get(`/admin/books?page=${page}`);
-    // The actual data is nested under response.data.data
-    const responseData = response.data.data;
+    debugInfo.value = response; // Store raw response for debugging
 
-    const fetchedBooks = responseData.data || [];
+    // Based on the logs, the response is nested: response.data.data contains the pagination object
+    const paginationData = response.data.data;
+
+    const fetchedBooks = paginationData.data || [];
     books.value = fetchedBooks.map(book => ({
       ...book,
       hidden_level: book.hidden_level ?? 1 // Default to 1
     }));
 
     pagination.value = {
-      currentPage: responseData.current_page,
-      lastPage: responseData.last_page,
-      total: responseData.total,
-      perPage: responseData.per_page,
+      currentPage: paginationData.current_page,
+      lastPage: paginationData.last_page,
+      total: paginationData.total,
+      perPage: paginationData.per_page,
     };
 
   } catch (err) {
