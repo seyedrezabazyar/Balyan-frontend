@@ -16,17 +16,13 @@ export const useApi = () => {
       'Accept': 'application/json',
     },
     onRequest({ request, options }) {
-      const logId = Math.random().toString(36).substr(2, 9)
-      options.headers = options.headers || {}
-      options.headers['X-Request-ID'] = logId
-
-      addLog({
-        id: logId,
+      const newLog = addLog({
         method: options.method || 'GET',
         url: request.toString(),
         request: options.body,
-        startTime: Date.now(),
       })
+      options.headers = options.headers || {}
+      options.headers['X-Request-ID'] = newLog.id
     },
     onResponse({ request, response, options }) {
       const logId = options.headers['X-Request-ID']
