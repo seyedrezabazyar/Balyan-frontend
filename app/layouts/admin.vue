@@ -26,6 +26,18 @@
               <span>مدیریت نقش‌ها</span>
             </NuxtLink>
           </li>
+          <li>
+            <NuxtLink to="/admin/books" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
+              <span class="w-6 h-6 i-heroicons-book-open-solid"></span>
+              <span>مدیریت کتاب‌ها</span>
+            </NuxtLink>
+          </li>
+          <li>
+            <NuxtLink to="/admin/orders" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
+              <span class="w-6 h-6 i-heroicons-shopping-cart-solid"></span>
+              <span>مدیریت سفارشات</span>
+            </NuxtLink>
+          </li>
           <!-- Add more admin links here -->
         </ul>
       </nav>
