@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useApi } from '~/composables/useApi';
+import { useApiAuth } from '~/composables/useApiAuth';
 import type { Role, Permission, CreateRolePayload, UpdateRolePayload } from '~/types/auth';
 import RoleModal from '~/components/admin/RoleModal.vue';
 
@@ -77,7 +77,7 @@ definePageMeta({
   middleware: ['auth'],
 });
 
-const api = useApi();
+const api = useApiAuth();
 
 const roles = ref<Role[]>([]);
 const groupedPermissions = ref<Record<string, Permission[]>>({});
