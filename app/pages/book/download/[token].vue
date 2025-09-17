@@ -17,40 +17,68 @@
         <p v-if="downloadInfo.book.author" class="text-gray-600 mt-2">اثر: {{ downloadInfo.book.author }}</p>
       </header>
 
-      <!-- Processing State -->
+      <!-- Global Processing State -->
       <div v-if="isProcessing" class="text-center p-6 bg-blue-50 rounded-lg">
-        <div class="flex items-center justify-center text-blue-800">
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p class="text-lg font-medium">
-            لینک دانلود شما در حال آماده‌سازی است. لطفاً چند لحظه صبر کنید...
+          <p class="text-lg font-medium text-blue-800">
+              یک یا چند فایل در حال آماده‌سازی است. این صفحه به صورت خودکار به‌روزرسانی می‌شود.
           </p>
-        </div>
-        <p class="text-sm text-blue-600 mt-2">این صفحه به صورت خودکار به‌روزرسانی می‌شود.</p>
+      </div>
 
-        <!-- Temporary Debug View -->
-        <div class="mt-4 p-2 bg-blue-100 border border-blue-300 text-left text-xs" dir="ltr">
-          <h4 class="font-bold text-blue-800">Debug Info (API Response):</h4>
-          <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(downloadInfo, null, 2) }}</pre>
+      <!-- Merged Book View -->
+      <div v-if="downloadInfo.book.is_master && downloadInfo.variants" class="space-y-6">
+        <div v-for="variant in downloadInfo.variants" :key="variant.id" class="border rounded-lg p-4">
+          <h2 class="text-xl font-semibold mb-3">
+            نسخه: {{ variant.format }} <span v-if="variant.publication_year">({{ variant.publication_year }})</span>
+          </h2>
+
+          <!-- Variant Available -->
+          <div v-if="variant.file_status === 'available' && canDownload">
+            <button @click="handleDownload(variant.download_link, `${downloadInfo.book.slug}-${variant.format}`)" :disabled="isDownloading" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 mb-4 disabled:bg-green-300 disabled:cursor-not-allowed">
+              {{ isDownloading ? 'در حال دانلود...' : `دانلود مستقیم (${variant.format})` }}
+            </button>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button v-for="i in 4" :key="i" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-2 px-3 rounded">
+                لینک کمکی {{ i }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Variant Processing -->
+          <div v-else-if="variant.file_status === 'processing' || variant.file_status === 'unavailable'" class="text-center p-3 bg-blue-50 rounded-lg text-blue-700">
+            در حال آماده‌سازی فایل...
+          </div>
+
+          <!-- Variant Failed -->
+          <div v-else-if="variant.file_status === 'failed'" class="text-center p-3 bg-red-50 rounded-lg text-red-700">
+            مشکلی در ساخت فایل این نسخه رخ داده است.
+          </div>
+
+          <!-- Cannot Download (Expired, etc) -->
+          <div v-else-if="!canDownload" class="text-center p-3 bg-yellow-50 rounded-lg text-yellow-700">
+            مهلت دانلود شما به پایان رسیده است.
+          </div>
         </div>
       </div>
 
-      <!-- Available State -->
-      <div v-else-if="canDownload && isFileAvailable" class="text-center">
-        <button
-          @click="handleDownload"
-          :disabled="isDownloading"
-          class="inline-flex items-center justify-center w-full font-bold py-3 px-6 rounded-lg transition-colors duration-300 text-lg bg-green-600 hover:bg-green-700 text-white disabled:bg-green-300 disabled:cursor-not-allowed"
-        >
-          <svg v-if="isDownloading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span>{{ isDownloading ? 'در حال دانلود...' : 'دانلود کتاب با لینک مستقیم' }}</span>
-        </button>
-        <div class="text-sm text-gray-600 mt-4 border-t pt-4">
+      <!-- Single Book View (Legacy) -->
+      <div v-else>
+        <!-- Available State -->
+        <div v-if="canDownload && isFileAvailable" class="text-center">
+            <button @click="handleDownload(downloadLink, downloadInfo.book.slug)" :disabled="isDownloading" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700">
+                {{ isDownloading ? 'در حال دانلود...' : 'دانلود کتاب با لینک مستقیم' }}
+            </button>
+        </div>
+        <!-- Unavailable/Failed State -->
+        <div v-else class="text-center p-6 bg-red-50 text-red-800 rounded-lg">
+            <p class="text-lg font-medium">در حال حاضر امکان دانلود این کتاب وجود ندارد.</p>
+             <p v-if="!canDownload" class="mt-2 text-sm">
+                شاید تاریخ انقضای لینک شما به پایان رسیده یا از تمام فرصت‌های دانلود خود استفاده کرده‌اید.
+            </p>
+        </div>
+      </div>
+
+      <!-- Common Footer Info -->
+      <div class="text-sm text-gray-600 mt-6 border-t pt-4">
           <div class="flex justify-between mb-2">
             <span>تعداد دانلود باقی‌مانده:</span>
             <span class="font-mono">{{ remainingDownloads }}</span>
@@ -59,31 +87,6 @@
             <span>تاریخ انقضای لینک:</span>
             <span class="font-mono">{{ formattedExpiresAt }}</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Unavailable/Failed State -->
-      <div v-else class="text-center p-6 bg-red-50 text-red-800 rounded-lg">
-        <p class="text-lg font-medium">در حال حاضر امکان دانلود این کتاب وجود ندارد.</p>
-        <p v-if="!canDownload" class="mt-2 text-sm">
-          شاید تاریخ انقضای لینک شما به پایان رسیده یا از تمام فرصت‌های دانلود خود استفاده کرده‌اید.
-        </p>
-        <p v-else-if="downloadInfo.file_status === 'failed'" class="mt-2 text-sm">
-          مشکلی در پردازش فایل کتاب رخ داده است. لطفاً با پشتیبانی تماس بگیرید.
-        </p>
-        <p v-else-if="downloadInfo.file_status === 'unavailable'" class="mt-2 text-sm">
-          فایل کتاب در سرور موجود نیست. لطفاً با پشتیبانی تماس بگیرید.
-        </p>
-      </div>
-
-      <!-- Auxiliary Links -->
-      <div class="mt-10 border-t pt-6">
-        <h3 class="text-center text-lg font-semibold text-gray-700 mb-4">لینک‌های کمکی</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button v-for="i in 4" :key="i" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
-            لینک کمکی {{ i }}
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -124,10 +127,21 @@ const fetchStatus = async () => {
       downloadInfo.value = response.data;
       error.value = null;
 
-      // Stop polling only on terminal states (available or failed)
-      if (['available', 'failed'].includes(downloadInfo.value.file_status)) {
+      const info = downloadInfo.value;
+      // For merged books, stop polling if no variants are in a processing state.
+      if (info.book?.is_master && Array.isArray(info.variants)) {
+        const isAnyVariantProcessing = info.variants.some(
+          v => v.file_status === 'processing' || v.file_status === 'unavailable'
+        );
+        if (!isAnyVariantProcessing) {
+          stopPolling();
+        }
+      }
+      // For single books, use the original logic.
+      else if (['available', 'failed'].includes(info.file_status)) {
         stopPolling();
       }
+
     } else {
       throw new Error(response.message || 'Failed to get download info.');
     }
@@ -139,30 +153,30 @@ const fetchStatus = async () => {
   }
 };
 
-const handleDownload = async () => {
-  if (!downloadLink.value || downloadLink.value === '#') return;
-  isDownloading.value = true;
+const handleDownload = async (url, fileName) => {
+  if (!url || url === '#') return;
+  isDownloading.value = true; // This might need to be more granular for variants
   error.value = null;
 
   try {
-    const response = await api.$api(downloadLink.value, {
+    const response = await api.$api(url, {
       responseType: 'blob',
     });
 
     const blob = new Blob([response]);
-    const url = window.URL.createObjectURL(blob);
+    const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href = downloadUrl;
 
-    const fileName = downloadInfo.value?.book?.slug || 'book';
     const fileExtension = blob.type.split('/')[1] || 'pdf';
     link.setAttribute('download', `${fileName}.${fileExtension}`);
 
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(downloadUrl);
 
+    // After a successful download, re-fetch status to update remaining download count.
     await fetchStatus();
 
   } catch (err) {
@@ -189,7 +203,15 @@ onUnmounted(() => {
 });
 
 const isProcessing = computed(() => {
-  const status = downloadInfo.value?.file_status;
+  const info = downloadInfo.value;
+  if (info?.book?.is_master && Array.isArray(info.variants)) {
+    // For master books, check if any variant is still processing/unavailable.
+    return info.variants.some(
+      (variant) => variant.file_status === 'processing' || variant.file_status === 'unavailable'
+    );
+  }
+  // For single books, use the existing logic.
+  const status = info?.file_status;
   return status === 'processing' || status === 'unavailable';
 });
 const isFileAvailable = computed(() => downloadInfo.value?.file_status === 'available');
