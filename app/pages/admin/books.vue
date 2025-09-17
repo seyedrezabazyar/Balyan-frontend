@@ -1,11 +1,5 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-    <!-- Temporary Debug Block -->
-    <div v-if="debugInfo" class="mt-4 p-2 bg-gray-800 text-white rounded-lg font-mono text-left text-xs" dir="ltr">
-      <h4 class="font-bold text-lg mb-2">DEBUG INFORMATION</h4>
-      <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(debugInfo, null, 2) }}</pre>
-    </div>
-
     <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">مدیریت کتاب‌ها</h1>
 
     <!-- Success Message -->
@@ -76,7 +70,7 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <p class="text-gray-900 whitespace-no-wrap">
-                {{ book.authors.map(a => a.name).join(', ') }}
+                {{ book.authors?.map(a => a.name).join(', ') }}
               </p>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
@@ -88,15 +82,15 @@
               </span>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <input type="number" class="w-16 text-center border rounded bg-gray-100 cursor-not-allowed" v-model="book.hidden_level" disabled title="API for this action is not implemented yet." />
+              <input type="number" class="w-16 text-center border rounded" v-model="book.hidden_level" @change="updateHiddenLevel(book.id, book.hidden_level)" />
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <button @click="editBook(book.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">ویرایش</button>
-              <button @click="deleteBook(book.id)" class="text-red-600 hover:text-red-900 mr-2 disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="API for this action is not implemented yet.">حذف</button>
-              <button @click="toggleVisibility(book.id)" class="text-gray-600 hover:text-gray-900 disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="API for this action is not implemented yet.">
-                {{ book.status === 'hidden' ? 'نمایش' : 'مخفی' }}
+              <button @click="deleteBook(book.id)" class="text-red-600 hover:text-red-900 mr-2">حذف</button>
+              <button @click="toggleVisibility(book.id)" class="text-gray-600 hover:text-gray-900">
+                {{ book.is_hidden ? 'نمایش' : 'مخفی' }}
               </button>
-              <button v-if="book.master_book_id" @click="unmergeBook(book.id)" class="text-yellow-600 hover:text-yellow-900 ml-2 disabled:text-gray-400 disabled:cursor-not-allowed" disabled title="API for this action is not implemented yet.">
+              <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book.id)" class="text-yellow-600 hover:text-yellow-900 ml-2">
                 لغو ادغام
               </button>
             </td>
@@ -153,7 +147,6 @@ const router = useRouter();
 const books = ref([]);
 const loading = ref(true);
 const error = ref(null);
-const debugInfo = ref(null);
 const selectedBooks = ref([]);
 const pagination = ref({
   currentPage: 1,
@@ -227,7 +220,6 @@ const fetchBooks = async (page = 1) => {
   selectedBooks.value = []; // Reset selection on fetch
   try {
     const response = await api.get(`/admin/books?page=${page}`);
-    debugInfo.value = response; // Store raw response for debugging
 
     // Based on the logs, the response is nested: response.data.data contains the pagination object
     const paginationData = response.data.data;
@@ -263,15 +255,48 @@ const editBook = (id) => {
 
 // TODO: Implement the following functions once the backend APIs are available.
 const deleteBook = async (id) => {
-  alert(`(Feature not implemented) Deleting book ${id}`);
+  if (confirm(`آیا از حذف کتاب با شناسه ${id} اطمینان دارید؟`)) {
+    try {
+      await api.delete(`/admin/books/${id}`);
+      successMessage.value = 'کتاب با موفقیت حذف شد.';
+      await fetchBooks(); // Refresh list
+    } catch (err) {
+      console.error(`Failed to delete book ${id}:`, err);
+      error.value = err.data?.message || 'حذف کتاب با خطا مواجه شد.';
+    }
+  }
 };
 const toggleVisibility = async (id) => {
-  alert(`(Feature not implemented) Toggling visibility for book ${id}`);
+  try {
+    await api.post(`/admin/books/${id}/toggle-visibility`);
+    successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
+    await fetchBooks(); // Refresh list
+  } catch (err) {
+    console.error(`Failed to toggle visibility for book ${id}:`, err);
+    error.value = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+  }
 };
 const unmergeBook = async (id) => {
-  alert(`(Feature not implemented) Unmerging book ${id}`);
+  if (confirm(`آیا از لغو ادغام کتاب با شناسه ${id} اطمینان دارید؟`)) {
+    try {
+      await api.post('/admin/unmerge', { book_id: id });
+      successMessage.value = 'ادغام کتاب با موفقیت لغو شد.';
+      await fetchBooks(); // Refresh list
+    } catch (err)      {
+      console.error(`Failed to unmerge book ${id}:`, err);
+      error.value = err.data?.message || 'لغو ادغام کتاب با خطا مواجه شد.';
+    }
+  }
 };
 const updateHiddenLevel = async (id, level) => {
-  alert(`(Feature not implemented) Updating hidden level for book ${id} to ${level}`);
+  try {
+    await api.put(`/admin/books/${id}`, { hidden_level: level });
+    successMessage.value = 'سطح مخفی کتاب به‌روزرسانی شد.';
+    // Optimistic update, no need to re-fetch unless there is an error.
+  } catch (err) {
+    console.error(`Failed to update hidden level for book ${id}:`, err);
+    error.value = err.data?.message || 'به‌روزرسانی سطح مخفی با خطا مواجه شد.';
+    await fetchBooks(); // Re-fetch to revert optimistic update on error
+  }
 };
 </script>
