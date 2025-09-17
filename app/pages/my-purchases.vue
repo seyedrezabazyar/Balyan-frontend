@@ -75,16 +75,20 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">{{ purchase.remaining_downloads }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div v-if="!purchase.is_expired && purchase.download_url">
-                <NuxtLink
-                  :to="`/book/download/${getDownloadTokenFromUrl(purchase.download_url)}`"
-                  class="text-indigo-600 hover:text-indigo-900"
-                >
-                  دانلود
-                </NuxtLink>
-              </div>
-              <div v-else-if="!purchase.is_expired">
-                <span class="text-gray-400">ناموجود</span>
+              <div v-if="!purchase.is_expired">
+                <div v-if="getAvailableDownloads(purchase).length > 0" class="flex flex-col gap-2 items-start">
+                  <NuxtLink
+                    v-for="download in getAvailableDownloads(purchase)"
+                    :key="download.id || download.format"
+                    :to="`/book/download/${download.token}`"
+                    class="text-indigo-600 hover:text-indigo-900"
+                  >
+                    دانلود {{ download.format.toUpperCase() }}
+                  </NuxtLink>
+                </div>
+                <div v-else>
+                  <span class="text-gray-400">ناموجود</span>
+                </div>
               </div>
               <NuxtLink v-else :to="`/book/${purchase.book.slug}`" class="text-orange-600 hover:text-orange-800 font-semibold">
                 خرید مجدد
@@ -119,17 +123,60 @@ const authStore = useAuthStore()
 const purchaseStore = usePurchaseStore()
 const formatters = useFormatters()
 
-const getDownloadTokenFromUrl = (url) => {
-  if (!url) return ''
-  try {
-    const urlObject = new URL(url)
-    const pathSegments = urlObject.pathname.split('/')
-    return pathSegments.pop() || ''
-  } catch (e) {
-    console.error('Invalid download URL:', url, e)
-    return ''
+const getAvailableDownloads = (purchase) => {
+  if (!purchase || !purchase.book) return [];
+
+  let allDownloads = [];
+
+  // Check if the book is a master book and has variants with downloads
+  if (purchase.book.is_master && Array.isArray(purchase.book.variants)) {
+    // Add the master book's own downloads first
+    if(Array.isArray(purchase.book.downloads)) {
+        allDownloads.push(...purchase.book.downloads);
+    }
+
+    // Add downloads from all variants
+    purchase.book.variants.forEach(variant => {
+      if (Array.isArray(variant.downloads)) {
+        allDownloads.push(...variant.downloads);
+      }
+    });
+  } else if (Array.isArray(purchase.book.downloads)) {
+    // It's a regular book, just add its downloads
+    allDownloads.push(...purchase.book.downloads);
   }
-}
+
+  // Fallback for legacy structure with a single download_url
+  if (allDownloads.length === 0 && purchase.download_url) {
+    try {
+      const urlObject = new URL(purchase.download_url);
+      const pathSegments = urlObject.pathname.split('/');
+      const token = pathSegments.pop() || '';
+      if(token) {
+          allDownloads.push({
+              id: 'legacy-' + purchase.id,
+              format: 'فایل', // Generic format name
+              token: token
+          });
+      }
+    } catch(e) {
+        console.error('Invalid legacy download URL:', purchase.download_url, e);
+    }
+  }
+
+  // Making sure downloads are unique by token
+  const uniqueDownloads = [];
+  const seenTokens = new Set();
+  for (const download of allDownloads) {
+    if (download.token && !seenTokens.has(download.token)) {
+      uniqueDownloads.push(download);
+      seenTokens.add(download.token);
+    }
+  }
+
+  return uniqueDownloads;
+};
+
 
 // Computed properties to reactively get data from the store
 const purchases = computed(() => purchaseStore.purchases)
