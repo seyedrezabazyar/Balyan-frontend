@@ -12,15 +12,18 @@
     <!--
     <TheFooter />
     -->
+    <ApiDebugger v-if="devMode" />
   </div>
 </template>
 
 <script setup>
 // Import the new header component
 import TheHeader from '~/components/layout/TheHeader.vue'
+import ApiDebugger from '~/components/ApiDebugger.vue'
+import { computed } from 'vue'
 
-// Since all logic has been moved to TheHeader, this script block might be empty
-// or could be used for other layout-specific logic in the future.
+// Show debugger only in development mode
+const devMode = process.dev
 </script>
 
 <style scoped>
