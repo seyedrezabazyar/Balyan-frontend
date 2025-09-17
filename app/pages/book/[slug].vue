@@ -96,11 +96,13 @@
 import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { usePurchaseStore } from '~/stores/purchase';
+import { useApiAuth } from '~/composables/useApiAuth';
 
 const route = useRoute();
 const slug = route.params.slug;
 const authStore = useAuthStore();
 const purchaseStore = usePurchaseStore();
+const api = useApiAuth();
 
 // State for the component
 const book = ref(null);
@@ -119,9 +121,7 @@ async function fetchBook() {
   error.value = null;
   debugInfo.value = null;
   try {
-    const response = await $fetch(`http://localhost:8000/api/v1/book/${slug}`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
-    });
+    const response = await api.get(`/book/${slug}`);
 
     debugInfo.value = {
       timestamp: new Date().toISOString(),
@@ -175,10 +175,7 @@ async function processPurchase() {
   notification.value = { show: false, message: '', type: 'success' };
 
   try {
-    const response = await $fetch(`http://localhost:8000/api/v1/books/${slug}/buy`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authStore.token}`, 'Accept': 'application/json' }
-    });
+    const response = await api.post(`/book/${slug}/buy`);
     // On success, show a notification and refetch the book data to update the state.
     notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
     purchaseStore.clearPurchases(); // Invalidate the purchases list
