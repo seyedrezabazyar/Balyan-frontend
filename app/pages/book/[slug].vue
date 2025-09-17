@@ -46,23 +46,20 @@
           <div class="actions text-center">
             <!-- Scenario 1: Purchase is valid and active -->
             <div v-if="purchaseStatus && purchaseStatus.is_purchased && !purchaseStatus.is_expired">
-              <div class="text-center">
-                  <h3 class="text-lg font-semibold mb-4">شما به این کتاب دسترسی دارید</h3>
-                  <p class="text-sm text-gray-600 mb-6">می‌توانید فایل‌های زیر را دانلود کنید.</p>
-                  <div v-if="allDownloads.length" class="flex flex-wrap justify-center gap-3">
-                      <a v-for="download in allDownloads"
-                         :key="download.id"
-                         :href="`/api/v1/downloads/${download.token}`"
-                         download
-                         class="bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                          دانلود {{ download.format.toUpperCase() }}
-                      </a>
-                  </div>
-                  <div v-else class="text-gray-500 text-sm">
-                      <p>در حال حاضر لینک دانلودی برای این کتاب موجود نیست.</p>
-                  </div>
-                  <NuxtLink to="/my-purchases" class="block mt-6 text-sm text-blue-600 hover:underline">
-                      مشاهده همه خریدها در کتابخانه
+              <!-- Sub-scenario: Just purchased -->
+              <div v-if="justPurchased" class="text-center p-4 bg-green-50 rounded-lg">
+                  <h3 class="text-xl font-bold text-green-800 mb-3">خرید شما با موفقیت انجام شد</h3>
+                  <p class="text-gray-700 mb-6">اکنون می‌توانید به فایل‌های کتاب در کتابخانه خود دسترسی داشته باشید.</p>
+                  <NuxtLink to="/my-purchases" class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                      رفتن به کتابخانه
+                  </NuxtLink>
+              </div>
+              <!-- Sub-scenario: Already owns the book (e.g., on page refresh) -->
+              <div v-else class="text-center p-4 bg-blue-50 rounded-lg">
+                  <h3 class="text-lg font-semibold mb-3 text-blue-800">شما این کتاب را قبلا خریداری کرده‌اید</h3>
+                  <p class="text-gray-600 mb-6">برای مشاهده و دانلود فایل‌های کتاب، به کتابخانه خود مراجعه کنید.</p>
+                  <NuxtLink to="/my-purchases" class="inline-block bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                      مشاهده در کتابخانه
                   </NuxtLink>
               </div>
             </div>
@@ -131,6 +128,7 @@ const error = ref(null);
 const purchaseInProgress = ref(false);
 const showLoginPrompt = ref(false);
 const notification = ref({ show: false, message: '', type: 'success' });
+const justPurchased = ref(false);
 const debugInfo = ref(null);
 
 const isLoggedIn = computed(() => !!authStore.token);
@@ -248,8 +246,12 @@ async function processPurchase() {
 
   try {
     const response = await api.post(`/book/${slug}/buy`);
-    // On success, show a notification and refetch the book data to update the state.
-    notification.value = { show: true, message: response.message || 'خرید با موفقیت انجام شد!', type: 'success' };
+
+    // On success, set the flag and refetch data.
+    // The success message is now handled in the template.
+    justPurchased.value = true;
+    notification.value.show = false; // Ensure any previous notifications are hidden
+
     purchaseStore.clearPurchases(); // Invalidate the purchases list
     await fetchBook(); // Refetch data to get the new purchase status
   } catch (err) {
