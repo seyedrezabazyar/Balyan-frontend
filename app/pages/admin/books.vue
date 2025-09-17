@@ -219,21 +219,25 @@ const fetchBooks = async (page = 1) => {
   error.value = null;
   selectedBooks.value = []; // Reset selection on fetch
   try {
-    // Reverting to the simpler parsing logic. This assumes `api.get` returns
-    // an object with pagination at the root and books in the `data` property.
-    const response = await api.get(`/admin/books?page=${page}`);
+const response = await api.get(`/admin/books?page=${page}`);
 
-    const fetchedBooks = response.data || [];
-    books.value = fetchedBooks.map(book => ({
-      ...book,
-      hidden_level: book.hidden_level ?? 1 // Default to 1
-    }));
+// طبق لاگ‌ها، دیتا داخل response.data.data هست
+const paginationData = response.data.data || {};
 
-    pagination.value = {
-      currentPage: response.current_page,
-      lastPage: response.last_page,
-      total: response.total,
-      perPage: response.per_page,
+const fetchedBooks = paginationData.data || [];
+
+books.value = fetchedBooks.map(book => ({
+  ...book,
+  hidden_level: book.hidden_level ?? 1 // اگر مقدار نداشت، پیش‌فرض 1
+}));
+
+pagination.value = {
+  currentPage: paginationData.current_page,
+  lastPage: paginationData.last_page,
+  total: paginationData.total,
+  perPage: paginationData.per_page,
+};
+
     };
 
   } catch (err) {
