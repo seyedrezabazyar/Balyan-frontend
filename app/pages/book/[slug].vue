@@ -20,13 +20,19 @@
         </div>
         <p v-if="book.excerpt" class="text-gray-700 leading-relaxed mb-6">{{ book.excerpt }}</p>
 
-        <div v-if="book.language || book.publication_year || book.pages_count || book.isbn" class="bg-gray-100 p-4 rounded-lg mb-6">
+        <div class="bg-gray-100 p-4 rounded-lg mb-6">
           <h3 class="font-semibold text-lg mb-2">مشخصات کتاب</h3>
           <ul class="grid grid-cols-2 gap-4 text-sm">
             <li v-if="book.language"><strong>زبان:</strong> {{ book.language === 'fa' ? 'فارسی' : 'انگلیسی' }}</li>
-            <li v-if="book.publication_year"><strong>سال انتشار:</strong> {{ book.publication_year }}</li>
+            <li v-if="displayPublicationYears"><strong>سال انتشار:</strong> {{ displayPublicationYears }}</li>
             <li v-if="book.pages_count"><strong>تعداد صفحات:</strong> {{ book.pages_count }}</li>
             <li v-if="book.isbn"><strong>شابک (ISBN):</strong> {{ book.isbn }}</li>
+            <li v-if="availableFormats && availableFormats.length" class="col-span-2">
+              <strong>فرمت‌های موجود:</strong>
+              <span v-for="(format, index) in availableFormats" :key="format" class="inline-block bg-gray-200 rounded-full px-3 py-1 text-xs font-semibold text-gray-700 mr-2">
+                {{ format.toUpperCase() }}
+              </span>
+            </li>
           </ul>
         </div>
 
@@ -40,12 +46,25 @@
           <div class="actions text-center">
             <!-- Scenario 1: Purchase is valid and active -->
             <div v-if="purchaseStatus && purchaseStatus.is_purchased && !purchaseStatus.is_expired">
-              <NuxtLink to="/my-purchases" class="btn-primary inline-block bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition">
-                مشاهده در کتابخانه
-              </NuxtLink>
-              <p class="purchase-info mt-2 text-sm text-gray-600">
-                شما این کتاب را خریده‌اید و به آن دسترسی دارید.
-              </p>
+              <div class="text-center">
+                  <h3 class="text-lg font-semibold mb-4">شما به این کتاب دسترسی دارید</h3>
+                  <p class="text-sm text-gray-600 mb-6">می‌توانید فایل‌های زیر را دانلود کنید.</p>
+                  <div v-if="allDownloads.length" class="flex flex-wrap justify-center gap-3">
+                      <a v-for="download in allDownloads"
+                         :key="download.id"
+                         :href="`/api/v1/downloads/${download.token}`"
+                         download
+                         class="bg-blue-600 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                          دانلود {{ download.format.toUpperCase() }}
+                      </a>
+                  </div>
+                  <div v-else class="text-gray-500 text-sm">
+                      <p>در حال حاضر لینک دانلودی برای این کتاب موجود نیست.</p>
+                  </div>
+                  <NuxtLink to="/my-purchases" class="block mt-6 text-sm text-blue-600 hover:underline">
+                      مشاهده همه خریدها در کتابخانه
+                  </NuxtLink>
+              </div>
             </div>
 
             <!-- Scenario 2: Purchase has expired, user needs to repurchase -->
@@ -115,6 +134,59 @@ const notification = ref({ show: false, message: '', type: 'success' });
 const debugInfo = ref(null);
 
 const isLoggedIn = computed(() => !!authStore.token);
+
+const isMasterBook = computed(() => book.value && book.value.is_master);
+
+const displayPublicationYears = computed(() => {
+  if (!book.value) return '';
+  if (isMasterBook.value && book.value.variants_data?.publication_years?.length) {
+    const years = [...new Set(book.value.variants_data.publication_years)].sort();
+    return years.join(', ');
+  }
+  return book.value.publication_year;
+});
+
+const availableFormats = computed(() => {
+  if (isMasterBook.value && book.value.variants_data?.formats?.length) {
+    return [...new Set(book.value.variants_data.formats)];
+  }
+  // Even for non-master books, we might have a format in downloads
+  if (book.value?.downloads?.length) {
+      return [...new Set(book.value.downloads.map(d => d.format))]
+  }
+  return [];
+});
+
+const allDownloads = computed(() => {
+    if (!book.value) return [];
+
+    let downloads = [];
+
+    // If it's a master book, collect downloads from itself and its variants
+    if (isMasterBook.value) {
+        // Add master book's own downloads
+        if (Array.isArray(book.value.downloads)) {
+            downloads.push(...book.value.downloads);
+        }
+        // Add downloads from variants
+        if (Array.isArray(book.value.variants)) {
+            book.value.variants.forEach(variant => {
+                if (Array.isArray(variant.downloads)) {
+                    downloads.push(...variant.downloads);
+                }
+            });
+        }
+    } else {
+        // If it's a regular book, just use its own downloads
+        if (Array.isArray(book.value.downloads)) {
+            downloads.push(...book.value.downloads);
+        }
+    }
+
+    // Ensure unique downloads, for example by format, if needed. For now, returning all.
+    return downloads;
+});
+
 
 async function fetchBook() {
   loading.value = true;

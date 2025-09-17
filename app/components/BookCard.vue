@@ -16,6 +16,14 @@
         <h3 class="font-semibold text-gray-800 mb-1 line-clamp-1 hover:text-blue-600">{{ book.title }}</h3>
       </NuxtLink>
       <p class="text-sm text-gray-600 mb-2">{{ book.authors && book.authors.length > 0 ? book.authors[0].name : 'ناشناس' }}</p>
+
+      <!-- Master Book Formats -->
+      <div v-if="book.is_master && book.variants_data && book.variants_data.formats" class="mb-2">
+        <span v-for="format in book.variants_data.formats" :key="format" class="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs font-semibold text-gray-700 mr-1">
+          {{ format.toUpperCase() }}
+        </span>
+      </div>
+
       <div class="mt-auto">
         <!-- Download Links Section -->
         <div v-if="showDownloadLinks" class="pt-4 border-t mt-4">
