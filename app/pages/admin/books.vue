@@ -23,14 +23,14 @@
 
     <!-- Books Table -->
     <div v-else class="bg-white shadow-md rounded-lg overflow-hidden">
-      <div class="p-4 flex justify-between items-center">
+      <!-- <div class="p-4 flex justify-between items-center">
         <button
           @click="openMergeModal"
           :disabled="!canMerge"
           class="bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
           ادغام انتخاب شده ها ({{ selectedBooks.length }})
         </button>
-      </div>
+      </div> -->
       <table class="min-w-full leading-normal">
         <thead>
           <tr>
@@ -99,14 +99,14 @@
       </table>
     </div>
 
-    <MergeBooksModal
+    <!-- <MergeBooksModal
       :isOpen="isModalOpen"
       :selectedBookDetails="selectedBookDetails"
       :isLoading="mergeLoading"
       :error="mergeError"
       @close="closeMergeModal"
       @confirm-merge="handleMerge"
-    />
+    /> -->
 
     <!-- Pagination -->
     <div v-if="pagination.lastPage > 1" class="mt-6 flex justify-center items-center">
@@ -135,7 +135,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useApiAuth } from '~/composables/useApiAuth';
-import MergeBooksModal from '~/components/admin/MergeBooksModal.vue';
+// import MergeBooksModal from '~/components/admin/MergeBooksModal.vue';
 
 definePageMeta({
   middleware: 'admin',
@@ -156,9 +156,9 @@ const pagination = ref({
 });
 
 // Modal state
-const isModalOpen = ref(false);
-const mergeLoading = ref(false);
-const mergeError = ref(null);
+// const isModalOpen = ref(false);
+// const mergeLoading = ref(false);
+// const mergeError = ref(null);
 const successMessage = ref('');
 
 const canMerge = computed(() => selectedBooks.value.length >= 2);
@@ -180,64 +180,60 @@ const toggleSelectAll = (event) => {
   allSelected.value = event.target.checked;
 };
 
-const selectedBookDetails = computed(() => {
-  return selectedBooks.value.map(id => books.value.find(b => b.id === id)).filter(Boolean);
-});
+// const selectedBookDetails = computed(() => {
+//   return selectedBooks.value.map(id => books.value.find(b => b.id === id)).filter(Boolean);
+// });
 
-const openMergeModal = () => {
-  mergeError.value = null;
-  successMessage.value = '';
-  isModalOpen.value = true;
-};
+// const openMergeModal = () => {
+//   mergeError.value = null;
+//   successMessage.value = '';
+//   isModalOpen.value = true;
+// };
 
-const closeMergeModal = () => {
-  isModalOpen.value = false;
-};
+// const closeMergeModal = () => {
+//   isModalOpen.value = false;
+// };
 
-const handleMerge = async ({ master_id, slave_ids }) => {
-  mergeLoading.value = true;
-  mergeError.value = null;
-  try {
-    await api.post('/admin/merge', {
-      master_id,
-      slave_ids,
-      type: 'book'
-    });
-    successMessage.value = 'کتاب‌ها با موفقیت ادغام شدند.';
-    closeMergeModal();
-    await fetchBooks(); // Refresh the list
-  } catch (err) {
-    console.error("Merge failed:", err);
-    mergeError.value = err.data?.message || 'یک خطای غیرمنتظره رخ داد.';
-  } finally {
-    mergeLoading.value = false;
-  }
-};
+// const handleMerge = async ({ master_id, slave_ids }) => {
+//   mergeLoading.value = true;
+//   mergeError.value = null;
+//   try {
+//     await api.post('/admin/merge', {
+//       master_id,
+//       slave_ids,
+//       type: 'book'
+//     });
+//     successMessage.value = 'کتاب‌ها با موفقیت ادغام شدند.';
+//     closeMergeModal();
+//     await fetchBooks(); // Refresh the list
+//   } catch (err) {
+//     console.error("Merge failed:", err);
+//     mergeError.value = err.data?.message || 'یک خطای غیرمنتظره رخ داد.';
+//   } finally {
+//     mergeLoading.value = false;
+//   }
+// };
 
 const fetchBooks = async (page = 1) => {
   loading.value = true;
   error.value = null;
   selectedBooks.value = []; // Reset selection on fetch
   try {
-const response = await api.get(`/admin/books?page=${page}`);
+    const response = await api.get(`/admin/books?page=${page}`);
+    // Based on the logs, the response is nested: response.data.data contains the pagination object
+    const paginationData = response.data.data;
 
-// طبق لاگ‌ها، دیتا داخل response.data.data هست
-const paginationData = response.data.data || {};
+    const fetchedBooks = paginationData.data || [];
+    books.value = fetchedBooks.map(book => ({
+      ...book,
+      hidden_level: book.hidden_level ?? 1 // Default to 1
+    }));
 
-const fetchedBooks = paginationData.data || [];
-
-books.value = fetchedBooks.map(book => ({
-  ...book,
-  hidden_level: book.hidden_level ?? 1 // اگر مقدار نداشت، پیش‌فرض 1
-}));
-
-pagination.value = {
-  currentPage: paginationData.current_page,
-  lastPage: paginationData.last_page,
-  total: paginationData.total,
-  perPage: paginationData.per_page,
-};
-
+    pagination.value = {
+      currentPage: paginationData.current_page,
+      lastPage: paginationData.last_page,
+      total: paginationData.total,
+      perPage: paginationData.per_page,
     };
 
   } catch (err) {
