@@ -33,8 +33,8 @@
 
           <!-- Variant Available -->
           <div v-if="variant.file_status === 'available' && canDownload">
-            <button @click="handleDownload(variant.download_link, `${downloadInfo.book.slug}-${variant.format}`)" :disabled="isDownloading" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 mb-4 disabled:bg-green-300 disabled:cursor-not-allowed">
-              {{ isDownloading ? 'در حال دانلود...' : `دانلود مستقیم (${variant.format})` }}
+            <button @click="handleDownload(variant.download_link, `${downloadInfo.book.slug}-${variant.format}`, variant.id)" :disabled="isDownloading === variant.id" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 mb-4 disabled:bg-green-300 disabled:cursor-not-allowed">
+              {{ isDownloading === variant.id ? 'در حال دانلود...' : `دانلود مستقیم (${variant.format})` }}
             </button>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
               <button v-for="i in 4" :key="i" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-2 px-3 rounded">
@@ -64,8 +64,8 @@
       <div v-else>
         <!-- Available State -->
         <div v-if="canDownload && isFileAvailable" class="text-center">
-            <button @click="handleDownload(downloadLink, downloadInfo.book.slug)" :disabled="isDownloading" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700">
-                {{ isDownloading ? 'در حال دانلود...' : 'دانلود کتاب با لینک مستقیم' }}
+            <button @click="handleDownload(downloadLink, downloadInfo.book.slug, 'main')" :disabled="isDownloading === 'main'" class="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed">
+                {{ isDownloading === 'main' ? 'در حال دانلود...' : 'دانلود کتاب با لینک مستقیم' }}
             </button>
         </div>
         <!-- Unavailable/Failed State -->
@@ -110,7 +110,7 @@ const token = route.params.token;
 const downloadInfo = ref(null);
 const loading = ref(true);
 const error = ref(null);
-const isDownloading = ref(false);
+const isDownloading = ref(null); // Will store the ID of the item being downloaded
 let pollingInterval = null;
 
 const stopPolling = () => {
@@ -153,9 +153,9 @@ const fetchStatus = async () => {
   }
 };
 
-const handleDownload = async (url, fileName) => {
+const handleDownload = async (url, fileName, downloadId) => {
   if (!url || url === '#') return;
-  isDownloading.value = true; // This might need to be more granular for variants
+  isDownloading.value = downloadId;
   error.value = null;
 
   try {
@@ -183,7 +183,7 @@ const handleDownload = async (url, fileName) => {
     error.value = 'خطا در دانلود فایل. لطفا دوباره تلاش کنید.';
     console.error('Download error:', err);
   } finally {
-    isDownloading.value = false;
+    isDownloading.value = null;
   }
 };
 
