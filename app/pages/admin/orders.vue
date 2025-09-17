@@ -124,15 +124,14 @@ const fetchOrders = async (page = 1) => {
   error.value = null;
   try {
     const response = await api.get(`/admin/orders?page=${page}`);
-    const paginationData = response.data;
 
-    orders.value = paginationData.data || [];
+    orders.value = response.data || [];
 
     pagination.value = {
-      currentPage: paginationData.current_page,
-      lastPage: paginationData.last_page,
-      total: paginationData.total,
-      perPage: paginationData.per_page,
+      currentPage: response.meta.current_page,
+      lastPage: response.meta.last_page,
+      total: response.meta.total,
+      perPage: response.meta.per_page,
     };
 
   } catch (err) {
