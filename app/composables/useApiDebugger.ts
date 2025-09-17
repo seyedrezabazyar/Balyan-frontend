@@ -17,9 +17,10 @@ export interface ApiLog {
 }
 
 // Create a reactive state to store API logs
-const apiLogs = useState<ApiLog[]>('api-logs', () => [])
 
 export const useApiDebugger = () => {
+  const apiLogs = useState<ApiLog[]>('api-logs', () => [])
+
   const addLog = (log: Omit<ApiLog, 'id' | 'startTime'>) => {
     const newLog: ApiLog = {
       ...log,
