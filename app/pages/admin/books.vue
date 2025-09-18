@@ -125,18 +125,24 @@
                 مخفی (سطح: {{ book.is_hidden }})
               </span>
             </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <button @click="editBook(book.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">ویرایش</button>
-              <button @click="deleteBook(book.id)" class="text-red-600 hover:text-red-900 mr-2">حذف</button>
-              <button @click="toggleVisibility(book)" class="text-gray-600 hover:text-gray-900">
-                {{ book.is_hidden > 0 ? 'نمایش' : 'مخفی' }}
-              </button>
-              <button v-if="book.is_hidden > 0" @click="setHiddenLevel(book)" class="text-blue-600 hover:text-blue-900 ml-2">
-                تغییر سطح مخفی
-              </button>
-              <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="text-yellow-600 hover:text-yellow-900 ml-2">
-                لغو ادغام
-              </button>
+            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+              <div class="flex items-center justify-center gap-2 flex-wrap">
+                <button @click="editBook(book.id)" class="px-3 py-1 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                  ویرایش
+                </button>
+                <button @click="deleteBook(book.id)" class="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
+                  حذف
+                </button>
+                <button @click="toggleVisibility(book)" class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
+                  {{ book.is_hidden > 0 ? 'نمایش' : 'مخفی' }}
+                </button>
+                <button v-if="book.is_hidden > 0" @click="setHiddenLevel(book)" class="px-3 py-1 text-sm font-medium text-white bg-teal-500 rounded-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition">
+                  تغییر سطح
+                </button>
+                <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
+                  لغو ادغام
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
