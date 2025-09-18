@@ -1,6 +1,11 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-    <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">مدیریت ادغام کتاب‌ها</h1>
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">مدیریت ادغام کتاب‌ها</h1>
+      <button @click="openCreateMergeModal" class="bg-indigo-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-indigo-700">
+        ایجاد ادغام جدید
+      </button>
+    </div>
 
     <!-- Success & Error Messages -->
     <div v-if="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -113,6 +118,14 @@
       @close="closeMergeModal"
       @confirm-merge="handleConfirmMerge"
     />
+
+    <!-- Create Merge Modal -->
+    <CreateMergeModal
+      :isOpen="isCreateModalOpen"
+      :confirmLoading="createMergeConfirmLoading"
+      @close="closeCreateMergeModal"
+      @confirm-create-merge="handleConfirmCreateMerge"
+    />
   </div>
 </template>
 
@@ -120,6 +133,7 @@
 import { ref, onMounted } from 'vue';
 import { useApiAuth } from '~/composables/useApiAuth';
 import MergeModal from '~/components/admin/MergeModal.vue';
+import CreateMergeModal from '~/components/admin/CreateMergeModal.vue';
 
 definePageMeta({
   middleware: 'admin',
@@ -146,6 +160,9 @@ const expandedMasters = ref([]);
 const isMergeModalOpen = ref(false);
 const currentMasterBook = ref(null);
 const mergeConfirmLoading = ref(false);
+
+const isCreateModalOpen = ref(false);
+const createMergeConfirmLoading = ref(false);
 
 const fetchMasters = async (page = 1) => {
   loading.value = true;
@@ -242,4 +259,33 @@ const handleConfirmMerge = async ({ masterId, slaveIds }) => {
 onMounted(() => {
   fetchMasters();
 });
+
+const openCreateMergeModal = () => {
+  isCreateModalOpen.value = true;
+};
+
+const closeCreateMergeModal = () => {
+  isCreateModalOpen.value = false;
+};
+
+const handleConfirmCreateMerge = async ({ masterId, slaveIds }) => {
+  createMergeConfirmLoading.value = true;
+  error.value = null;
+  successMessage.value = '';
+
+  try {
+    await api.post(`/admin/books/${masterId}/merge`, {
+      slave_ids: slaveIds
+    });
+    successMessage.value = `ادغام جدید با موفقیت ایجاد شد.`;
+    closeCreateMergeModal();
+    await fetchMasters(); // Refresh the main list
+  } catch (err) {
+    console.error("Failed to create merge:", err);
+    // It's helpful to show the specific error to the user if possible
+    error.value = err.data?.message || 'ایجاد ادغام جدید با خطا مواجه شد.';
+  } finally {
+    createMergeConfirmLoading.value = false;
+  }
+};
 </script>
