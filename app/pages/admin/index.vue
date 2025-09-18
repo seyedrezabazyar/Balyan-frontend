@@ -152,6 +152,20 @@
             </div>
           </div>
         </div>
+
+        <!-- New Card 5: Content Filter -->
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+             @click="$router.push('/admin/content-filter')">
+          <div class="flex items-center">
+            <div class="bg-red-500 p-3 rounded-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15l-3.5-3.5a6 6 0 018-8l3.5 3.5-8 8z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15l-3.5-3.5a6 6 0 018-8l3.5 3.5-8 8zM3 21l3.5-3.5"></path></svg>
+            </div>
+            <div class="mr-4">
+              <h3 class="text-lg font-medium text-gray-900">فیلتر محتوا</h3>
+              <p class="text-sm text-gray-500">مدیریت کلمات ممنوعه</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

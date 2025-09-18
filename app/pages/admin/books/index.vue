@@ -124,6 +124,15 @@
               <span v-if="book.is_hidden > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                 مخفی (سطح: {{ book.is_hidden }})
               </span>
+              <span v-if="book.content_filter_status === 'auto_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-200 text-purple-800">
+                بلاک خودکار
+              </span>
+               <span v-if="book.content_filter_status === 'manually_approved'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-200 text-green-800">
+                تایید دستی
+              </span>
+               <span v-if="book.content_filter_status === 'manually_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-200 text-red-800">
+                بلاک دستی
+              </span>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <div class="flex items-center justify-center gap-2 flex-wrap">
@@ -336,8 +345,17 @@ const deleteBook = async (id) => {
 
 const setBookHiddenLevel = async (book, level) => {
   try {
+    // First, update the visibility level
     await api.post(`/admin/books/${book.id}/toggle-visibility`, { level });
     successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
+
+    // Then, if the book was auto-blocked, update its filter status to manual
+    if (book.content_filter_status === 'auto_blocked') {
+      const newStatus = level > 0 ? 'manually_blocked' : 'manually_approved';
+      await api.post(`/admin/books/${book.id}/content-filter-status`, { status: newStatus });
+      successMessage.value += ' وضعیت فیلتر به دستی تغییر یافت.';
+    }
+
     await fetchBooks(); // Refresh list
   } catch (err) {
     console.error(`Failed to set hidden level for book ${book.id}:`, err);
