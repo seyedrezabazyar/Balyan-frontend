@@ -138,6 +138,20 @@
             </div>
           </div>
         </div>
+
+        <!-- New Card 4: Book Merging -->
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
+             @click="$router.push('/admin/books/merge')">
+          <div class="flex items-center">
+            <div class="bg-orange-500 p-3 rounded-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <div class="mr-4">
+              <h3 class="text-lg font-medium text-gray-900">ادغام کتاب‌ها</h3>
+              <p class="text-sm text-gray-500">ادغام و لغو ادغام کتاب‌ها</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
