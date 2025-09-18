@@ -53,14 +53,14 @@
               <div class="font-bold text-gray-900">{{ master.title }}</div>
               <div class="text-sm text-gray-500">{{ master.authors?.map(a => a.name).join(', ') }}</div>
             </div>
-            <div class="flex items-center">
-              <span class="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">
-                {{ master.variants.length }} Variants
+            <div class="flex items-center gap-x-4">
+              <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                {{ master.variants.length }} زیرمجموعه
               </span>
-              <button @click.stop="openMergeModal(master)" class="ml-4 px-3 py-1 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600">
+              <button @click.stop="openMergeModal(master)" class="px-3 py-1 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600">
                 افزودن زیرمجموعه
               </button>
-              <svg class="w-6 h-6 text-gray-500 transition-transform ml-2" :class="{'rotate-180': expandedMasters.includes(master.id)}">
+              <svg class="w-6 h-6 text-gray-500 transition-transform" :class="{'rotate-180': expandedMasters.includes(master.id)}">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </div>
