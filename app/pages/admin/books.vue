@@ -121,12 +121,18 @@
               <span v-else-if="book.master_book_id" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                 Variant (Master: {{ book.master_book_id }})
               </span>
+              <span v-if="book.is_hidden > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                مخفی (سطح: {{ book.is_hidden }})
+              </span>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <button @click="editBook(book.id)" class="text-indigo-600 hover:text-indigo-900 mr-2">ویرایش</button>
               <button @click="deleteBook(book.id)" class="text-red-600 hover:text-red-900 mr-2">حذف</button>
-              <button @click="toggleVisibility(book.id)" class="text-gray-600 hover:text-gray-900">
-                {{ book.is_hidden ? 'نمایش' : 'مخفی' }}
+              <button @click="toggleVisibility(book)" class="text-gray-600 hover:text-gray-900">
+                {{ book.is_hidden > 0 ? 'نمایش' : 'مخفی' }}
+              </button>
+              <button v-if="book.is_hidden > 0" @click="setHiddenLevel(book)" class="text-blue-600 hover:text-blue-900 ml-2">
+                تغییر سطح مخفی
               </button>
               <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="text-yellow-600 hover:text-yellow-900 ml-2">
                 لغو ادغام
@@ -321,16 +327,45 @@ const deleteBook = async (id) => {
     }
   }
 };
-const toggleVisibility = async (id) => {
+
+const setBookHiddenLevel = async (book, level) => {
   try {
-    await api.post(`/admin/books/${id}/toggle-visibility`);
+    await api.post(`/admin/books/${book.id}/hide`, { level });
     successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
     await fetchBooks(); // Refresh list
   } catch (err) {
-    console.error(`Failed to toggle visibility for book ${id}:`, err);
-    error.value = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+    console.error(`Failed to set hidden level for book ${book.id}:`, err);
+    const errorMessage = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+    error.value = errorMessage;
+    // Keep the error message on screen for a few seconds
+    setTimeout(() => {
+      if (error.value === errorMessage) {
+        error.value = null;
+      }
+    }, 5000);
+  }
+}
+
+const toggleVisibility = async (book) => {
+  const newLevel = book.is_hidden > 0 ? 0 : 1;
+  const actionText = newLevel > 0 ? 'مخفی کردن' : 'نمایش دادن';
+  if (confirm(`آیا از ${actionText} کتاب "${book.title}" اطمینان دارید؟`)) {
+    await setBookHiddenLevel(book, newLevel);
   }
 };
+
+const setHiddenLevel = async (book) => {
+  const newLevelStr = prompt(`سطح مخفی جدید را برای کتاب "${book.title}" وارد کنید. سطح فعلی ${book.is_hidden} است.`, book.is_hidden);
+  if (newLevelStr !== null) {
+    const newLevel = parseInt(newLevelStr, 10);
+    if (!isNaN(newLevel) && newLevel >= 0) {
+      await setBookHiddenLevel(book, newLevel);
+    } else {
+      alert('لطفاً یک عدد معتبر وارد کنید.');
+    }
+  }
+};
+
 const unmergeBook = async (book) => {
   if (confirm(`آیا از لغو ادغام کتاب "${book.title}" از کتاب اصلی اطمینان دارید؟`)) {
     try {
