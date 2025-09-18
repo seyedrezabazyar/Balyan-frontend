@@ -330,7 +330,7 @@ const deleteBook = async (id) => {
 
 const setBookHiddenLevel = async (book, level) => {
   try {
-    await api.post(`/admin/books/${book.id}/hide`, { level });
+    await api.post(`/admin/books/${book.id}/toggle-visibility`, { level });
     successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
     await fetchBooks(); // Refresh list
   } catch (err) {
