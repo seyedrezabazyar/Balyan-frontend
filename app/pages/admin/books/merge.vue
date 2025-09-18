@@ -82,9 +82,14 @@
                     <div class="text-sm text-gray-500">ID: {{ variant.id }}</div>
                   </div>
                 </div>
-                <button @click.stop="unmergeVariant(master, variant)" class="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
-                  لغو ادغام
-                </button>
+                <div class="flex items-center gap-x-2">
+                  <button @click.stop="changeMaster(master, variant)" class="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                    تبدیل به اصلی
+                  </button>
+                  <button @click.stop="unmergeVariant(master, variant)" class="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
+                    لغو ادغام
+                  </button>
+                </div>
               </li>
             </ul>
             <p v-else class="text-sm text-gray-500">هیچ کتاب زیرمجموعه‌ای برای این مورد وجود ندارد.</p>
@@ -286,6 +291,26 @@ const handleConfirmCreateMerge = async ({ masterId, slaveIds }) => {
     error.value = err.data?.message || 'ایجاد ادغام جدید با خطا مواجه شد.';
   } finally {
     createMergeConfirmLoading.value = false;
+  }
+};
+
+const changeMaster = async (currentMaster, newMaster) => {
+  if (!confirm(`آیا مطمئن هستید که می‌خواهید کتاب "${newMaster.title}" را به عنوان کتاب اصلی جدید برای این گروه انتخاب کنید؟`)) {
+    return;
+  }
+
+  error.value = null;
+  successMessage.value = '';
+
+  try {
+    await api.post(`/admin/books/${currentMaster.id}/change-master`, {
+      new_master_id: newMaster.id
+    });
+    successMessage.value = 'کتاب اصلی با موفقیت تغییر کرد.';
+    await fetchMasters(); // Refresh the entire list
+  } catch (err) {
+    console.error("Failed to change master book:", err);
+    error.value = err.data?.message || 'تغییر کتاب اصلی با خطا مواجه شد.';
   }
 };
 </script>
