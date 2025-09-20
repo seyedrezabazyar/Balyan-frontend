@@ -65,6 +65,7 @@
         <slot />
       </div>
     </main>
+    <ApiDebugger />
   </div>
 </template>
 
@@ -72,6 +73,7 @@
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useApi } from '~/composables/useApi'
+import ApiDebugger from '~/components/ApiDebugger.vue';
 
 const authStore = useAuthStore()
 const router = useRouter()
