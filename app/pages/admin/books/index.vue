@@ -349,18 +349,14 @@ const setBookHiddenLevel = async (book, level) => {
     await api.post(`/admin/books/${book.id}/toggle-visibility`, { level });
     successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
 
-    // Optimistically update the book's state
-    book.is_hidden = level;
-
     // Then, if the book was auto-blocked, update its filter status to manual
     if (book.content_filter_status === 'auto_blocked') {
       const newStatus = level > 0 ? 'manually_blocked' : 'manually_approved';
       await api.post(`/admin/books/${book.id}/content-filter-status`, { status: newStatus });
       successMessage.value += ' وضعیت فیلتر به دستی تغییر یافت.';
-      // Optimistically update the status
-      book.content_filter_status = newStatus;
     }
 
+    await fetchBooks(); // Refresh list
   } catch (err) {
     console.error(`Failed to set hidden level for book ${book.id}:`, err);
     const errorMessage = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
