@@ -121,8 +121,8 @@
               <span v-else-if="book.master_book_id" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                 Variant (Master: {{ book.master_book_id }})
               </span>
-              <span v-if="book.is_hidden > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                مخفی (سطح: {{ book.is_hidden }})
+              <span v-if="book.hidden_level > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                مخفی (سطح: {{ book.hidden_level }})
               </span>
               <span v-if="book.content_filter_status === 'auto_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-200 text-purple-800">
                 بلاک خودکار
@@ -143,9 +143,9 @@
                   حذف
                 </button>
                 <button @click="toggleVisibility(book)" class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
-                  {{ book.is_hidden > 0 ? 'نمایش' : 'مخفی' }}
+                  {{ book.hidden_level > 0 ? 'نمایش' : 'مخفی' }}
                 </button>
-                <button v-if="book.is_hidden > 0" @click="setHiddenLevel(book)" class="px-3 py-1 text-sm font-medium text-white bg-teal-500 rounded-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition">
+                <button v-if="book.hidden_level > 0" @click="setHiddenLevel(book)" class="px-3 py-1 text-sm font-medium text-white bg-teal-500 rounded-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition">
                   تغییر سطح
                 </button>
                 <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
@@ -371,15 +371,24 @@ const setBookHiddenLevel = async (book, level) => {
 }
 
 const toggleVisibility = async (book) => {
-  const newLevel = book.is_hidden > 0 ? 0 : 1;
-  const actionText = newLevel > 0 ? 'مخفی کردن' : 'نمایش دادن';
+  const actionText = book.hidden_level > 0 ? 'نمایش دادن' : 'مخفی کردن';
   if (confirm(`آیا از ${actionText} کتاب "${book.title}" اطمینان دارید؟`)) {
-    await setBookHiddenLevel(book, newLevel);
+    try {
+      // Call the API with NO request body, as per backend developer instructions
+      await api.post(`/admin/books/${book.id}/toggle-visibility`);
+      successMessage.value = 'وضعیت نمایش کتاب با موفقیت تغییر کرد.';
+
+      // Refresh the list to get the new state from the server
+      await fetchBooks();
+    } catch (err) {
+      console.error(`Failed to toggle visibility for book ${book.id}:`, err);
+      error.value = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+    }
   }
 };
 
 const setHiddenLevel = async (book) => {
-  const newLevelStr = prompt(`سطح مخفی جدید را برای کتاب "${book.title}" وارد کنید. سطح فعلی ${book.is_hidden} است.`, book.is_hidden);
+  const newLevelStr = prompt(`سطح مخفی جدید را برای کتاب "${book.title}" وارد کنید. سطح فعلی ${book.hidden_level} است.`, book.hidden_level);
   if (newLevelStr !== null) {
     const newLevel = parseInt(newLevelStr, 10);
     if (!isNaN(newLevel) && newLevel >= 0) {
