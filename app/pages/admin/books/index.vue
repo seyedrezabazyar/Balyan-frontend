@@ -145,6 +145,9 @@
                 <button @click="toggleVisibility(book)" class="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition">
                   {{ book.hidden_level > 0 ? 'نمایش' : 'مخفی' }}
                 </button>
+                <button v-if="book.hidden_level > 0" @click="setHiddenLevel(book)" class="px-3 py-1 text-sm font-medium text-white bg-teal-500 rounded-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition">
+                  تغییر سطح
+                </button>
                 <button v-if="!book.is_master && book.master_book_id" @click="unmergeBook(book)" class="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
                   لغو ادغام
                 </button>
@@ -353,6 +356,45 @@ const toggleVisibility = async (book) => {
     } catch (err) {
       console.error(`Failed to toggle visibility for book ${book.id}:`, err);
       error.value = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+    }
+  }
+};
+
+const setBookHiddenLevel = async (book, level) => {
+  try {
+    // First, update the visibility level
+    await api.post(`/admin/books/${book.id}/update-hidden-level`, { level });
+    successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
+
+    // Then, if the book was auto-blocked, update its filter status to manual
+    if (book.content_filter_status === 'auto_blocked') {
+      const newStatus = level > 0 ? 'manually_blocked' : 'manually_approved';
+      await api.post(`/admin/books/${book.id}/content-filter-status`, { status: newStatus });
+      successMessage.value += ' وضعیت فیلتر به دستی تغییر یافت.';
+    }
+
+    await fetchBooks(); // Refresh list
+  } catch (err) {
+    console.error(`Failed to set hidden level for book ${book.id}:`, err);
+    const errorMessage = err.data?.message || 'تغییر وضعیت نمایش با خطا مواجه شد.';
+    error.value = errorMessage;
+    // Keep the error message on screen for a few seconds
+    setTimeout(() => {
+      if (error.value === errorMessage) {
+        error.value = null;
+      }
+    }, 5000);
+  }
+}
+
+const setHiddenLevel = async (book) => {
+  const newLevelStr = prompt(`سطح مخفی جدید را برای کتاب "${book.title}" وارد کنید. سطح فعلی ${book.hidden_level} است.`, book.hidden_level);
+  if (newLevelStr !== null) {
+    const newLevel = parseInt(newLevelStr, 10);
+    if (!isNaN(newLevel) && newLevel >= 0) {
+      await setBookHiddenLevel(book, newLevel);
+    } else {
+      alert('لطفاً یک عدد معتبر وارد کنید.');
     }
   }
 };
