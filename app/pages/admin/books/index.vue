@@ -124,7 +124,7 @@
                     class="inline-flex items-center"
                     :class="book.override ? 'text-green-500' : 'text-red-500'"
                     title="وضعیت این کتاب توسط مدیر تثبیت شده و تحت تاثیر فیلتر خودکار قرار نمی‌گیرد.">
-                    <span class="w-4 h-4 i-heroicons-lock-closed-solid"></span>
+                    <span>[LOCK]</span>
                   </span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
