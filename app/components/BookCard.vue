@@ -2,7 +2,7 @@
   <div class="bg-white rounded-lg shadow hover:shadow-lg transition h-full flex flex-col">
     <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
-        <img :src="book.image && book.image.thumbnail_url ? book.image.thumbnail_url : '/placeholder-book.jpg'"
+        <img :src="imageUrl"
              :alt="book.title"
              class="w-full h-48 object-cover rounded-t-lg">
         <div v-if="book.discount_percent"
@@ -66,6 +66,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
   book: {
     type: Object,
@@ -80,4 +82,14 @@ const props = defineProps({
 const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
 };
+
+const imageUrl = computed(() => {
+  // The logic is to show the image only if it exists and is approved.
+  // Otherwise, fall back to a placeholder.
+  if (props.book.image && props.book.image.thumbnail_url && props.book.image.status === 'approved') {
+    return props.book.image.thumbnail_url;
+  }
+  // This is a generic placeholder. You might want to create one that matches your site's design.
+  return '/images/placeholders/book-placeholder-thumb.jpg';
+});
 </script>

@@ -212,20 +212,23 @@ async function fetchBookImages() {
   try {
     const response = await apiPublic.get(`/book/${slug}/images`);
     if (response.success && Array.isArray(response.data)) {
-      bookImages.value = response.data;
-      // If there are gallery images, add the main book image to the start of the list
-      // if it's not already there. This makes the gallery complete.
-      if (book.value?.image?.url) {
-        const mainImageInGallery = bookImages.value.find(img => img.image_url === book.value.image.url);
+      // Filter images to only show approved ones
+      const approvedImages = response.data.filter(img => img.status === 'approved');
+
+      // If the main book image is approved, make sure it's in the gallery
+      if (book.value?.image?.url && book.value.image.status === 'approved') {
+        const mainImageInGallery = approvedImages.find(img => img.image_url === book.value.image.url);
         if (!mainImageInGallery) {
-          bookImages.value.unshift({
-            id: `book-${book.value.id}-main-image`, // A more stable, unique key
+          approvedImages.unshift({
+            id: `book-${book.value.id}-main-image`,
             image_url: book.value.image.url,
             thumbnail_url: book.value.image.thumbnail_url || book.value.image.url,
-            alt_text: book.value.title
+            alt_text: book.value.title,
+            status: 'approved' // Explicitly set status
           });
         }
       }
+      bookImages.value = approvedImages;
     }
   } catch (err) {
     // Fail silently, as the main book data is more important.
@@ -252,8 +255,12 @@ async function fetchBook() {
       purchaseStatus.value = response.data.user_purchase_status;
       useHead({ title: response.data.book.title });
 
-      // Set the initial displayed image
-      displayedImage.value = book.value.image;
+      // Set the initial displayed image only if it's approved
+      if (book.value.image && book.value.image.status === 'approved') {
+        displayedImage.value = book.value.image;
+      } else {
+        displayedImage.value = null; // This will cause the placeholder to be shown
+      }
 
       // Fetch additional images for the gallery
       await fetchBookImages();
