@@ -33,6 +33,12 @@
             </NuxtLink>
           </li>
           <li>
+            <NuxtLink to="/admin/book-images" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
+              <span class="w-6 h-6 i-heroicons-photo-solid"></span>
+              <span>بازبینی تصاویر کتاب</span>
+            </NuxtLink>
+          </li>
+          <li>
             <NuxtLink to="/admin/orders" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
               <span class="w-6 h-6 i-heroicons-shopping-cart-solid"></span>
               <span>مدیریت سفارشات</span>
