@@ -84,12 +84,9 @@ const formatPrice = (price) => {
 };
 
 const imageUrl = computed(() => {
-  // The logic is to show the image only if it exists and is approved.
-  // Otherwise, fall back to a placeholder.
   if (props.book.image && props.book.image.thumbnail_url && props.book.image.status === 'approved') {
     return props.book.image.thumbnail_url;
   }
-  // This is a generic placeholder. You might want to create one that matches your site's design.
   return '/images/placeholders/book-placeholder-thumb.jpg';
 });
 </script>
