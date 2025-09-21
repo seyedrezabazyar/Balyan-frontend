@@ -136,7 +136,7 @@ async function fetchImages() {
     const response = await api.get('/book-images', {
       params: { status: 'pending', per_page: 100 }
     })
-    images.value = response.data?.data || []
+    images.value = response.data || []
     initializeStates()
   } catch (err) {
     console.error('Error fetching images:', err)
