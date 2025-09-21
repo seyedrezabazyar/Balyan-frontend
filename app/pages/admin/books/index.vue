@@ -120,15 +120,20 @@
                   <span v-if="book.is_master" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Master</span>
                   <span v-else-if="book.master_book_id" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Variant (Master: {{ book.master_book_id }})</span>
                   <!-- Lock Icon for Manual Override -->
-                  <span v-if="book.override"
-                    class="inline-flex items-center text-gray-500"
+                  <span
+                    class="inline-flex items-center"
+                    :class="book.override ? 'text-green-500' : 'text-red-500'"
                     title="وضعیت این کتاب توسط مدیر تثبیت شده و تحت تاثیر فیلتر خودکار قرار نمی‌گیرد.">
                     <span class="w-4 h-4 i-heroicons-lock-closed-solid"></span>
                   </span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col items-center gap-2">
                   <span v-if="book.hidden_level > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">مخفی (سطح: {{ book.hidden_level }})</span>
                   <span v-if="book.content_filter_status === 'auto_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-200 text-purple-800">بلاک خودکار</span>
+                  <div class="mt-2 p-1 bg-gray-100 rounded">
+                    <p class="text-xs font-mono text-left">override:</p>
+                    <code class="block text-xs text-left">{{ JSON.stringify(book.override) }}</code>
+                  </div>
                 </div>
               </div>
             </td>
