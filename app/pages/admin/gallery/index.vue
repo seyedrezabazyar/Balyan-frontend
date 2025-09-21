@@ -90,9 +90,8 @@
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <button
-                  disabled
-                  class="w-full mt-2 bg-yellow-500 text-white px-3 py-1 text-sm rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  title="API for this action is not available yet"
+                @click="resetImageStatus(image, 'approved')"
+                class="w-full mt-2 bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600"
                 >
                   انتقال به صف بازبینی
                 </button>
@@ -118,9 +117,8 @@
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <p class="text-xs text-gray-500 mt-1">دلیل رد: {{ image.rejection_reason }}</p>
                 <button
-                  disabled
-                  class="w-full mt-2 bg-yellow-500 text-white px-3 py-1 text-sm rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  title="API for this action is not available yet"
+                @click="resetImageStatus(image, 'rejected')"
+                class="w-full mt-2 bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600"
                 >
                   انتقال به صف بازبینی
                 </button>
@@ -269,6 +267,17 @@ async function loadMore(status) {
     alert(`خطا در بارگذاری صفحات بیشتر.`)
   } finally {
     loadingMore.value = false
+  }
+}
+
+async function resetImageStatus(image, fromList) {
+  try {
+    await api.patch(`/book-images/${image.id}/reset`)
+    // Refetch all lists to ensure UI is in sync with the database
+    await fetchAllImages()
+  } catch (err) {
+    console.error(`Error resetting image ${image.id} status:`, err)
+    alert(`خطا در بازگرداندن وضعیت تصویر.`)
   }
 }
 </script>
