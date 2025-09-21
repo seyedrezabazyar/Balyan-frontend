@@ -133,7 +133,7 @@ async function fetchImages() {
   loading.value = true
   error.value = null
   try {
-    const response = await api.get('/book-images', {
+    const response = await api.get('/book/all/images', {
       params: { status: 'pending', per_page: 100 }
     })
     images.value = response.data?.data || []
@@ -219,7 +219,7 @@ async function submitReviews() {
   const payload = { images_to_approve, images_to_reject }
 
   try {
-    const response = await api.patch('/book-images/review-bulk', payload)
+    const response = await api.patch('/book/images/review-bulk', payload)
 
     if (response.data?.failed_count > 0) {
         let alertMessage = `عملیات با موفقیت نسبی انجام شد.\n` +
