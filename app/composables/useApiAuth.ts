@@ -79,6 +79,7 @@ export const useApiAuth = () => {
     get: (url: string, opts?: any) => $api(url, { method: 'GET', ...opts }),
     post: (url: string, body?: any, opts?: any) => $api(url, { method: 'POST', body, ...opts }),
     put: (url: string, body?: any, opts?: any) => $api(url, { method: 'PUT', body, ...opts }),
+    patch: (url: string, body?: any, opts?: any) => $api(url, { method: 'PATCH', body, ...opts }),
     delete: (url: string, opts?: any) => $api(url, { method: 'DELETE', ...opts }),
     $api,
   }
