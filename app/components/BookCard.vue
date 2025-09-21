@@ -3,7 +3,7 @@
     <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
         <img :src="imageUrl"
-             :alt="book.title"
+             :alt="book.image && book.image.alt_text ? book.image.alt_text : book.title"
              class="w-full h-48 object-cover rounded-t-lg">
         <div v-if="book.discount_percent"
              class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
@@ -84,9 +84,12 @@ const formatPrice = (price) => {
 };
 
 const imageUrl = computed(() => {
-  if (props.book.image && props.book.image.thumbnail_url && props.book.image.status === 'approved') {
-    return props.book.image.thumbnail_url;
+  if (props.book.image) {
+    // First, try thumbnail_url, then fall back to the main url.
+    // This handles both real images and placeholder images from the API.
+    return props.book.image.thumbnail_url || props.book.image.url;
   }
+  // If for some reason the book has no image object at all, return a static placeholder.
   return '/images/placeholders/book-placeholder-thumb.jpg';
 });
 </script>
