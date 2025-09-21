@@ -84,12 +84,12 @@ const formatPrice = (price) => {
 };
 
 const imageUrl = computed(() => {
-  if (props.book.image) {
-    // First, try thumbnail_url, then fall back to the main url.
-    // This handles both real images and placeholder images from the API.
+  // Only show the image if it exists and its status is 'approved'.
+  if (props.book.image && props.book.image.status === 'approved') {
+    // Prioritize thumbnail_url, but fall back to the main url.
     return props.book.image.thumbnail_url || props.book.image.url;
   }
-  // If for some reason the book has no image object at all, return a static placeholder.
+  // For any other status (e.g., pending, rejected) or if there's no image, show the placeholder.
   return '/images/placeholders/book-placeholder-thumb.jpg';
 });
 </script>
