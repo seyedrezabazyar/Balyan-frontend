@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-semibold">بازبینی تصاویر کتاب‌ها</h1>
+      <h1 class="text-2xl font-semibold">گالری تصاویر کتاب ها</h1>
       <div v-if="!loading" class="text-gray-600">
         <span class="font-medium">{{ pendingCount }}</span> تصویر در انتظار،
         <span class="font-medium text-green-600">{{ approvedCount }}</span> تایید شده،
@@ -101,7 +101,7 @@ import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
   layout: 'admin',
-  title: 'بازبینی تصاویر کتاب',
+  title: 'گالری تصاویر کتاب ها',
   middleware: 'admin'
 })
 
