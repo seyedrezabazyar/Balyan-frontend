@@ -120,7 +120,7 @@
                   <span v-if="book.is_master" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Master</span>
                   <span v-else-if="book.master_book_id" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Variant (Master: {{ book.master_book_id }})</span>
                   <!-- Lock Icon for Manual Override -->
-                  <span v-if="book.content_filter_status === 'manually_approved' || book.content_filter_status === 'manually_blocked'"
+                  <span v-if="book.override"
                     class="inline-flex items-center text-gray-500"
                     title="وضعیت این کتاب توسط مدیر تثبیت شده و تحت تاثیر فیلتر خودکار قرار نمی‌گیرد.">
                     <span class="w-4 h-4 i-heroicons-lock-closed-solid"></span>
@@ -129,8 +129,6 @@
                 <div class="flex items-center gap-2">
                   <span v-if="book.hidden_level > 0" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">مخفی (سطح: {{ book.hidden_level }})</span>
                   <span v-if="book.content_filter_status === 'auto_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-200 text-purple-800">بلاک خودکار</span>
-                  <span v-if="book.content_filter_status === 'manually_approved'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-200 text-green-800">تایید دستی</span>
-                  <span v-if="book.content_filter_status === 'manually_blocked'" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-200 text-red-800">بلاک دستی</span>
                 </div>
               </div>
             </td>
@@ -365,13 +363,6 @@ const setBookHiddenLevel = async (book, level) => {
     // Correct endpoint for setting a specific level
     await api.post(`/admin/books/${book.id}/update-hidden-level`, { level });
     successMessage.value = 'وضعیت نمایش کتاب تغییر کرد.';
-
-    // Then, if the book was auto-blocked, update its filter status to manual
-    if (book.content_filter_status === 'auto_blocked') {
-      const newStatus = level > 0 ? 'manually_blocked' : 'manually_approved';
-      await api.post(`/admin/books/${book.id}/content-filter-status`, { status: newStatus });
-      successMessage.value += ' وضعیت فیلتر به دستی تغییر یافت.';
-    }
 
     await fetchBooks(); // Refresh list
   } catch (err) {
