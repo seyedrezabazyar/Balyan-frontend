@@ -198,17 +198,20 @@ async function submitReviews() {
   const images_to_approve = []
   const images_to_reject = []
 
+  // Process all images currently loaded on the page
   for (const id in reviewStates.value) {
     const state = reviewStates.value[id];
-    if (state.status === 'approved') {
+    // Treat 'pending' as 'approved' during final submission
+    if (state.status === 'approved' || state.status === 'pending') {
       images_to_approve.push(parseInt(id, 10))
     } else if (state.status === 'rejected') {
       images_to_reject.push({ id: parseInt(id, 10), rejection_reason: state.reason })
     }
   }
 
+  // Do not submit if no action is to be taken (e.g., all images were left pending and are now being approved)
   if (images_to_approve.length === 0 && images_to_reject.length === 0) {
-    alert("هیچ تغییری برای ثبت وجود ندارد.");
+    alert("هیچ تصویری برای بررسی وجود ندارد.");
     submitting.value = false;
     return;
   }
@@ -232,6 +235,7 @@ async function submitReviews() {
         alert(response.message || 'عملیات با موفقیت انجام شد.');
     }
 
+    // Refresh the list of images
     await fetchImages()
 
   } catch (err) {

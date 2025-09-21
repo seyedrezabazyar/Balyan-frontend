@@ -8,7 +8,26 @@
     </div>
     <article v-else-if="book" class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div class="md:col-span-1">
-        <img v-if="book.image?.url" :src="book.image.url" :alt="book.title" class="w-full rounded-lg shadow-lg">
+        <!-- Main Image Display -->
+        <div class="mb-4">
+          <img v-if="displayedImage" :src="displayedImage.url || displayedImage.image_url" :alt="book.title" class="w-full rounded-lg shadow-lg aspect-[3/4] object-cover">
+          <div v-else class="w-full rounded-lg shadow-lg aspect-[3/4] bg-gray-200 flex items-center justify-center">
+            <span class="text-gray-500">بدون تصویر</span>
+          </div>
+        </div>
+
+        <!-- Thumbnail Gallery -->
+        <div v-if="bookImages && bookImages.length > 1" class="grid grid-cols-4 gap-2">
+          <button
+            v-for="image in bookImages"
+            :key="image.id"
+            @click="displayedImage = { url: image.image_url, alt: image.alt_text }"
+            class="rounded-lg overflow-hidden border-2 transition"
+            :class="(displayedImage?.url || displayedImage?.image_url) === image.image_url ? 'border-blue-500' : 'border-transparent hover:border-blue-300'"
+          >
+            <img :src="image.thumbnail_url" :alt="image.alt_text || book.title" class="w-full h-full object-cover aspect-[3/4]">
+          </button>
+        </div>
       </div>
       <div class="md:col-span-2">
         <h1 v-if="book.title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">{{ book.title }}</h1>
@@ -113,15 +132,19 @@ import { ref, computed, watch } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { usePurchaseStore } from '~/stores/purchase';
 import { useApiAuth } from '~/composables/useApiAuth';
+import { useApi } from '~/composables/useApi';
 
 const route = useRoute();
 const slug = route.params.slug;
 const authStore = useAuthStore();
 const purchaseStore = usePurchaseStore();
-const api = useApiAuth();
+const apiAuth = useApiAuth();
+const apiPublic = useApi();
 
 // State for the component
 const book = ref(null);
+const bookImages = ref([]);
+const displayedImage = ref(null);
 const purchaseStatus = ref(null); // Will hold the user_purchase_status object
 const loading = ref(true);
 const error = ref(null);
@@ -185,13 +208,38 @@ const allDownloads = computed(() => {
     return downloads;
 });
 
+async function fetchBookImages() {
+  try {
+    const response = await apiPublic.get(`/book/${slug}/images`);
+    if (response.success && Array.isArray(response.data)) {
+      bookImages.value = response.data;
+      // If there are gallery images, add the main book image to the start of the list
+      // if it's not already there. This makes the gallery complete.
+      if (book.value?.image?.url) {
+        const mainImageInGallery = bookImages.value.find(img => img.image_url === book.value.image.url);
+        if (!mainImageInGallery) {
+          bookImages.value.unshift({
+            id: `book-${book.value.id}-main-image`, // A more stable, unique key
+            image_url: book.value.image.url,
+            thumbnail_url: book.value.image.thumbnail_url || book.value.image.url,
+            alt_text: book.value.title
+          });
+        }
+      }
+    }
+  } catch (err) {
+    // Fail silently, as the main book data is more important.
+    console.warn('Could not fetch additional book images:', err);
+  }
+}
 
 async function fetchBook() {
   loading.value = true;
   error.value = null;
   debugInfo.value = null;
+  bookImages.value = []; // Reset images on each fetch
   try {
-    const response = await api.get(`/book/${slug}`);
+    const response = await apiAuth.get(`/book/${slug}`);
 
     debugInfo.value = {
       timestamp: new Date().toISOString(),
@@ -203,6 +251,13 @@ async function fetchBook() {
       book.value = response.data.book;
       purchaseStatus.value = response.data.user_purchase_status;
       useHead({ title: response.data.book.title });
+
+      // Set the initial displayed image
+      displayedImage.value = book.value.image;
+
+      // Fetch additional images for the gallery
+      await fetchBookImages();
+
     } else {
       throw new Error('Invalid book data received from API.');
     }
@@ -245,7 +300,7 @@ async function processPurchase() {
   notification.value = { show: false, message: '', type: 'success' };
 
   try {
-    const response = await api.post(`/book/${slug}/buy`);
+    const response = await apiAuth.post(`/book/${slug}/buy`);
 
     // On success, set the flag and refetch data.
     // The success message is now handled in the template.
