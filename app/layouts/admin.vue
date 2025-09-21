@@ -15,6 +15,12 @@
             </NuxtLink>
           </li>
           <li>
+            <NuxtLink to="/admin/api-sync" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
+              <span class="w-6 h-6 i-heroicons-arrow-path-solid"></span>
+              <span>همگام‌سازی با API</span>
+            </NuxtLink>
+          </li>
+          <li>
             <NuxtLink to="/admin/users" class="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-700" active-class="bg-gray-900">
               <span class="w-6 h-6 i-heroicons-user-group-solid"></span>
               <span>مدیریت کاربران</span>
