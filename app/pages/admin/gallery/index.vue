@@ -3,29 +3,8 @@
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-semibold">گالری تصاویر کتاب ها</h1>
       <div v-if="!loading" class="text-gray-600">
-        <span class="font-medium">{{ pendingCount }}</span> تصویر در انتظار،
-        <span class="font-medium text-green-600">{{ approvedCount }}</span> تایید شده،
-        <span class="font-medium text-red-600">{{ rejectedCount }}</span> رد شده
+        <span class="font-medium">{{ images.length }}</span> تصویر در انتظار بازبینی
       </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="mb-4 flex justify-between items-center">
-      <button
-        @click="approveAllPending"
-        class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-green-600 disabled:bg-gray-400"
-        :disabled="pendingCount === 0 || submitting"
-      >
-        تایید همه باقی‌مانده‌ها
-      </button>
-      <button
-        @click="submitReviews"
-        :disabled="submitting || (approvedCount === 0 && rejectedCount === 0)"
-        class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-      >
-        <span v-if="submitting">در حال ارسال...</span>
-        <span v-else>ثبت تغییرات</span>
-      </button>
     </div>
 
     <!-- Loading and Error States -->
@@ -38,37 +17,25 @@
     </div>
 
     <!-- Image Grid -->
-    <div v-if="!loading && !error" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <div v-if="!loading && !error && images.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
       <div
         v-for="image in images"
         :key="image.id"
-        class="relative border-2 rounded-lg overflow-hidden shadow-sm"
-        :class="{
-          'border-green-500': reviewStates[image.id]?.status === 'approved',
-          'border-red-500': reviewStates[image.id]?.status === 'rejected',
-          'border-gray-300': reviewStates[image.id]?.status === 'pending'
-        }"
+        class="relative border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm"
       >
         <img :src="image.thumbnail_url" :alt="image.book_title" class="w-full h-48 object-cover">
 
-        <div class="absolute top-1 right-1">
-            <span v-if="reviewStates[image.id]?.status === 'approved'" class="h-6 w-6 bg-green-500 text-white flex items-center justify-center rounded-full i-heroicons-check-solid"></span>
-            <span v-if="reviewStates[image.id]?.status === 'rejected'" class="h-6 w-6 bg-red-500 text-white flex items-center justify-center rounded-full i-heroicons-x-mark-solid"></span>
-        </div>
-
         <div class="p-2">
-          <h3 class="text-sm font-medium truncate">{{ image.book_title }}</h3>
+          <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
           <div class="flex justify-center gap-2 mt-2">
-            <template v-if="reviewStates[image.id]?.status === 'pending'">
-              <button @click="approveImage(image.id)" class="w-1/2 bg-green-500 text-white px-3 py-1 text-sm rounded hover:bg-green-600">تایید</button>
-              <button @click="promptReject(image)" class="w-1/2 bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600">رد</button>
-            </template>
-            <template v-else>
-              <button @click="undoAction(image.id)" class="w-full bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600">لغو</button>
-            </template>
+            <button @click="approveImage(image.id)" class="w-1/2 bg-green-500 text-white px-3 py-1 text-sm rounded hover:bg-green-600">تایید</button>
+            <button @click="promptReject(image)" class="w-1/2 bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600">رد</button>
           </div>
         </div>
       </div>
+    </div>
+    <div v-if="!loading && !error && images.length === 0" class="text-center py-10">
+      <p>هیچ تصویر جدیدی برای بازبینی وجود ندارد.</p>
     </div>
 
     <!-- Rejection Reason Modal -->
@@ -109,25 +76,11 @@ const api = useApiAuth()
 
 const images = ref([])
 const loading = ref(true)
-const submitting = ref(false)
 const error = ref(null)
-
-const reviewStates = ref({}) // { [id]: { status: 'pending' | 'approved' | 'rejected', reason?: '...' } }
 
 const showRejectionModal = ref(false)
 const imageToReject = ref(null)
 const rejectionReason = ref('')
-
-const statusCounts = computed(() => {
-  return Object.values(reviewStates.value).reduce((counts, state) => {
-    counts[state.status] = (counts[state.status] || 0) + 1
-    return counts
-  }, { pending: 0, approved: 0, rejected: 0 })
-})
-
-const pendingCount = computed(() => statusCounts.value.pending)
-const approvedCount = computed(() => statusCounts.value.approved)
-const rejectedCount = computed(() => statusCounts.value.rejected)
 
 async function fetchImages() {
   loading.value = true
@@ -137,7 +90,6 @@ async function fetchImages() {
       params: { status: 'pending', per_page: 100 }
     })
     images.value = response.data || []
-    initializeStates()
   } catch (err) {
     console.error('Error fetching images:', err)
     error.value = 'خطا در بارگذاری تصاویر. لطفاً دوباره تلاش کنید.'
@@ -146,18 +98,19 @@ async function fetchImages() {
   }
 }
 
-function initializeStates() {
-  const newStates = {}
-  images.value.forEach(img => {
-    newStates[img.id] = { status: 'pending' }
-  })
-  reviewStates.value = newStates
-}
-
 onMounted(fetchImages)
 
-function approveImage(id) {
-  reviewStates.value[id] = { status: 'approved' }
+async function approveImage(id) {
+  try {
+    await api.patch('/book-images/review-bulk', {
+      images_to_approve: [id]
+    })
+    // Remove the image from the list after successful approval
+    images.value = images.value.filter(img => img.id !== id)
+  } catch (err) {
+    console.error(`Error approving image ${id}:`, err)
+    alert(`خطا در تایید تصویر. لطفاً دوباره تلاش کنید.`)
+  }
 }
 
 function promptReject(image) {
@@ -172,77 +125,19 @@ function cancelReject() {
   rejectionReason.value = ''
 }
 
-function confirmReject() {
+async function confirmReject() {
   if (!rejectionReason.value || !imageToReject.value) return
   const imageId = imageToReject.value.id
-  reviewStates.value[imageId] = { status: 'rejected', reason: rejectionReason.value }
-  cancelReject()
-}
-
-function undoAction(id) {
-  reviewStates.value[id] = { status: 'pending' }
-}
-
-function approveAllPending() {
-    for (const id in reviewStates.value) {
-        if (reviewStates.value[id].status === 'pending') {
-            reviewStates.value[id].status = 'approved'
-        }
-    }
-}
-
-async function submitReviews() {
-  submitting.value = true
-  error.value = null
-
-  const images_to_approve = []
-  const images_to_reject = []
-
-  // Process all images currently loaded on the page
-  for (const id in reviewStates.value) {
-    const state = reviewStates.value[id];
-    // Treat 'pending' as 'approved' during final submission
-    if (state.status === 'approved' || state.status === 'pending') {
-      images_to_approve.push(parseInt(id, 10))
-    } else if (state.status === 'rejected') {
-      images_to_reject.push({ id: parseInt(id, 10), rejection_reason: state.reason })
-    }
-  }
-
-  // Do not submit if no action is to be taken (e.g., all images were left pending and are now being approved)
-  if (images_to_approve.length === 0 && images_to_reject.length === 0) {
-    alert("هیچ تصویری برای بررسی وجود ندارد.");
-    submitting.value = false;
-    return;
-  }
-
-  const payload = { images_to_approve, images_to_reject }
-
   try {
-    const response = await api.patch('/book-images/review-bulk', payload)
-
-    if (response.data?.failed_count > 0) {
-        let alertMessage = `عملیات با موفقیت نسبی انجام شد.\n` +
-            `تایید شده: ${response.data.approved_count}\n` +
-            `رد شده: ${response.data.rejected_count}\n` +
-            `ناموفق: ${response.data.failed_count}`;
-
-        response.data.failed_items.forEach(item => {
-            alertMessage += `\n- تصویر با شناسه ${item.id}: ${item.error}`;
-        });
-        alert(alertMessage);
-    } else {
-        alert(response.message || 'عملیات با موفقیت انجام شد.');
-    }
-
-    // Refresh the list of images
-    await fetchImages()
-
+    await api.patch('/book-images/review-bulk', {
+      images_to_reject: [{ id: imageId, rejection_reason: rejectionReason.value }]
+    })
+    // Remove the image from the list after successful rejection
+    images.value = images.value.filter(img => img.id !== imageId)
+    cancelReject() // Close the modal and reset state
   } catch (err) {
-    console.error('Error submitting reviews:', err)
-    error.value = err.data?.message || 'خطا در ارسال بازبینی‌ها. لطفاً دوباره تلاش کنید.'
-  } finally {
-    submitting.value = false
+    console.error(`Error rejecting image ${imageId}:`, err)
+    alert(`خطا در رد تصویر. لطفاً دوباره تلاش کنید.`)
   }
 }
 </script>
