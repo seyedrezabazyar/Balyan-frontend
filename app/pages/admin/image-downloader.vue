@@ -48,14 +48,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useApiAuth } from '~/composables/useApiAuth'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   middleware: 'admin',
   layout: 'default'
 })
 
-const api = useApiAuth()
+const authStore = useAuthStore()
 const limit = ref(50)
 const loading = ref(false)
 const message = ref('')
@@ -74,22 +74,29 @@ const startImageDownloader = async () => {
   }
 
   try {
-    // The endpoint is not under /api/v1, so we use a relative path to go up one level from the base URL.
-    const response = await api.post('/../image-downloader/start', { limit: limit.value })
+    const response = await $fetch('/api/image-downloader/start', {
+      method: 'POST',
+      body: { limit: limit.value },
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      }
+    })
     message.value = response.message || 'عملیات با موفقیت شروع شد.'
     messageType.value = 'success'
   } catch (error) {
-    if (error.response && error.response.data && error.response.data.errors) {
-      const errors = error.response.data.errors
-      const firstErrorKey = Object.keys(errors)[0]
-      message.value = errors[firstErrorKey][0]
-    } else if (error.response && error.response.data && error.response.data.message) {
-      message.value = error.response.data.message
+    const errorData = error.data || {}
+    if (errorData.errors) {
+      const firstErrorKey = Object.keys(errorData.errors)[0]
+      message.value = errorData.errors[firstErrorKey][0]
+    } else if (errorData.message) {
+      message.value = errorData.message
     } else {
       message.value = 'یک خطای ناشناخته رخ داد.'
     }
     messageType.value = 'error'
-    console.error('Error starting image downloader:', error.response?.data || error)
+    console.error('Error starting image downloader:', errorData)
   } finally {
     loading.value = false
   }
