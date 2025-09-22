@@ -74,7 +74,8 @@ const startImageDownloader = async () => {
   }
 
   try {
-    const response = await api.post('/image-downloader/start', { limit: limit.value })
+    // The endpoint is not under /api/v1, so we use a relative path to go up one level from the base URL.
+    const response = await api.post('/../image-downloader/start', { limit: limit.value })
     message.value = response.message || 'عملیات با موفقیت شروع شد.'
     messageType.value = 'success'
   } catch (error) {
