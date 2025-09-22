@@ -100,7 +100,7 @@ const syncBooks = async () => {
   }
 
   try {
-    const response = await api.post('/admin/books/sync-from-api', requestBody)
+    const response = await api.post('/admin/importer/sync', requestBody)
     if (response.success) {
       message.value = response.message || 'فرآیند همگام‌سازی کتاب‌ها با موفقیت آغاز شد.'
       messageType.value = 'success'
