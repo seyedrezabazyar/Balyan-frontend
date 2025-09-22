@@ -10,6 +10,25 @@
       <p>خطا در دریافت اطلاعات: {{ error }}</p>
     </div>
 
+    <!-- Expired Link State -->
+    <div v-else-if="isExpired && expiredBookDetails" class="max-w-2xl mx-auto text-center bg-white rounded-lg shadow-lg p-8">
+      <h1 class="text-2xl font-bold text-red-600 mb-4">لینک دانلود منقضی شده است</h1>
+      <img
+        v-if="expiredBookDetails.book.image"
+        :src="expiredBookDetails.book.image.url"
+        :alt="expiredBookDetails.book.title"
+        class="w-48 h-auto mx-auto mb-4 rounded-lg shadow-md"
+      />
+      <h2 class="text-xl font-semibold text-gray-800">{{ expiredBookDetails.book.title }}</h2>
+      <p class="text-gray-600 my-4">{{ expiredBookDetails.message }}</p>
+      <NuxtLink
+        :to="`/book/${expiredBookDetails.book.slug}`"
+        class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        خرید مجدد کتاب
+      </NuxtLink>
+    </div>
+
     <!-- Main Content -->
     <div v-else-if="downloadInfo" class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
       <header class="text-center mb-6 border-b pb-4">
@@ -111,6 +130,8 @@ const downloadInfo = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const isDownloading = ref(null); // Will store the ID of the item being downloaded
+const isExpired = ref(false);
+const expiredBookDetails = ref(null);
 let pollingInterval = null;
 
 const stopPolling = () => {
@@ -146,7 +167,15 @@ const fetchStatus = async () => {
       throw new Error(response.message || 'Failed to get download info.');
     }
   } catch (err) {
-    error.value = err.response?._data?.message || err.message || 'An unknown error occurred.';
+    // Check if the error is a 403 with the specific 'expired' status
+    if (err.response?.status === 403 && err.response?._data?.status === 'expired') {
+      expiredBookDetails.value = err.response._data;
+      isExpired.value = true;
+      error.value = null; // Clear any generic error
+    } else {
+      // Handle all other errors as before
+      error.value = err.response?._data?.message || err.message || 'An unknown error occurred.';
+    }
     stopPolling();
   } finally {
     loading.value = false;
