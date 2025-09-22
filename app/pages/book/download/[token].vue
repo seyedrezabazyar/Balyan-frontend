@@ -167,8 +167,8 @@ const fetchStatus = async () => {
       throw new Error(response.message || 'Failed to get download info.');
     }
   } catch (err) {
-    // Check if the error is a 403 with the specific 'expired' status
-    if (err.response?.status === 403 && err.response?._data?.status === 'expired') {
+    // Check if the error is a 404 with the specific 'expired' status
+    if (err.response?.status === 404 && err.response?._data?.status === 'expired') {
       expiredBookDetails.value = err.response._data;
       isExpired.value = true;
       error.value = null; // Clear any generic error

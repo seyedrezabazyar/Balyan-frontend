@@ -226,6 +226,7 @@ const isExpirable = (order) => {
   return order.items.some(item => item.purchase && item.purchase.status === 'active');
 };
 
+
 const fetchOrders = async (page = 1) => {
   loading.value = true;
   error.value = null;
