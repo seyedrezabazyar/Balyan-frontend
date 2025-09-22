@@ -48,14 +48,14 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useAuthStore } from '~/stores/auth'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
   middleware: 'admin',
   layout: 'default'
 })
 
-const authStore = useAuthStore()
+const api = useApiAuth()
 const limit = ref(50)
 const loading = ref(false)
 const message = ref('')
@@ -74,15 +74,7 @@ const startImageDownloader = async () => {
   }
 
   try {
-    const response = await $fetch('/api/image-downloader/start', {
-      method: 'POST',
-      body: { limit: limit.value },
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      }
-    })
+    const response = await api.post('/image-downloader/start', { limit: limit.value })
     message.value = response.message || 'عملیات با موفقیت شروع شد.'
     messageType.value = 'success'
   } catch (error) {
