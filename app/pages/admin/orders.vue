@@ -113,7 +113,7 @@
                 <template v-for="item in order.items" :key="item.id">
                   <NuxtLink
                     v-if="item.purchase && item.purchase.download_token"
-                    :to="`/download/book/${item.purchase.download_token}`"
+                    :to="`/book/download/${item.purchase.download_token}`"
                     target="_blank"
                     class="p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-gray-200 transition-colors"
                     title="دانلود فایل"
