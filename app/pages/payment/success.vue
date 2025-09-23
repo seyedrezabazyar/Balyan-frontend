@@ -42,7 +42,6 @@ definePageMeta({
 
 const route = useRoute();
 const purchaseStore = usePurchaseStore();
-const apiAuth = useApiAuth();
 const authStore = useAuthStore();
 
 const orderId = ref(null);
@@ -51,6 +50,7 @@ const loadingBookDetails = ref(false);
 
 async function fetchOrderDetails(id) {
   if (!id) return;
+  const apiAuth = useApiAuth();
 
   loadingBookDetails.value = true;
   try {
