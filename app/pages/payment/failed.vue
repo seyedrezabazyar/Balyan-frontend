@@ -23,17 +23,27 @@
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Temporary Debug View -->
+    <div v-if="debugLogs.length" class="mt-8 p-4 bg-gray-800 text-white rounded-lg font-mono text-left text-sm w-full max-w-4xl mx-auto" dir="ltr">
+      <h3 class="font-bold text-lg mb-2 text-center">DEBUG VIEW: REQUEST LOGS</h3>
+      <pre>{{ JSON.stringify(debugLogs, null, 2) }}</pre>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from '#app'
 import { useApiAuth } from '~/composables/useApiAuth'
 import { useAuthStore } from '~/stores/auth'
+import { useDebugStore } from '~/stores/debug'
 
 const route = useRoute();
 const authStore = useAuthStore();
+const debugStore = useDebugStore();
+
+const debugLogs = computed(() => debugStore.requests);
 
 const orderId = ref(null);
 const bookSlug = ref(null);

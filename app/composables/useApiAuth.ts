@@ -1,6 +1,7 @@
 // composables/useApiAuth.ts
 import { useAuthStore } from '~/stores/auth'
 import { useApiDebugger } from '~/composables/useApiDebugger'
+import { useDebugStore } from '~/stores/debug'
 
 export const useApiAuth = () => {
   const config = useRuntimeConfig()
@@ -24,19 +25,22 @@ export const useApiAuth = () => {
       options.headers = options.headers || {}
       options.headers['X-Request-ID'] = newLog.id
 
-      // --- TEMPORARY DEBUG LOGGING ---
-      console.log('Inspecting headers before auth logic...', options.headers)
-      // -----------------------------
+      // --- TEMPORARY DEBUG LOGGING to store ---
+      const debugStore = useDebugStore()
+      // ----------------------------------------
 
       // Original auth logic
       const authStore = useAuthStore()
       if (authStore.token) {
-        console.log('Token found in store, adding to headers:', authStore.token.substring(0, 10) + '...') // Log token presence
         options.headers = {
           ...options.headers,
           Authorization: `Bearer ${authStore.token}`,
         }
       }
+
+      // --- Log headers after potential modification ---
+      debugStore.addRequestLog(request.toString(), options.headers)
+      // ----------------------------------------------
     },
     onResponse({ request, response, options }) {
       const logId = options.headers['X-Request-ID']
