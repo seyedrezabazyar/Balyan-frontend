@@ -67,9 +67,12 @@ onMounted(() => {
 // This prevents a race condition on page load where the API call is made
 // before the auth token is initialized.
 watch(
-  () => authStore.isLoggedIn,
-  (isLoggedIn) => {
-    if (isLoggedIn && orderId.value) {
+  () => authStore.currentUser,
+  (currentUser) => {
+    // We watch for the user object to be populated, which happens after
+    // the /auth/user call is complete. This is a more reliable signal
+    // for full authentication than just isLoggedIn.
+    if (currentUser && orderId.value) {
       fetchOrderDetails(orderId.value);
     }
   },
