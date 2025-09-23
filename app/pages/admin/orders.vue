@@ -110,6 +110,22 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-2">
+
+                <!-- Direct Download Link for Active Purchases -->
+                <template v-for="item in order.items" :key="item.id">
+                  <NuxtLink
+                    v-if="item.purchase && item.purchase.download_token"
+                    :to="`/book/download/${item.purchase.download_token}`"
+                    target="_blank"
+                    class="p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-gray-200 transition-colors"
+                    title="دانلود فایل"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </NuxtLink>
+                </template>
+
                 <!-- Expire Button -->
                 <button
                   v-if="isExpirable(order)"
@@ -145,8 +161,9 @@
                   </svg>
                 </button>
 
-                <!-- Download Info Button -->
+                <!-- Download Info Button (for non-downloadable orders) -->
                 <button
+                  v-if="!order.items.some(item => item.purchase && item.purchase.download_token)"
                   @click="getDownloadInfo(order)"
                   class="p-1 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200 transition-colors"
                   title="مشاهده اطلاعات دانلود"
