@@ -109,21 +109,6 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-2">
-                <!-- Download Links -->
-                <template v-for="item in order.items" :key="item.id">
-                  <NuxtLink
-                    v-if="item.purchase && item.purchase.download_token"
-                    :to="`/book/download/${item.purchase.download_token}`"
-                    target="_blank"
-                    class="p-1 text-blue-600 hover:text-blue-800 rounded-full hover:bg-gray-200 transition-colors"
-                    title="دانلود فایل"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                  </NuxtLink>
-                </template>
-
                 <!-- Expire Button -->
                 <button
                   v-if="isExpirable(order)"
@@ -198,43 +183,46 @@
     </div>
 
     <!-- Download Info Modal -->
-    <div v-if="isDownloadInfoModalVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" @click.self="isDownloadInfoModalVisible = false">
+    <div v-if="isDownloadInfoModalVisible && selectedOrderForDownloadInfo" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" @click.self="isDownloadInfoModalVisible = false">
       <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">اطلاعات دانلود</h3>
 
-          <div v-if="selectedOrderForDownloadInfo?.loading" class="py-4">
+          <!-- Base Book Info (Always visible) -->
+          <div v-if="selectedOrderForDownloadInfo.order?.items?.[0]?.book" class="text-right space-y-2 mb-4 p-3 bg-gray-50 rounded-md">
+            <h4 class="font-semibold text-gray-800">اطلاعات کتاب</h4>
+            <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.order.items[0].book.title }}</p>
+            <p v-if="selectedOrderForDownloadInfo.order.items[0].book.author"><span class="font-medium">نویسنده:</span> {{ selectedOrderForDownloadInfo.order.items[0].book.author }}</p>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="selectedOrderForDownloadInfo.loading" class="py-4">
             <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="text-sm text-gray-500 mt-2">در حال بارگذاری...</p>
+            <p class="text-sm text-gray-500 mt-2">در حال بارگذاری جزئیات خرید...</p>
           </div>
 
-          <div v-else-if="selectedOrderForDownloadInfo?.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong class="font-bold">خطا!</strong>
+          <!-- Error Message -->
+          <div v-else-if="selectedOrderForDownloadInfo.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">خطا در دریافت اطلاعات خرید!</strong>
             <span class="block sm:inline">{{ selectedOrderForDownloadInfo.error }}</span>
           </div>
 
-          <div v-else-if="selectedOrderForDownloadInfo?.data" class="text-right space-y-4">
-            <div>
-              <h4 class="font-semibold text-gray-700">اطلاعات کتاب</h4>
-              <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.data.book.title }}</p>
-              <p><span class="font-medium">نویسنده:</span> {{ selectedOrderForDownloadInfo.data.book.author }}</p>
-            </div>
-            <hr/>
+          <!-- Successful Data -->
+          <div v-else-if="selectedOrderForDownloadInfo.data" class="text-right space-y-4">
             <div v-if="selectedOrderForDownloadInfo.data.purchase">
-              <h4 class="font-semibold text-gray-700">اطلاعات خرید</h4>
+              <hr/>
+              <h4 class="font-semibold text-gray-700 mt-4">اطلاعات خرید</h4>
               <p><span class="font-medium">وضعیت:</span> {{ selectedOrderForDownloadInfo.data.purchase.status }}</p>
               <p><span class="font-medium">تعداد دانلود:</span> {{ selectedOrderForDownloadInfo.data.purchase.total_downloads }} / {{ selectedOrderForDownloadInfo.data.purchase.max_downloads }}</p>
               <p v-if="selectedOrderForDownloadInfo.data.purchase.expires_at"><span class="font-medium">تاریخ انقضا:</span> {{ new Date(selectedOrderForDownloadInfo.data.purchase.expires_at).toLocaleDateString('fa-IR') }}</p>
             </div>
-            <div v-else class="text-gray-500">
-              <p>خریدی برای این سفارش ثبت نشده است (ممکن است پرداخت ناموفق بوده باشد).</p>
-            </div>
+
             <hr/>
             <div>
-              <h4 class="font-semibold text-gray-700">لینک دانلود</h4>
+              <h4 class="font-semibold text-gray-700 mt-4">لینک دانلود</h4>
               <div v-if="selectedOrderForDownloadInfo.data.can_download && selectedOrderForDownloadInfo.data.download_link">
                 <a :href="selectedOrderForDownloadInfo.data.download_link" target="_blank" class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors">
                   دانلود کتاب
@@ -255,7 +243,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -338,16 +325,26 @@ const isRenewable = (order) => {
 };
 
 const getDownloadInfo = async (order) => {
-  selectedOrderForDownloadInfo.value = { loading: true, data: null, error: null };
+  // Set the base order data immediately and show the modal
+  selectedOrderForDownloadInfo.value = {
+    loading: true,
+    data: null,
+    error: null,
+    order: order // Keep the original order data
+  };
   isDownloadInfoModalVisible.value = true;
 
   try {
     const response = await api.get(`/admin/orders/${order.id}/download-link`);
-    selectedOrderForDownloadInfo.value = { loading: false, data: response, error: null };
+    // On success, add the detailed data
+    selectedOrderForDownloadInfo.value.data = response;
   } catch (err) {
     console.error(`Failed to fetch download info for order ${order.id}:`, err);
-    const errorMessage = err.response?._data?.message || 'یک خطای ناشناخته رخ داد.';
-    selectedOrderForDownloadInfo.value = { loading: false, data: null, error: errorMessage };
+    // On failure, record the error message
+    selectedOrderForDownloadInfo.value.error = err.response?._data?.message || 'یک خطای ناشناخته رخ داد.';
+  } finally {
+    // In both cases, stop loading
+    selectedOrderForDownloadInfo.value.loading = false;
   }
 };
 
