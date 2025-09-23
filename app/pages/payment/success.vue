@@ -30,10 +30,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from '#app'
 import { usePurchaseStore } from '~/stores/purchase'
 import { useApiAuth } from '~/composables/useApiAuth'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   middleware: 'auth'
@@ -42,6 +43,7 @@ definePageMeta({
 const route = useRoute();
 const purchaseStore = usePurchaseStore();
 const apiAuth = useApiAuth();
+const authStore = useAuthStore();
 
 const orderId = ref(null);
 const bookSlug = ref(null);
@@ -75,12 +77,22 @@ async function fetchOrderDetails(id) {
 onMounted(() => {
   orderId.value = route.query.order_id || null;
 
-  // Fetch order details to get the book slug for a direct link.
-  fetchOrderDetails(orderId.value);
-
   // Clear the local purchase cache. This is crucial so that when the user
   // navigates to their library, the app is forced to re-fetch the list
   // of purchases, which will now include the book they just bought.
   purchaseStore.clearPurchases();
 });
+
+// Watch for the user to be logged in before fetching order details.
+// This prevents a race condition on page load where the API call is made
+// before the auth token is initialized.
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn && orderId.value) {
+      fetchOrderDetails(orderId.value);
+    }
+  },
+  { immediate: true }
+);
 </script>
