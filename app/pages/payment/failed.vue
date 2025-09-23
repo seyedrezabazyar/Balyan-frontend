@@ -33,7 +33,6 @@ import { useApiAuth } from '~/composables/useApiAuth'
 import { useAuthStore } from '~/stores/auth'
 
 const route = useRoute();
-const apiAuth = useApiAuth();
 const authStore = useAuthStore();
 
 const orderId = ref(null);
@@ -42,6 +41,7 @@ const loadingBookDetails = ref(false);
 
 async function fetchOrderDetails(id) {
   if (!id) return;
+  const apiAuth = useApiAuth();
 
   loadingBookDetails.value = true;
   try {
