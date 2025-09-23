@@ -68,9 +68,15 @@ export const useApiAuth = () => {
       // Original auth logic
       const authStore = useAuthStore()
       if (response.status === 401) {
-        authStore.clearAuth()
-        // Optionally redirect to login page
-        // navigateTo('/login')
+        // Only clear auth if we are sure the user was actually authenticated
+        // before this call. If `currentUser` is null, it means we are likely
+        // in the middle of the initAuth process. A 401 here is probably
+        // a race condition, not an invalid session.
+        if (authStore.currentUser) {
+          authStore.clearAuth()
+        }
+        // Do not clear auth if currentUser is not set, to prevent logging out
+        // during the initial auth race condition.
       }
     }
   })
