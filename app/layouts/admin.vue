@@ -77,7 +77,6 @@
         <slot />
       </div>
     </main>
-    <ApiDebugger />
   </div>
 </template>
 
