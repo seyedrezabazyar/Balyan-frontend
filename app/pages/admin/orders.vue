@@ -22,12 +22,16 @@
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">روش پرداخت</th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">تاریخ ثبت</th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">جزئیات خرید</th>
-            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">عملیات</th>
+            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">مشاهده</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50">
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p class="text-gray-900 whitespace-no-wrap">{{ order.order_number }}</p></td>
+            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+              <NuxtLink :to="`/admin/orders/${order.id}`" class="text-blue-600 hover:text-blue-800 hover:underline">
+                {{ order.order_number }}
+              </NuxtLink>
+            </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <p class="text-gray-900 whitespace-no-wrap">{{ order.user?.name }}</p>
               <p class="text-gray-600 whitespace-no-wrap text-xs">{{ order.user?.email }}</p>
@@ -47,45 +51,9 @@
               <div v-else class="text-gray-400">-</div>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <div class="flex items-center justify-center gap-x-3">
-                <!-- Direct Download Link -->
-                <NuxtLink
-                  v-if="order.actions && order.actions.download_token"
-                  :to="`/book/download/${order.actions.download_token}`"
-                  class="text-xs bg-green-500 text-white font-semibold py-1 px-2 rounded hover:bg-green-600"
-                  title="دانلود مستقیم"
-                  target="_blank"
-                >
-                  دانلود
-                </NuxtLink>
-                <span v-else class="text-xs text-gray-400">
-                  [لینک غیرفعال]
-                </span>
-
-                <!-- Combined Expire/Renew Button -->
-                <button
-                  v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
-                  @click="() => toggleOrderStatus(order)"
-                  :disabled="processingOrders[order.id]"
-                  :class="[
-                    'text-xs',
-                    'disabled:opacity-50',
-                    'font-semibold',
-                    'py-1',
-                    'px-2',
-                    'rounded',
-                    'hover:opacity-80',
-                    {
-                      'bg-yellow-500 text-white': order.actions.expire_url,
-                      'bg-green-500 text-white': order.actions.renew_url
-                    }
-                  ]"
-                  :title="order.actions.expire_url ? 'منقضی کردن' : 'فعال سازی مجدد'"
-                >
-                  <span v-if="processingOrders[order.id]">...</span>
-                  <span v-else>{{ order.actions.expire_url ? 'منقضی کردن' : 'تمدید کردن' }}</span>
-                </button>
-              </div>
+              <NuxtLink :to="`/admin/orders/${order.id}`" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                مشاهده جزئیات
+              </NuxtLink>
             </td>
           </tr>
         </tbody>
@@ -121,51 +89,6 @@ const pagination = ref({
   perPage: 20,
 });
 
-const processingOrders = ref({});
-
-const performOrderAction = async (order, url, actionName, confirmMessage) => {
-  if (!url) return;
-  if (!confirm(confirmMessage)) return;
-
-  processingOrders.value[order.id] = actionName;
-  try {
-    const response = await api.post(url);
-    // The backend now returns the updated order object nested under the 'order' key.
-    const updatedOrder = response.order;
-    if (updatedOrder) {
-      const index = orders.value.findIndex(o => o.id === order.id);
-      if (index !== -1) {
-        orders.value[index] = updatedOrder;
-      }
-    } else {
-      // As a robust fallback, if the updated order isn't returned, refetch the list.
-      fetchOrders(pagination.value.currentPage);
-    }
-  } catch (err) {
-    console.error(`Failed to ${actionName} order ${order.id}:`, err);
-    alert(`عملیات ${actionName} سفارش با خطا مواجه شد.`);
-  } finally {
-    processingOrders.value[order.id] = false;
-  }
-};
-
-const toggleOrderStatus = (order) => {
-  if (order.actions.expire_url) {
-    performOrderAction(
-      order,
-      order.actions.expire_url,
-      'expire',
-      `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
-    );
-  } else if (order.actions.renew_url) {
-    performOrderAction(
-      order,
-      order.actions.renew_url,
-      'renew',
-      `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
-    );
-  }
-};
 
 const authorName = (author) => {
   if (!author) return 'نامشخص';
