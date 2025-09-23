@@ -48,10 +48,14 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-x-3">
-                <button @click="handleDownloadClick(order)" :disabled="processingOrders[order.id]" class="text-xs text-blue-600 hover:text-blue-900 disabled:opacity-50" title="دانلود / مشاهده اطلاعات">
-                  <span v-if="processingOrders[order.id] === 'download'">...</span>
-                  <span v-else>[دانلود]</span>
-                </button>
+                <NuxtLink
+                  v-if="order.actions && order.actions.download_info_url"
+                  :to="`/admin/orders/${order.id}/download-info`"
+                  class="text-xs text-blue-600 hover:text-blue-900"
+                  title="مشاهده اطلاعات دانلود"
+                >
+                  [مشاهده لینک]
+                </NuxtLink>
                 <button v-if="isExpirable(order)" @click="expireOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-yellow-600 hover:text-yellow-900 disabled:opacity-50" title="منقضی کردن">
                   <span v-if="processingOrders[order.id] === 'expire'">...</span>
                   <span v-else>[منقضی کردن]</span>
@@ -117,25 +121,6 @@ const updateOrderStatus = async (order, action) => {
   } catch (err) {
     console.error(messages.error, err);
     alert(messages.alert);
-  } finally {
-    processingOrders.value[order.id] = false;
-  }
-};
-
-const handleDownloadClick = async (order) => {
-  processingOrders.value[order.id] = 'download';
-  try {
-    const response = await api.get(`/admin/orders/${order.id}/download-link`);
-    if (response.purchase && response.purchase.download_token) {
-      router.push(`/book/download/${response.purchase.download_token}`);
-    } else {
-      // As per user request, do not show a popup.
-      // If there's no download token, nothing will happen.
-      console.warn(`No download token available for order #${order.id}`);
-    }
-  } catch (err) {
-    console.error(`Failed to fetch download info for order ${order.id}:`, err);
-    alert('دریافت اطلاعات دانلود با خطا مواجه شد.');
   } finally {
     processingOrders.value[order.id] = false;
   }
