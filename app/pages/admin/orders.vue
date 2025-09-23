@@ -56,13 +56,13 @@
                 >
                   [مشاهده لینک]
                 </NuxtLink>
-                <button v-if="isExpirable(order)" @click="expireOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-yellow-600 hover:text-yellow-900 disabled:opacity-50" title="منقضی کردن">
+                <button v-if="order.actions && order.actions.expire_url" @click="expireOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-yellow-600 hover:text-yellow-900 disabled:opacity-50" title="منقضی کردن">
                   <span v-if="processingOrders[order.id] === 'expire'">...</span>
                   <span v-else>[منقضی کردن]</span>
                 </button>
-                <button v-if="isRenewable(order)" @click="renewOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-green-600 hover:text-green-900 disabled:opacity-50" title="فعال سازی مجدد">
+                <button v-if="order.actions && order.actions.renew_url" @click="renewOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-green-600 hover:text-green-900 disabled:opacity-50" title="فعال سازی مجدد">
                   <span v-if="processingOrders[order.id] === 'renew'">...</span>
-                  <span v-else>[فعال سازی]</span>
+                  <span v-else>[تمدید کردن]</span>
                 </button>
               </div>
             </td>
@@ -102,35 +102,42 @@ const pagination = ref({
 
 const processingOrders = ref({});
 
-const updateOrderStatus = async (order, action) => {
-  const actionMessages = {
-    expire: { confirm: `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`, error: `Failed to expire order ${order.id}:`, alert: 'عملیات منقضی کردن سفارش با خطا مواجه شد.' },
-    renew: { confirm: `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`, error: `Failed to renew order ${order.id}:`, alert: 'عملیات فعال سازی مجدد سفارش با خطا مواجه شد.' }
-  };
-  const messages = actionMessages[action];
-  if (!confirm(messages.confirm)) return;
+const performOrderAction = async (order, url, actionName, confirmMessage) => {
+  if (!url) return;
+  if (!confirm(confirmMessage)) return;
 
-  processingOrders.value[order.id] = action;
+  processingOrders.value[order.id] = actionName;
   try {
-    const response = await api.post(`/admin/orders/${order.id}/${action}`);
-    const updatedOrder = response.order;
+    const updatedOrder = await api.post(url);
     const index = orders.value.findIndex(o => o.id === order.id);
-    if (index !== -1 && updatedOrder) {
+    if (index !== -1) {
       orders.value[index] = updatedOrder;
     }
   } catch (err) {
-    console.error(messages.error, err);
-    alert(messages.alert);
+    console.error(`Failed to ${actionName} order ${order.id}:`, err);
+    alert(`عملیات ${actionName} سفارش با خطا مواجه شد.`);
   } finally {
     processingOrders.value[order.id] = false;
   }
 };
 
-const expireOrder = (order) => updateOrderStatus(order, 'expire');
-const renewOrder = (order) => updateOrderStatus(order, 'renew');
+const expireOrder = (order) => {
+  performOrderAction(
+    order,
+    order.actions.expire_url,
+    'expire',
+    `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
+  );
+};
 
-const isExpirable = (order) => order.status === 'paid';
-const isRenewable = (order) => ['cancelled', 'failed'].includes(order.status);
+const renewOrder = (order) => {
+  performOrderAction(
+    order,
+    order.actions.renew_url,
+    'renew',
+    `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
+  );
+};
 
 const authorName = (author) => {
   if (!author) return 'نامشخص';
