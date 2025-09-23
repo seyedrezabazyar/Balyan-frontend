@@ -1,5 +1,6 @@
 <template>
   <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <ApiDebugger />
     <h1 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">مدیریت سفارشات</h1>
     <div v-if="loading && orders.length === 0" class="space-y-4">
       <div class="bg-white shadow rounded-lg p-4 animate-pulse" v-for="n in 5" :key="n">
@@ -49,39 +50,20 @@
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-x-3">
                 <NuxtLink
-                  v-if="order.actions && order.actions.download_token"
-                  :to="`/book/download/${order.actions.download_token}`"
-                  class="text-xs bg-green-500 text-white font-semibold py-1 px-2 rounded hover:bg-green-600"
-                  title="دانلود مستقیم"
-                  target="_blank"
+                  v-if="order.actions && order.actions.download_info_url"
+                  :to="`/admin/orders/${order.id}/download-info`"
+                  class="text-xs text-blue-600 hover:text-blue-900"
+                  title="مشاهده اطلاعات دانلود"
                 >
-                  دانلود
+                  [مشاهده لینک]
                 </NuxtLink>
-                <span v-else class="text-xs text-gray-400">
-                  [لینک غیرفعال]
-                </span>
-                <!-- Combined Expire/Renew Button -->
-                <button
-                  v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
-                  @click="() => toggleOrderStatus(order)"
-                  :disabled="processingOrders[order.id]"
-                  :class="[
-                    'text-xs',
-                    'disabled:opacity-50',
-                    'font-semibold',
-                    'py-1',
-                    'px-2',
-                    'rounded',
-                    'hover:opacity-80',
-                    {
-                      'bg-yellow-500 text-white': order.actions.expire_url,
-                      'bg-green-500 text-white': order.actions.renew_url
-                    }
-                  ]"
-                  :title="order.actions.expire_url ? 'منقضی کردن' : 'فعال سازی مجدد'"
-                >
-                  <span v-if="processingOrders[order.id]">...</span>
-                  <span v-else>{{ order.actions.expire_url ? 'منقضی کردن' : 'تمدید کردن' }}</span>
+                <button v-if="order.actions && order.actions.expire_url" @click="expireOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-yellow-600 hover:text-yellow-900 disabled:opacity-50" title="منقضی کردن">
+                  <span v-if="processingOrders[order.id] === 'expire'">...</span>
+                  <span v-else>[منقضی کردن]</span>
+                </button>
+                <button v-if="order.actions && order.actions.renew_url" @click="renewOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-green-600 hover:text-green-900 disabled:opacity-50" title="فعال سازی مجدد">
+                  <span v-if="processingOrders[order.id] === 'renew'">...</span>
+                  <span v-else>[تمدید کردن]</span>
                 </button>
               </div>
             </td>
@@ -101,6 +83,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useApiAuth } from '~/composables/useApiAuth';
+import ApiDebugger from '~/components/ApiDebugger.vue';
 
 definePageMeta({
   middleware: 'admin',
@@ -127,16 +110,10 @@ const performOrderAction = async (order, url, actionName, confirmMessage) => {
 
   processingOrders.value[order.id] = actionName;
   try {
-    const response = await api.post(url);
-    const updatedOrder = response.order; // <-- Extract order from new response structure
-    if (updatedOrder) {
-      const index = orders.value.findIndex(o => o.id === order.id);
-      if (index !== -1) {
-        orders.value[index] = updatedOrder;
-      }
-    } else {
-      // If the updated order isn't returned, refetch the whole list as a fallback
-      fetchOrders(pagination.value.currentPage);
+    const updatedOrder = await api.post(url);
+    const index = orders.value.findIndex(o => o.id === order.id);
+    if (index !== -1) {
+      orders.value[index] = updatedOrder;
     }
   } catch (err) {
     console.error(`Failed to ${actionName} order ${order.id}:`, err);
@@ -146,22 +123,22 @@ const performOrderAction = async (order, url, actionName, confirmMessage) => {
   }
 };
 
-const toggleOrderStatus = (order) => {
-  if (order.actions.expire_url) {
-    performOrderAction(
-      order,
-      order.actions.expire_url,
-      'expire',
-      `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
-    );
-  } else if (order.actions.renew_url) {
-    performOrderAction(
-      order,
-      order.actions.renew_url,
-      'renew',
-      `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
-    );
-  }
+const expireOrder = (order) => {
+  performOrderAction(
+    order,
+    order.actions.expire_url,
+    'expire',
+    `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
+  );
+};
+
+const renewOrder = (order) => {
+  performOrderAction(
+    order,
+    order.actions.renew_url,
+    'renew',
+    `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
+  );
 };
 
 const authorName = (author) => {
