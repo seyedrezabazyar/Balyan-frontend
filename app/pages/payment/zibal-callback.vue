@@ -68,17 +68,29 @@ const bookSlug = ref(null)
 onMounted(async () => {
   const query = route.query
 
-  // Zarinpal typically returns 'Authority' and 'Status'
-  if (!query.Authority || !query.Status) {
+  // Zibal returns success, trackId, and orderId.
+  // We check for them here.
+  if (!query.success || !query.trackId || !query.orderId) {
     status.value = 'error'
-    message.value = 'اطلاعات بازگشتی از درگاه پرداخت ناقص است.'
+    message.value = 'اطلاعات بازگشتی از درگاه پرداخت ناقص یا نادرست است.'
+    return
+  }
+
+  // If the payment was not successful according to Zibal, show an error.
+  if (query.success !== '1') {
+    status.value = 'error'
+    message.value = 'تراکنش توسط درگاه پرداخت موفق اعلام نشده است.'
     return
   }
 
   try {
+    // Send the verification data to our backend.
+    // The backend will perform a server-to-server check with Zibal.
     const response = await apiAuth.post('/purchase/verify', {
-      authority: query.Authority,
-      status: query.Status
+      gateway: 'zibal',
+      trackId: query.trackId,
+      orderId: query.orderId,
+      success: query.success,
     })
 
     if (response.success) {
@@ -88,9 +100,9 @@ onMounted(async () => {
         bookSlug.value = response.data.book.slug
       }
     } else {
-      // This case might happen if the API call is successful (2xx) but the business logic fails
+      // This case happens if our backend fails to verify the payment.
       status.value = 'error'
-      message.value = response.message || 'تایید پرداخت با خطا مواجه شد.'
+      message.value = response.message || 'تایید پرداخت با خطا مواجه شد. لطفا با پشتیبانی تماس بگیرید.'
     }
   } catch (err) {
     status.value = 'error'
