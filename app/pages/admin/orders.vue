@@ -48,23 +48,18 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-x-3">
-                <!--
-                  The user requested a direct download link. However, the /admin/orders API endpoint
-                  does not provide a direct `download_url`. It only provides a `download_info_url`
-                  which leads to a page that then fetches the actual download link.
-                  Making two API calls per order on this list page would be very inefficient.
-                  Therefore, we check for `download_info_url` to determine if a download is possible,
-                  and link to the info page as a necessary intermediate step.
-                -->
                 <NuxtLink
-                  v-if="order.actions && order.actions.download_info_url"
-                  :to="`/admin/orders/${order.id}/download-info`"
-                  class="text-xs bg-blue-500 text-white font-semibold py-1 px-2 rounded hover:bg-blue-600"
-                  title="مشاهده اطلاعات دانلود"
+                  v-if="order.actions && order.actions.download_token"
+                  :to="`/book/download/${order.actions.download_token}`"
+                  class="text-xs bg-green-500 text-white font-semibold py-1 px-2 rounded hover:bg-green-600"
+                  title="دانلود مستقیم"
+                  target="_blank"
                 >
-                  مشاهده لینک دانلود
+                  دانلود
                 </NuxtLink>
-
+                <span v-else class="text-xs text-gray-400">
+                  [لینک غیرفعال]
+                </span>
                 <!-- Combined Expire/Renew Button -->
                 <button
                   v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
@@ -132,10 +127,16 @@ const performOrderAction = async (order, url, actionName, confirmMessage) => {
 
   processingOrders.value[order.id] = actionName;
   try {
-    const updatedOrder = await api.post(url);
-    const index = orders.value.findIndex(o => o.id === order.id);
-    if (index !== -1) {
-      orders.value[index] = updatedOrder;
+    const response = await api.post(url);
+    const updatedOrder = response.order; // <-- Extract order from new response structure
+    if (updatedOrder) {
+      const index = orders.value.findIndex(o => o.id === order.id);
+      if (index !== -1) {
+        orders.value[index] = updatedOrder;
+      }
+    } else {
+      // If the updated order isn't returned, refetch the whole list as a fallback
+      fetchOrders(pagination.value.currentPage);
     }
   } catch (err) {
     console.error(`Failed to ${actionName} order ${order.id}:`, err);
