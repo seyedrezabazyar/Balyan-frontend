@@ -80,7 +80,7 @@
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <div class="space-y-2">
                 <div v-for="item in order.items" :key="item.id" class="text-xs">
-                  <p class="font-semibold text-gray-800">{{ item.book.title }}</p>
+                  <p class="font-semibold text-gray-800">{{ item.book?.title }}</p>
                   <div v-if="item.purchase" class="mt-1">
                     <div class="flex items-center justify-between gap-2">
                       <span
@@ -206,8 +206,8 @@
             <!-- Book Info -->
             <div>
               <h4 class="font-semibold text-gray-700">اطلاعات کتاب</h4>
-              <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.data.book.title }}</p>
-              <p><span class="font-medium">نویسنده:</span> {{ selectedOrderForDownloadInfo.data.book.author.name }}</p>
+              <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.data.book?.title }}</p>
+              <p><span class="font-medium">نویسنده:</span> {{ authorName(selectedOrderForDownloadInfo.data.book?.author) }}</p>
             </div>
             <hr/>
 
@@ -250,7 +250,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useApiAuth } from '~/composables/useApiAuth';
 
 definePageMeta({
@@ -335,6 +335,14 @@ const getDownloadInfo = async (order) => {
     const errorMessage = err.response?._data?.message || 'یک خطای ناشناخته رخ داد.';
     selectedOrderForDownloadInfo.value = { loading: false, data: null, error: errorMessage };
   }
+};
+
+const authorName = (author) => {
+  if (!author) return 'نامشخص';
+  if (typeof author === 'object' && author.name) {
+    return author.name;
+  }
+  return author;
 };
 
 const fetchOrders = async (page = 1) => {
