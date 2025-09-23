@@ -97,6 +97,11 @@
       <span class="text-sm text-gray-700">صفحه {{ pagination.currentPage }} از {{ pagination.lastPage }}</span>
       <button @click="fetchOrders(pagination.currentPage + 1)" :disabled="pagination.currentPage === pagination.lastPage" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">بعدی</button>
     </div>
+
+    <div class="mt-8 p-4 bg-gray-800 text-white rounded-lg">
+      <h3 class="font-bold text-lg mb-2">DEBUGGER: Raw 'orders' API Response</h3>
+      <pre class="text-xs whitespace-pre-wrap break-all">{{ JSON.stringify(orders, null, 2) }}</pre>
+    </div>
   </div>
 </template>
 
