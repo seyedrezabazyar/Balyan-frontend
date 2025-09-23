@@ -48,21 +48,45 @@
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-x-3">
+                <!--
+                  The user requested a direct download link. However, the /admin/orders API endpoint
+                  does not provide a direct `download_url`. It only provides a `download_info_url`
+                  which leads to a page that then fetches the actual download link.
+                  Making two API calls per order on this list page would be very inefficient.
+                  Therefore, we check for `download_info_url` to determine if a download is possible,
+                  and link to the info page as a necessary intermediate step.
+                -->
                 <NuxtLink
                   v-if="order.actions && order.actions.download_info_url"
                   :to="`/admin/orders/${order.id}/download-info`"
-                  class="text-xs text-blue-600 hover:text-blue-900"
+                  class="text-xs bg-blue-500 text-white font-semibold py-1 px-2 rounded hover:bg-blue-600"
                   title="مشاهده اطلاعات دانلود"
                 >
-                  [مشاهده لینک]
+                  مشاهده لینک دانلود
                 </NuxtLink>
-                <button v-if="order.actions && order.actions.expire_url" @click="expireOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-yellow-600 hover:text-yellow-900 disabled:opacity-50" title="منقضی کردن">
-                  <span v-if="processingOrders[order.id] === 'expire'">...</span>
-                  <span v-else>[منقضی کردن]</span>
-                </button>
-                <button v-if="order.actions && order.actions.renew_url" @click="renewOrder(order)" :disabled="processingOrders[order.id]" class="text-xs text-green-600 hover:text-green-900 disabled:opacity-50" title="فعال سازی مجدد">
-                  <span v-if="processingOrders[order.id] === 'renew'">...</span>
-                  <span v-else>[تمدید کردن]</span>
+
+                <!-- Combined Expire/Renew Button -->
+                <button
+                  v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
+                  @click="() => toggleOrderStatus(order)"
+                  :disabled="processingOrders[order.id]"
+                  :class="[
+                    'text-xs',
+                    'disabled:opacity-50',
+                    'font-semibold',
+                    'py-1',
+                    'px-2',
+                    'rounded',
+                    'hover:opacity-80',
+                    {
+                      'bg-yellow-500 text-white': order.actions.expire_url,
+                      'bg-green-500 text-white': order.actions.renew_url
+                    }
+                  ]"
+                  :title="order.actions.expire_url ? 'منقضی کردن' : 'فعال سازی مجدد'"
+                >
+                  <span v-if="processingOrders[order.id]">...</span>
+                  <span v-else>{{ order.actions.expire_url ? 'منقضی کردن' : 'تمدید کردن' }}</span>
                 </button>
               </div>
             </td>
@@ -121,22 +145,22 @@ const performOrderAction = async (order, url, actionName, confirmMessage) => {
   }
 };
 
-const expireOrder = (order) => {
-  performOrderAction(
-    order,
-    order.actions.expire_url,
-    'expire',
-    `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
-  );
-};
-
-const renewOrder = (order) => {
-  performOrderAction(
-    order,
-    order.actions.renew_url,
-    'renew',
-    `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
-  );
+const toggleOrderStatus = (order) => {
+  if (order.actions.expire_url) {
+    performOrderAction(
+      order,
+      order.actions.expire_url,
+      'expire',
+      `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`
+    );
+  } else if (order.actions.renew_url) {
+    performOrderAction(
+      order,
+      order.actions.renew_url,
+      'renew',
+      `آیا از فعال سازی مجدد سفارش شماره ${order.order_number} اطمینان دارید؟`
+    );
+  }
 };
 
 const authorName = (author) => {
