@@ -25,78 +25,78 @@
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">عملیات</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50">
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <NuxtLink
-                v-if="order.actions?.download_token"
-                :to="`/book/download/${order.actions.download_token}`"
-                class="text-blue-600 hover:underline"
-                target="_blank"
-                title="رفتن به صفحه دانلود کاربر"
-              >
-                {{ order.order_number }}
-              </NuxtLink>
-              <span v-else>{{ order.order_number }}</span>
-            </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <p class="text-gray-900 whitespace-no-wrap">{{ order.user?.name }}</p>
-              <p class="text-gray-600 whitespace-no-wrap text-xs">{{ order.user?.email }}</p>
-            </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="statusClass(order.status)">{{ order.status }}</span>
-            </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p class="text-gray-900 whitespace-no-wrap">{{ order.total_amount }} {{ order.currency }}</p></td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p class="text-gray-900 whitespace-no-wrap">{{ order.payment_method }}</p></td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p class="text-gray-900 whitespace-no-wrap">{{ new Date(order.created_at).toLocaleDateString('fa-IR') }}</p></td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-              <div v-if="order.items && order.items.length > 0" class="space-y-1">
-                <div v-for="item in order.items" :key="item.id" class="text-xs">
-                   <NuxtLink
-                      v-if="item.book?.slug"
-                      :to="`/book/${item.book.slug}`"
-                      class="font-semibold text-blue-600 hover:underline"
-                      target="_blank"
-                   >
-                     {{ item.title }}
-                   </NuxtLink>
-                   <span v-else class="font-semibold text-gray-800">{{ item.title }}</span>
-                </div>
-              </div>
-              <div v-else class="text-gray-400">-</div>
-            </td>
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-                <button
-                  v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
-                  @click="() => toggleOrderStatus(order)"
-                  :disabled="processingOrders[order.id]"
-                  :class="[
-                    'text-xs',
-                    'disabled:opacity-50',
-                    'font-semibold',
-                    'py-1',
-                    'px-2',
-                    'rounded',
-                    'hover:opacity-80',
-                    {
-                      'bg-red-500 text-white': order.actions.expire_url,
-                      'bg-green-500 text-white': order.actions.renew_url
-                    }
-                  ]"
-                  :title="order.actions.expire_url ? 'منقضی کردن' : 'فعال سازی مجدد'"
-                >
-                  <span v-if="processingOrders[order.id]">...</span>
-                  <span v-else>{{ order.actions.expire_url ? 'منقضی کردن' : 'تمدید' }}</span>
-                </button>
-            </td>
-          </tr>
-        </tbody>
+   <tbody>
+     <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50">
+       <!-- شماره سفارش (لینک به دانلود) -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+         <NuxtLink
+           v-if="order.actions && order.actions.download_token"
+           :to="`/book/download/${order.actions.download_token}`"
+           class="text-blue-600 hover:underline font-semibold"
+           target="_blank"
+         >
+           {{ order.order_number }}
+         </NuxtLink>
+         <span v-else class="text-gray-600">{{ order.order_number }} <span class="text-red-500">(توکن نیست)</span></span>
+       </td>
+       <!-- کاربر -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+         {{ order.user.name }}<br />{{ order.user.email }}
+       </td>
+       <!-- وضعیت -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ order.status }}</td>
+       <!-- مبلغ کل -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ order.total_amount }} {{ order.currency }}</td>
+       <!-- روش پرداخت -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ order.payment_method }}</td>
+       <!-- تاریخ ثبت -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ new Date(order.created_at).toLocaleDateString('fa-IR') }}</td>
+       <!-- جزئیات خرید (لینک به صفحه کتاب) -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+         <div v-if="order.items && order.items.length > 0">
+            <NuxtLink
+              v-for="item in order.items"
+              :key="item.id"
+              :to="item.book?.page_url || (item.book?.slug ? `/book/${item.book.slug}` : '#')"
+              class="text-blue-600 hover:underline font-semibold block"
+              target="_blank"
+            >
+              {{ item.title }}
+            </NuxtLink>
+         </div>
+         <span v-else class="text-gray-600">بدون جزئیات</span>
+       </td>
+       <!-- عملیات (فقط تمدید/منقضی کردن) -->
+       <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+         <button
+           v-if="order.actions?.renew_url"
+           @click="toggleOrderStatus(order)"
+           class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+         >
+           تمدید
+         </button>
+         <button
+           v-else-if="order.actions?.expire_url"
+           @click="toggleOrderStatus(order)"
+           class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+         >
+           منقضی کردن
+         </button>
+       </td>
+     </tr>
+   </tbody>
       </table>
     </div>
     <div v-if="pagination.lastPage > 1" class="mt-6 flex justify-center items-center">
       <button @click="fetchOrders(pagination.currentPage - 1)" :disabled="pagination.currentPage === 1" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">قبلی</button>
       <span class="text-sm text-gray-700">صفحه {{ pagination.currentPage }} از {{ pagination.lastPage }}</span>
       <button @click="fetchOrders(pagination.currentPage + 1)" :disabled="pagination.currentPage === pagination.lastPage" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">بعدی</button>
+    </div>
+
+    <!-- Temporary Debug Section -->
+    <div class="debug mt-4 p-4 bg-gray-100 border border-gray-300 rounded">
+      <h2 class="text-lg font-bold">Debug: Raw Orders Data from API</h2>
+      <pre class="overflow-auto">{{ JSON.stringify(orders, null, 2) }}</pre>
     </div>
   </div>
 </template>
