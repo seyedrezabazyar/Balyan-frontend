@@ -26,9 +26,9 @@
       </div>
 
       <div v-if="downloadInfo.can_download && downloadInfo.download_link">
-        <a :href="downloadInfo.download_link" target="_blank" class="w-full text-center block bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed">
-          دانلود کتاب
-        </a>
+        <NuxtLink :to="frontendDownloadLink" class="w-full text-center block bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700">
+          مشاهده صفحه دانلود
+        </NuxtLink>
       </div>
       <div v-else class="text-center p-4 bg-yellow-50 text-yellow-800 rounded-lg">
         <p>{{ downloadInfo.message || 'لینک دانلودی برای این سفارش وجود ندارد.' }}</p>
@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useApiAuth } from '~/composables/useApiAuth';
 
@@ -88,4 +88,19 @@ const fetchDownloadInfo = async () => {
 };
 
 onMounted(fetchDownloadInfo);
+
+const frontendDownloadLink = computed(() => {
+  const backendUrl = downloadInfo.value?.download_link;
+  if (!backendUrl) {
+    return '#';
+  }
+  try {
+    // Extract the token from the end of the URL path
+    const token = backendUrl.split('/').pop();
+    return `/book/download/${token}`;
+  } catch (e) {
+    console.error("Could not parse backend download URL:", backendUrl, e);
+    return '#';
+  }
+});
 </script>
