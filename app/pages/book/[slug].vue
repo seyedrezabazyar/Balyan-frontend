@@ -309,13 +309,26 @@ async function processPurchase() {
   try {
     const response = await apiAuth.post(`/book/${slug}/buy`);
 
-    // On success, set the flag and refetch data.
-    // The success message is now handled in the template.
-    justPurchased.value = true;
-    notification.value.show = false; // Ensure any previous notifications are hidden
+    // Scenario B: Paid book, redirect to payment gateway
+    if (response.data && response.data.redirect_url) {
+      window.location.href = response.data.redirect_url;
+      return; // Stop execution to allow for redirect
+    }
 
-    purchaseStore.clearPurchases(); // Invalidate the purchases list
-    await fetchBook(); // Refetch data to get the new purchase status
+    // Scenario A: Free book, purchase is instant
+    if (response.success) {
+      // On success, set the flag and refetch data.
+      // The success message is now handled in the template.
+      justPurchased.value = true;
+      notification.value.show = false; // Ensure any previous notifications are hidden
+
+      purchaseStore.clearPurchases(); // Invalidate the purchases list
+      await fetchBook(); // Refetch data to get the new purchase status
+    } else {
+      // Handle cases where success is false but no redirect_url is provided
+      throw new Error(response.message || 'پاسخ ناموفقی از سرور دریافت شد.');
+    }
+
   } catch (err) {
     notification.value = { show: true, message: err.response?._data?.message || 'خطایی در هنگام خرید رخ داد.', type: 'error' };
   } finally {
