@@ -40,7 +40,7 @@
               تاریخ ثبت
             </th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              آیتم خریداری شده
+              جزئیات خرید
             </th>
             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
               عملیات
@@ -80,8 +80,7 @@
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <div class="space-y-2">
                 <div v-for="item in order.items" :key="item.id" class="text-xs">
-                  <p class="font-semibold text-gray-800">{{ item.book?.title }}</p>
-                  <div v-if="item.purchase" class="mt-1">
+                  <div v-if="item.purchase">
                     <div class="flex items-center justify-between gap-2">
                       <span
                         class="px-2 inline-flex leading-5 font-semibold rounded-full text-xs"
@@ -103,15 +102,14 @@
                     </div>
                   </div>
                   <div v-else class="text-gray-400">
-                    - (خرید ناموفق)
+                    -
                   </div>
                 </div>
               </div>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
               <div class="flex items-center justify-center gap-2">
-
-                <!-- Direct Download Link for Active Purchases -->
+                <!-- Download Links -->
                 <template v-for="item in order.items" :key="item.id">
                   <NuxtLink
                     v-if="item.purchase && item.purchase.download_token"
@@ -137,41 +135,13 @@
                   <svg v-if="!processingOrders[order.id]" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
+                  <!-- Spinner Icon -->
                   <svg v-else class="animate-spin h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 </button>
 
-                <!-- Renew Button -->
-                <button
-                  v-if="isRenewable(order)"
-                  @click="renewOrder(order)"
-                  :disabled="processingOrders[order.id]"
-                  class="p-1 text-green-600 hover:text-green-800 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
-                  title="تمدید کردن"
-                >
-                  <svg v-if="!processingOrders[order.id]" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0114.13-4.13M20 15a9 9 0 01-14.13 4.13" />
-                  </svg>
-                  <svg v-else class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </button>
-
-                <!-- Download Info Button (for non-downloadable orders) -->
-                <button
-                  v-if="!order.items.some(item => item.purchase && item.purchase.download_token)"
-                  @click="getDownloadInfo(order)"
-                  class="p-1 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200 transition-colors"
-                  title="مشاهده اطلاعات دانلود"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
               </div>
             </td>
           </tr>
@@ -199,75 +169,11 @@
         بعدی
       </button>
     </div>
-
-    <!-- Download Info Modal -->
-    <div v-if="isDownloadInfoModalVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" @click.self="isDownloadInfoModalVisible = false">
-      <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">اطلاعات دانلود</h3>
-
-          <div v-if="selectedOrderForDownloadInfo?.loading" class="py-4">
-            <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-sm text-gray-500 mt-2">در حال بارگذاری...</p>
-          </div>
-
-          <div v-else-if="selectedOrderForDownloadInfo?.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong class="font-bold">خطا!</strong>
-            <span class="block sm:inline">{{ selectedOrderForDownloadInfo.error }}</span>
-          </div>
-
-          <div v-else-if="selectedOrderForDownloadInfo?.data" class="text-right space-y-4">
-            <!-- Book Info -->
-            <div>
-              <h4 class="font-semibold text-gray-700">اطلاعات کتاب</h4>
-              <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.data.book?.title }}</p>
-              <p><span class="font-medium">نویسنده:</span> {{ authorName(selectedOrderForDownloadInfo.data.book?.author) }}</p>
-            </div>
-            <hr/>
-
-            <!-- Purchase Info -->
-            <div v-if="selectedOrderForDownloadInfo.data.purchase">
-              <h4 class="font-semibold text-gray-700">اطلاعات خرید</h4>
-              <p><span class="font-medium">وضعیت:</span> {{ selectedOrderForDownloadInfo.data.purchase.status }}</p>
-              <p><span class="font-medium">تعداد دانلود:</span> {{ selectedOrderForDownloadInfo.data.purchase.total_downloads }} / {{ selectedOrderForDownloadInfo.data.purchase.max_downloads }}</p>
-              <p v-if="selectedOrderForDownloadInfo.data.purchase.expires_at"><span class="font-medium">تاریخ انقضا:</span> {{ new Date(selectedOrderForDownloadInfo.data.purchase.expires_at).toLocaleDateString('fa-IR') }}</p>
-            </div>
-            <div v-else class="text-gray-500">
-              <p>{{ selectedOrderForDownloadInfo.data.message || 'خریدی برای این سفارش ثبت نشده است.' }}</p>
-            </div>
-            <hr/>
-
-            <!-- Download Link -->
-            <div>
-              <h4 class="font-semibold text-gray-700">لینک دانلود</h4>
-              <div v-if="selectedOrderForDownloadInfo.data.can_download && selectedOrderForDownloadInfo.data.download_link">
-                <a :href="selectedOrderForDownloadInfo.data.download_link" target="_blank" class="inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors">
-                  دانلود کتاب
-                </a>
-              </div>
-              <div v-else class="text-gray-500">
-                <p>لینک دانلودی در دسترس نیست.</p>
-                <p v-if="selectedOrderForDownloadInfo.data.file_status !== 'available'" class="text-xs text-red-600">وضعیت فایل: {{ selectedOrderForDownloadInfo.data.file_status }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="items-center px-4 py-3 mt-6">
-            <button @click="isDownloadInfoModalVisible = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 w-full">
-              بستن
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useApiAuth } from '~/composables/useApiAuth';
 
 definePageMeta({
@@ -286,81 +192,40 @@ const pagination = ref({
   perPage: 20,
 });
 
-// State for modals and processing
 const processingOrders = ref({});
-const selectedOrderForDownloadInfo = ref(null);
-const isDownloadInfoModalVisible = ref(false);
 
-const updateOrderStatus = async (order, action) => {
-  const actionMessages = {
-    expire: {
-      confirm: `آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`,
-      error: `Failed to expire order ${order.id}:`,
-      alert: 'عملیات منقضی کردن سفارش با خطا مواجه شد.'
-    },
-    renew: {
-      confirm: `آیا از تمدید سفارش شماره ${order.order_number} اطمینان دارید؟ این کار مهلت دانلود را به 90 روز و تعداد دانلود را به 50 بازنشانی می‌کند.`,
-      error: `Failed to renew order ${order.id}:`,
-      alert: 'عملیات تمدید سفارش با خطا مواجه شد.'
-    }
-  };
-
-  const messages = actionMessages[action];
-  if (!confirm(messages.confirm)) {
+const expireOrder = async (order) => {
+  if (!confirm(`آیا از منقضی کردن سفارش شماره ${order.order_number} اطمینان دارید؟`)) {
     return;
   }
 
   processingOrders.value[order.id] = true;
   try {
-    const response = await api.post(`/admin/orders/${order.id}/${action}`);
-    const updatedOrder = response.order;
+    await api.post(`/admin/orders/${order.id}/expire`);
 
-    const index = orders.value.findIndex(o => o.id === order.id);
-    if (index !== -1 && updatedOrder) {
-      orders.value[index] = updatedOrder;
+    // Find the order in the local array and update its items' purchase status
+    const orderToUpdate = orders.value.find(o => o.id === order.id);
+    if (orderToUpdate) {
+      orderToUpdate.items.forEach(item => {
+        if (item.purchase) {
+          item.purchase.status = 'expired';
+        }
+      });
     }
   } catch (err) {
-    console.error(messages.error, err);
-    alert(messages.alert);
+    console.error(`Failed to expire order ${order.id}:`, err);
+    // A more user-friendly error message would be good, maybe via a toast library
+    alert('عملیات با خطا مواجه شد. لطفاً دوباره تلاش کنید.');
   } finally {
     processingOrders.value[order.id] = false;
   }
 };
-
-const expireOrder = (order) => updateOrderStatus(order, 'expire');
-const renewOrder = (order) => updateOrderStatus(order, 'renew');
 
 const isExpirable = (order) => {
   if (!order || !order.items) return false;
   return order.items.some(item => item.purchase && item.purchase.status === 'active');
 };
 
-const isRenewable = (order) => {
-  if (!order || !order.items) return false;
-  return order.status === 'paid' && order.items.some(item => item.purchase && item.purchase.status !== 'active');
-};
-
-const getDownloadInfo = async (order) => {
-  selectedOrderForDownloadInfo.value = { loading: true, data: null, error: null };
-  isDownloadInfoModalVisible.value = true;
-
-  try {
-    const response = await api.get(`/admin/orders/${order.id}/download-link`);
-    selectedOrderForDownloadInfo.value = { loading: false, data: response, error: null };
-  } catch (err) {
-    console.error(`Failed to fetch download info for order ${order.id}:`, err);
-    const errorMessage = err.response?._data?.message || 'یک خطای ناشناخته رخ داد.';
-    selectedOrderForDownloadInfo.value = { loading: false, data: null, error: errorMessage };
-  }
-};
-
-const authorName = (author) => {
-  if (!author) return 'نامشخص';
-  if (typeof author === 'object' && author.name) {
-    return author.name;
-  }
-  return author;
-};
 
 const fetchOrders = async (page = 1) => {
   loading.value = true;
