@@ -24,9 +24,14 @@ export const useApiAuth = () => {
       options.headers = options.headers || {}
       options.headers['X-Request-ID'] = newLog.id
 
+      // --- TEMPORARY DEBUG LOGGING ---
+      console.log('Inspecting headers before auth logic...', options.headers)
+      // -----------------------------
+
       // Original auth logic
       const authStore = useAuthStore()
       if (authStore.token) {
+        console.log('Token found in store, adding to headers:', authStore.token.substring(0, 10) + '...') // Log token presence
         options.headers = {
           ...options.headers,
           Authorization: `Bearer ${authStore.token}`,
