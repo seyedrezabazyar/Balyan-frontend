@@ -71,33 +71,6 @@
       <span class="text-sm text-gray-700">صفحه {{ pagination.currentPage }} از {{ pagination.lastPage }}</span>
       <button @click="fetchOrders(pagination.currentPage + 1)" :disabled="pagination.currentPage === pagination.lastPage" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">بعدی</button>
     </div>
-    <div v-if="isDownloadInfoModalVisible" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center" @click.self="isDownloadInfoModalVisible = false">
-      <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">اطلاعات سفارش</h3>
-          <div v-if="selectedOrderForDownloadInfo?.data" class="text-right space-y-4">
-            <div>
-              <h4 class="font-semibold text-gray-700">اطلاعات کتاب</h4>
-              <p><span class="font-medium">عنوان:</span> {{ selectedOrderForDownloadInfo.data.book?.title }}</p>
-              <p><span class="font-medium">نویسنده:</span> {{ authorName(selectedOrderForDownloadInfo.data.book?.author) }}</p>
-            </div>
-            <hr/>
-            <div v-if="selectedOrderForDownloadInfo.data.purchase">
-              <h4 class="font-semibold text-gray-700">اطلاعات خرید</h4>
-              <p><span class="font-medium">وضعیت:</span> {{ selectedOrderForDownloadInfo.data.purchase.status }}</p>
-              <p><span class="font-medium">تعداد دانلود:</span> {{ selectedOrderForDownloadInfo.data.purchase.total_downloads }} / {{ selectedOrderForDownloadInfo.data.purchase.max_downloads }}</p>
-              <p v-if="selectedOrderForDownloadInfo.data.purchase.expires_at"><span class="font-medium">تاریخ انقضا:</span> {{ new Date(selectedOrderForDownloadInfo.data.purchase.expires_at).toLocaleDateString('fa-IR') }}</p>
-            </div>
-            <div v-else class="text-gray-500">
-              <p>{{ selectedOrderForDownloadInfo.data.message || 'خریدی برای این سفارش ثبت نشده است.' }}</p>
-            </div>
-          </div>
-          <div class="items-center px-4 py-3 mt-6">
-            <button @click="isDownloadInfoModalVisible = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 w-full">بستن</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -124,8 +97,6 @@ const pagination = ref({
 });
 
 const processingOrders = ref({});
-const selectedOrderForDownloadInfo = ref(null);
-const isDownloadInfoModalVisible = ref(false);
 
 const updateOrderStatus = async (order, action) => {
   const actionMessages = {
@@ -158,8 +129,9 @@ const handleDownloadClick = async (order) => {
     if (response.purchase && response.purchase.download_token) {
       router.push(`/book/download/${response.purchase.download_token}`);
     } else {
-      selectedOrderForDownloadInfo.value = { data: response };
-      isDownloadInfoModalVisible.value = true;
+      // As per user request, do not show a popup.
+      // If there's no download token, nothing will happen.
+      console.warn(`No download token available for order #${order.id}`);
     }
   } catch (err) {
     console.error(`Failed to fetch download info for order ${order.id}:`, err);
