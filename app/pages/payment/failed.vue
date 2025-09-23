@@ -12,9 +12,12 @@
         شماره سفارش: {{ orderId }}
       </div>
       <div class="mt-6 space-y-3">
-        <button @click="goBack" class="block w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+        <NuxtLink v-if="bookSlug" :to="`/book/${bookSlug}`" class="block w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
           تلاش مجدد
-        </button>
+        </NuxtLink>
+        <div v-else-if="loadingBookDetails" class="text-center">
+          <p class="text-sm text-gray-500">در حال آماده‌سازی تلاش مجدد...</p>
+        </div>
         <NuxtLink to="/" class="block w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
           بازگشت به صفحه اصلی
         </NuxtLink>
@@ -24,21 +27,52 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from '#app'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from '#app'
+import { useApiAuth } from '~/composables/useApiAuth'
+import { useAuthStore } from '~/stores/auth'
 
 const route = useRoute();
-const router = useRouter();
+const apiAuth = useApiAuth();
+const authStore = useAuthStore();
 
 const orderId = ref(null);
+const bookSlug = ref(null);
+const loadingBookDetails = ref(false);
+
+async function fetchOrderDetails(id) {
+  if (!id) return;
+
+  loadingBookDetails.value = true;
+  try {
+    const response = await apiAuth.get(`/orders/${id}`);
+    const item = response.data?.items?.[0];
+    if (item && item.purchase && item.purchase.book && item.purchase.book.slug) {
+        bookSlug.value = item.purchase.book.slug;
+    } else if (response.data?.book?.slug) {
+        bookSlug.value = response.data.book.slug;
+    }
+  } catch (error) {
+    console.error('Could not fetch order details for failed payment page:', error);
+  } finally {
+    loadingBookDetails.value = false;
+  }
+}
 
 onMounted(() => {
-  // Extract order_id from query params for user reference
   orderId.value = route.query.order_id || null;
 });
 
-function goBack() {
-  // Takes the user back to the previous page (likely the book page)
-  router.back();
-}
+// Watch for the user to be logged in before fetching order details.
+// This prevents a race condition on page load where the API call is made
+// before the auth token is initialized.
+watch(
+  () => authStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn && orderId.value) {
+      fetchOrderDetails(orderId.value);
+    }
+  },
+  { immediate: true }
+);
 </script>
