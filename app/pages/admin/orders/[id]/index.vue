@@ -57,14 +57,14 @@
           >
             منقضی کردن سفارش
           </button>
-          <NuxtLink
-            v-if="order.actions && order.actions.download_token"
-            :to="`/book/download/${order.actions.download_token}`"
-            target="_blank"
-            class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600"
+          <button
+            v-if="order.actions && order.actions.download_url"
+            @click="goToDownloadPage"
+            :disabled="isProcessing"
+            class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50"
           >
             مشاهده صفحه دانلود کاربر
-          </NuxtLink>
+          </button>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useApiAuth } from '~/composables/useApiAuth';
 
 definePageMeta({
@@ -82,6 +82,7 @@ definePageMeta({
 });
 
 const route = useRoute();
+const router = useRouter();
 const api = useApiAuth();
 
 const orderId = route.params.id;
@@ -101,6 +102,28 @@ const fetchOrder = async () => {
     error.value = 'دریافت اطلاعات سفارش با خطا مواجه شد.';
   } finally {
     loading.value = false;
+  }
+};
+
+const goToDownloadPage = async () => {
+  if (!order.value.actions.download_url) return;
+
+  isProcessing.value = true;
+  try {
+    const response = await api.get(order.value.actions.download_url);
+    const token = response.download_token;
+
+    if (token) {
+      const route = router.resolve(`/book/download/${token}`);
+      window.open(route.href, '_blank');
+    } else {
+      throw new Error('Download token not found in API response.');
+    }
+  } catch (err) {
+    console.error('Failed to get download link:', err);
+    alert('دریافت لینک دانلود با خطا مواجه شد.');
+  } finally {
+    isProcessing.value = false;
   }
 };
 
