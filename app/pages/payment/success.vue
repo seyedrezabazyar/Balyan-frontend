@@ -12,6 +12,12 @@
         شماره سفارش: {{ orderId }}
       </div>
       <div class="mt-6 space-y-3">
+        <NuxtLink v-if="bookSlug" :to="`/book/${bookSlug}`" class="block w-full px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700">
+          مشاهده صفحه کتاب
+        </NuxtLink>
+        <div v-else-if="loadingBookDetails" class="text-center">
+          <p class="text-sm text-gray-500">در حال یافتن صفحه کتاب...</p>
+        </div>
         <NuxtLink to="/my-purchases" class="block w-full px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">
           رفتن به کتابخانه
         </NuxtLink>
@@ -27,6 +33,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from '#app'
 import { usePurchaseStore } from '~/stores/purchase'
+import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
   middleware: 'auth'
@@ -34,17 +41,46 @@ definePageMeta({
 
 const route = useRoute();
 const purchaseStore = usePurchaseStore();
+const apiAuth = useApiAuth();
 
 const orderId = ref(null);
+const bookSlug = ref(null);
+const loadingBookDetails = ref(false);
+
+async function fetchOrderDetails(id) {
+  if (!id) return;
+
+  loadingBookDetails.value = true;
+  try {
+    // We assume an endpoint exists for regular users to fetch their own order details.
+    // The exact structure of the response is also an assumption based on other parts of the app.
+    const response = await apiAuth.get(`/orders/${id}`);
+
+    // The book's slug could be in a nested object. We'll check the most likely structure.
+    const item = response.data?.items?.[0];
+    if (item && item.purchase && item.purchase.book && item.purchase.book.slug) {
+        bookSlug.value = item.purchase.book.slug;
+    } else if (response.data?.book?.slug) {
+        bookSlug.value = response.data.book.slug;
+    }
+  } catch (error) {
+    // Fail silently if the endpoint doesn't exist or there's an error.
+    // The user still has the main navigation links.
+    console.error('Could not fetch order details to create direct book link:', error);
+  } finally {
+    loadingBookDetails.value = false;
+  }
+}
 
 onMounted(() => {
-  // Extract order_id from query params
   orderId.value = route.query.order_id || null;
 
-  // Clear the local purchase cache.
-  // This is crucial so that when the user navigates to their library,
-  // the app is forced to re-fetch the list of purchases, which will
-  // now include the book they just bought.
+  // Fetch order details to get the book slug for a direct link.
+  fetchOrderDetails(orderId.value);
+
+  // Clear the local purchase cache. This is crucial so that when the user
+  // navigates to their library, the app is forced to re-fetch the list
+  // of purchases, which will now include the book they just bought.
   purchaseStore.clearPurchases();
 });
 </script>
