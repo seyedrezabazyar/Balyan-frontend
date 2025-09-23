@@ -27,7 +27,18 @@
         </thead>
         <tbody>
           <tr v-for="order in orders" :key="order.id" class="hover:bg-gray-50">
-            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm"><p class="text-gray-900 whitespace-no-wrap">{{ order.order_number }}</p></td>
+            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+              <NuxtLink
+                v-if="order.actions?.download_token"
+                :to="`/book/download/${order.actions.download_token}`"
+                class="text-blue-600 hover:underline"
+                target="_blank"
+                title="رفتن به صفحه دانلود کاربر"
+              >
+                {{ order.order_number }}
+              </NuxtLink>
+              <span v-else>{{ order.order_number }}</span>
+            </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <p class="text-gray-900 whitespace-no-wrap">{{ order.user?.name }}</p>
               <p class="text-gray-600 whitespace-no-wrap text-xs">{{ order.user?.email }}</p>
@@ -41,29 +52,20 @@
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
               <div v-if="order.items && order.items.length > 0" class="space-y-1">
                 <div v-for="item in order.items" :key="item.id" class="text-xs">
-                  <p class="font-semibold text-gray-800">{{ item.title }}</p>
+                   <NuxtLink
+                      v-if="item.book?.slug"
+                      :to="`/book/${item.book.slug}`"
+                      class="font-semibold text-blue-600 hover:underline"
+                      target="_blank"
+                   >
+                     {{ item.title }}
+                   </NuxtLink>
+                   <span v-else class="font-semibold text-gray-800">{{ item.title }}</span>
                 </div>
               </div>
               <div v-else class="text-gray-400">-</div>
             </td>
             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
-              <div class="flex items-center justify-center gap-x-3">
-                <!-- Download Button -->
-                <button
-                  v-if="order.actions && order.actions.download_url"
-                  @click="() => goToDownloadPage(order)"
-                  :disabled="processingOrders[order.id]"
-                  class="text-xs bg-blue-500 text-white font-semibold py-1 px-2 rounded hover:bg-blue-600 disabled:opacity-50"
-                  title="مشاهده صفحه دانلود"
-                >
-                  <span v-if="processingOrders[order.id] === 'download'">...</span>
-                  <span v-else>دانلود</span>
-                </button>
-                <span v-else class="text-xs text-gray-400">
-                  [دانلود غیرفعال]
-                </span>
-
-                <!-- Combined Expire/Renew Button -->
                 <button
                   v-if="order.actions && (order.actions.expire_url || order.actions.renew_url)"
                   @click="() => toggleOrderStatus(order)"
@@ -83,10 +85,9 @@
                   ]"
                   :title="order.actions.expire_url ? 'منقضی کردن' : 'فعال سازی مجدد'"
                 >
-                  <span v-if="processingOrders[order.id] === 'expire' || processingOrders[order.id] === 'renew'">...</span>
+                  <span v-if="processingOrders[order.id]">...</span>
                   <span v-else>{{ order.actions.expire_url ? 'منقضی کردن' : 'تمدید' }}</span>
                 </button>
-              </div>
             </td>
           </tr>
         </tbody>
@@ -96,11 +97,6 @@
       <button @click="fetchOrders(pagination.currentPage - 1)" :disabled="pagination.currentPage === 1" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">قبلی</button>
       <span class="text-sm text-gray-700">صفحه {{ pagination.currentPage }} از {{ pagination.lastPage }}</span>
       <button @click="fetchOrders(pagination.currentPage + 1)" :disabled="pagination.currentPage === pagination.lastPage" class="px-4 py-2 mx-1 bg-white border rounded-md disabled:opacity-50">بعدی</button>
-    </div>
-
-    <div class="mt-8 p-4 bg-gray-800 text-white rounded-lg">
-      <h3 class="font-bold text-lg mb-2">DEBUGGER: Raw 'orders' API Response</h3>
-      <pre class="text-xs whitespace-pre-wrap break-all">{{ JSON.stringify(orders, null, 2) }}</pre>
     </div>
   </div>
 </template>
@@ -150,28 +146,6 @@ const performOrderAction = async (order, url, actionName, confirmMessage) => {
   } catch (err) {
     console.error(`Failed to ${actionName} order ${order.id}:`, err);
     alert(`عملیات ${actionName} سفارش با خطا مواجه شد.`);
-  } finally {
-    processingOrders.value[order.id] = false;
-  }
-};
-
-const goToDownloadPage = async (order) => {
-  if (!order.actions.download_url) return;
-
-  processingOrders.value[order.id] = 'download';
-  try {
-    const response = await api.get(order.actions.download_url);
-    const token = response.download_token;
-
-    if (token) {
-      const route = router.resolve(`/book/download/${token}`);
-      window.open(route.href, '_blank');
-    } else {
-      throw new Error('Download token not found in API response.');
-    }
-  } catch (err) {
-    console.error('Failed to get download link:', err);
-    alert('دریافت لینک دانلود با خطا مواجه شد.');
   } finally {
     processingOrders.value[order.id] = false;
   }
