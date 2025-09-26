@@ -59,10 +59,10 @@
     <div v-if="!loading && !error">
       <!-- Pending Tab -->
       <div v-if="activeTab === 'pending'">
-        <div v-if="images.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div v-if="images.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in images" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-48 object-cover">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <div class="flex justify-center gap-2 mt-2">
@@ -83,10 +83,10 @@
 
       <!-- Approved Tab -->
       <div v-if="activeTab === 'approved'">
-        <div v-if="approvedImages.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div v-if="approvedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in approvedImages" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-green-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-48 object-cover">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <button
@@ -109,10 +109,10 @@
 
       <!-- Rejected Tab -->
       <div v-if="activeTab === 'rejected'">
-        <div v-if="rejectedImages.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div v-if="rejectedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in rejectedImages" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-red-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-48 object-cover">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <p class="text-xs text-gray-500 mt-1">دلیل رد: {{ image.rejection_reason }}</p>
@@ -135,6 +135,10 @@
       </div>
     </div>
 
+    <!-- Fullscreen Image Viewer -->
+    <div v-if="fullscreenImageUrl" @click="hideFullscreen" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 cursor-pointer">
+      <img :src="fullscreenImageUrl" class="max-w-full max-h-full object-contain">
+    </div>
   </div>
 </template>
 
@@ -143,7 +147,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useApiAuth } from '~/composables/useApiAuth'
 
 definePageMeta({
-  layout: 'admin',
+  layout: 'fullscreen',
   title: 'گالری تصاویر کتاب ها',
   middleware: 'admin'
 })
@@ -161,6 +165,15 @@ const rejectedMeta = ref(null)
 const loading = ref(true)
 const error = ref(null)
 const activeTab = ref('pending') // 'pending', 'approved', 'rejected'
+const fullscreenImageUrl = ref(null)
+
+function showFullscreen(url) {
+  fullscreenImageUrl.value = url
+}
+
+function hideFullscreen() {
+  fullscreenImageUrl.value = null
+}
 
 async function fetchAllImages() {
   loading.value = true
