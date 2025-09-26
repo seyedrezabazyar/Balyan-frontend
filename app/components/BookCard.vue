@@ -2,7 +2,7 @@
   <div class="bg-white rounded-lg shadow hover:shadow-lg transition h-full flex flex-col">
     <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
-        <img :src="imageUrl"
+        <img :src="book.cover_image_url || '/images/placeholders/book-placeholder-thumb.jpg'"
              :alt="book.title"
              @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
              class="w-full h-48 object-cover rounded-t-lg">
@@ -84,7 +84,4 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
 };
 
-const imageUrl = computed(() => {
-  return props.book.cover_image_url || '/images/placeholders/book-placeholder-thumb.jpg';
-});
 </script>

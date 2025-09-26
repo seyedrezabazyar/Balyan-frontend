@@ -61,8 +61,8 @@
       <div v-if="activeTab === 'pending'">
         <div v-if="images.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in images" :key="image.id">
-            <div v-if="image.thumbnail_url || image.url" class="relative border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url || image.url"
+            <div class="relative border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
+              <img :src="image.thumbnail_url || image.url || '/images/placeholders/book-placeholder-thumb.jpg'"
                    :alt="image.book.title"
                    @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
                    class="w-full h-64 object-cover cursor-pointer"
@@ -89,8 +89,8 @@
       <div v-if="activeTab === 'approved'">
         <div v-if="approvedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in approvedImages" :key="image.id">
-            <div v-if="image.thumbnail_url || image.url" class="relative border-2 border-green-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url || image.url"
+            <div class="relative border-2 border-green-300 rounded-lg overflow-hidden shadow-sm">
+              <img :src="image.thumbnail_url || image.url || '/images/placeholders/book-placeholder-thumb.jpg'"
                    :alt="image.book.title"
                    @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
                    class="w-full h-64 object-cover cursor-pointer"
@@ -119,8 +119,8 @@
       <div v-if="activeTab === 'rejected'">
         <div v-if="rejectedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in rejectedImages" :key="image.id">
-            <div v-if="image.thumbnail_url || image.url" class="relative border-2 border-red-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url || image.url"
+            <div class="relative border-2 border-red-300 rounded-lg overflow-hidden shadow-sm">
+              <img :src="image.thumbnail_url || image.url || '/images/placeholders/book-placeholder-thumb.jpg'"
                    :alt="image.book.title"
                    @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
                    class="w-full h-64 object-cover cursor-pointer"
