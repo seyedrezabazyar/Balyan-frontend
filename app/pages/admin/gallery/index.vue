@@ -62,7 +62,7 @@
         <div v-if="images.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in images" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full aspect-square object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <div class="flex justify-center gap-2 mt-2">
@@ -86,7 +86,7 @@
         <div v-if="approvedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in approvedImages" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-green-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full aspect-square object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <button
@@ -112,7 +112,7 @@
         <div v-if="rejectedImages.length > 0" class="grid grid-cols-4 gap-2">
           <template v-for="image in rejectedImages" :key="image.id">
             <div v-if="image.thumbnail_url" class="relative border-2 border-red-300 rounded-lg overflow-hidden shadow-sm">
-              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full h-64 object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
+              <img :src="image.thumbnail_url" :alt="image.book.title" class="w-full aspect-square object-cover cursor-pointer" @click="showFullscreen(image.url || image.thumbnail_url)">
               <div class="p-2">
                 <h3 class="text-sm font-medium truncate">{{ image.book.title }}</h3>
                 <p class="text-xs text-gray-500 mt-1">دلیل رد: {{ image.rejection_reason }}</p>
