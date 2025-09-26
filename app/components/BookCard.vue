@@ -2,10 +2,12 @@
   <div class="bg-white rounded-lg shadow hover:shadow-lg transition h-full flex flex-col">
     <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
-        <img :src="book.cover_image_url || '/images/placeholders/book-placeholder-thumb.jpg'"
-             :alt="book.title"
-             @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
-             class="w-full h-48 object-cover rounded-t-lg">
+        <SafeImage
+          :src="book.cover_image_url"
+          :alt="book.title"
+          fallback-src="/images/placeholders/book-placeholder-thumb.jpg"
+          class="w-full h-48 object-cover rounded-t-lg"
+        />
         <div v-if="book.discount_percent"
              class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
           {{ book.discount_percent }}% تخفیف
@@ -67,7 +69,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import SafeImage from '~/components/SafeImage.vue';
 
 const props = defineProps({
   book: {
@@ -83,5 +85,4 @@ const props = defineProps({
 const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
 };
-
 </script>
