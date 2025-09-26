@@ -3,7 +3,8 @@
     <NuxtLink :to="`/book/${book.slug}`" class="block">
       <div class="relative">
         <img :src="imageUrl"
-             :alt="book.image && book.image.alt_text ? book.image.alt_text : book.title"
+             :alt="book.title"
+             @error="$event.target.src='/images/placeholders/book-placeholder-thumb.jpg'"
              class="w-full h-48 object-cover rounded-t-lg">
         <div v-if="book.discount_percent"
              class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
@@ -84,12 +85,6 @@ const formatPrice = (price) => {
 };
 
 const imageUrl = computed(() => {
-  // Only show the image if it exists and its status is 'approved'.
-  if (props.book.image && props.book.image.status === 'approved') {
-    // Prioritize thumbnail_url, but fall back to the main url.
-    return props.book.image.thumbnail_url || props.book.image.url;
-  }
-  // For any other status (e.g., pending, rejected) or if there's no image, show the placeholder.
-  return '/images/placeholders/book-placeholder-thumb.jpg';
+  return props.book.cover_image_url || '/images/placeholders/book-placeholder-thumb.jpg';
 });
 </script>
