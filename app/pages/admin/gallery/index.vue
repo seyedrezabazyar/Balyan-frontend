@@ -136,8 +136,8 @@
     </div>
 
     <!-- Fullscreen Image Viewer -->
-    <div v-if="fullscreenImageUrl" @click="hideFullscreen" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 cursor-pointer">
-      <img :src="fullscreenImageUrl" class="max-w-full max-h-full object-contain">
+    <div v-if="fullscreenImageUrl" @click="hideFullscreen" class="fixed inset-0 bg-black z-50 cursor-pointer">
+      <img :src="fullscreenImageUrl" class="w-full h-full object-cover">
     </div>
   </div>
 </template>
