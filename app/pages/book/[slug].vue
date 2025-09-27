@@ -99,7 +99,7 @@
               <!-- Sub-case: Guest clicked "Buy", show login prompt -->
               <div v-if="showLoginPrompt" class="text-center p-4 bg-gray-100 rounded-lg">
                 <p class="font-semibold mb-3">برای خرید این کتاب، لطفاً ابتدا وارد حساب کاربری خود شوید.</p>
-                <NuxtLink to="/auth" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
+                <NuxtLink :to="`/auth?redirect=${route.fullPath}`" class="inline-block bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">
                   ورود یا ثبت‌نام
                 </NuxtLink>
               </div>
