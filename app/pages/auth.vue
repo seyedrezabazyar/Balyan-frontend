@@ -120,6 +120,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const formatters = useFormatters()
 
 type UiState = 'identifier' | 'register' | 'password' | 'otp'
@@ -218,7 +219,8 @@ const handleLoginWithPassword = async () => {
   loading.value = true
   try {
     await authStore.loginWithPassword(identifier.value, password.value)
-    await router.push('/dashboard')
+    const redirectPath = route.query.redirect?.toString() || '/dashboard'
+    await router.push(redirectPath)
   } catch (err: any) {
     error.value = err.data?.message || 'شناسه یا رمز عبور اشتباه است.'
   } finally {
@@ -253,7 +255,8 @@ const handleVerifyOtp = async () => {
   try {
     const nameToSend = checkUserResponse.value?.user_exists ? undefined : userName.value
     await authStore.verifyOtp(identifier.value, otp.value, nameToSend)
-    await router.push('/dashboard')
+    const redirectPath = route.query.redirect?.toString() || '/dashboard'
+    await router.push(redirectPath)
   } catch (err: any) {
     error.value = err.data?.message || 'کد تایید اشتباه است.'
   } finally {
