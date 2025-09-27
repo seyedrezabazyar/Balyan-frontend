@@ -4,8 +4,10 @@ import { useApiDebugger } from '~/composables/useApiDebugger'
 import { useDebugStore } from '~/stores/debug'
 
 export const useApiAuth = () => {
-  const config = useRuntimeConfig()
-  const baseURL = config.public.apiBase || '/api/v1'
+  // Always use the relative path for the API base to ensure the Nuxt proxy is used.
+  // The runtime config can be used for other environments (e.g., production),
+  // but for local development, the proxy is the correct approach.
+  const baseURL = '/api/v1'
   const { addLog, updateLog } = useApiDebugger()
 
   const $api = $fetch.create({
